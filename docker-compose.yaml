@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15.2-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=kamifusen
+      - POSTGRES_PASSWORD=kamifusen
+      - POSTGRES_DB=dev
+    ports:
+      - '5432:5432'
+
