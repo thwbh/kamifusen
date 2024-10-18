@@ -1,6 +1,7 @@
 package io.tohuwabohu.kamifusen
 
 import io.quarkus.runtime.util.HashUtil.sha256
+import io.quarkus.test.common.http.TestHTTPEndpoint
 import io.quarkus.test.junit.QuarkusMock
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.vertx.RunOnVertxContext
@@ -20,6 +21,7 @@ import java.net.URLEncoder
 import java.util.*
 
 @QuarkusTest
+@TestHTTPEndpoint(PageVisitResource::class)
 class PageVisitResourceTest {
     @Inject
     lateinit var pageRepository: PageRepository
@@ -45,7 +47,7 @@ class PageVisitResourceTest {
             header("User-Agent", "test-user-agent")
             body("/page/test-page")
         } When {
-            post("/visits/hit")
+            post("/hit")
         } Then {
             statusCode(200)
         }
@@ -75,7 +77,7 @@ class PageVisitResourceTest {
             header("User-Agent", "test-user-agent")
             body("/page/test-page")
         } When {
-            post("/visits/hit")
+            post("/hit")
         } Then {
             statusCode(200)
         }
@@ -107,7 +109,7 @@ class PageVisitResourceTest {
             header("User-Agent", "test-user-agent")
             body("/page/test-page")
         } When {
-            post("/visits/hit")
+            post("/hit")
         } Then {
             statusCode(200)
         }
@@ -139,7 +141,7 @@ class PageVisitResourceTest {
             header("User-Agent", "test-user-agent")
             body("/page/test-page")
         } When {
-            post("/visits/hit")
+            post("/hit")
         } Then {
             statusCode(200)
         }
@@ -168,7 +170,7 @@ class PageVisitResourceTest {
             header("User-Agent", "test-user-agent")
             body("/page/test-page")
         } When {
-            post("/visits/hit")
+            post("/hit")
         } Then {
             statusCode(200)
         }
@@ -195,7 +197,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
 
         val count = When {
-            get("/visits/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
+            get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
         } Then {
             statusCode(200)
         } Extract {
@@ -215,7 +217,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         val count = When {
-            get("/visits/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
+            get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
         } Then {
             statusCode(200)
         } Extract {
@@ -235,7 +237,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         When {
-            get("/visits/count/${URLEncoder.encode("/page/test-page2", "UTF-8")}")
+            get("/count/${URLEncoder.encode("/page/test-page2", "UTF-8")}")
         } Then {
             statusCode(404)
         }
