@@ -9,6 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import org.hibernate.proxy.HibernateProxy
+import java.awt.SystemColor.info
 import java.util.*
 
 @Entity
@@ -42,11 +43,11 @@ data class Visitor (
 @ApplicationScoped
 class VisitorRepository : PanacheRepositoryBase<Visitor, UUID> {
     @WithTransaction
-    fun addVisitor(info: String): Uni<Visitor> {
-        val visitor = Visitor(UUID.randomUUID(), sha256(info))
+    fun addVisitor(remoteAddress: String, userAgent: String): Uni<Visitor> {
+        val visitor = Visitor(UUID.randomUUID(), sha256("$remoteAddress $userAgent"))
 
         return persist(visitor)
     }
 
-    fun findByInfo(info: String) = find("info", sha256(info)).firstResult()
+    fun findByInfo(remoteAddress: String, userAgent: String) = find("info", sha256("$remoteAddress $userAgent")).firstResult()
 }

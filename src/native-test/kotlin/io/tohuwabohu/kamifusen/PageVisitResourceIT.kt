@@ -1,4 +1,4 @@
-package io.tohuwabohu
+package io.tohuwabohu.kamifusen
 
 import io.quarkus.test.junit.QuarkusIntegrationTest
 
