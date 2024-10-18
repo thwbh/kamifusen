@@ -1,5 +1,6 @@
 package io.tohuwabohu.kamifusen.crud
 
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
 import io.quarkus.runtime.util.HashUtil.sha256
@@ -40,8 +41,9 @@ data class Visitor (
 
 @ApplicationScoped
 class VisitorRepository : PanacheRepositoryBase<Visitor, UUID> {
+    @WithTransaction
     fun addVisitor(info: String): Uni<Visitor> {
-        val visitor = Visitor(UUID.randomUUID(), info)
+        val visitor = Visitor(UUID.randomUUID(), sha256(info))
 
         return persist(visitor)
     }

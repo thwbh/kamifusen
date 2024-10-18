@@ -1,9 +1,8 @@
 package io.tohuwabohu.kamifusen
 
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.crud.PageVisitRepository
-import io.tohuwabohu.kamifusen.crud.VisitorRepository
+import io.smallrye.mutiny.tuples.Tuple2
+import io.tohuwabohu.kamifusen.crud.*
 import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
 import io.vertx.core.http.HttpServerRequest
 import jakarta.ws.rs.*
@@ -17,15 +16,16 @@ class PageVisitResource(
     private val pageVisitRepository: PageVisitRepository,
     private val visitorRepository: VisitorRepository
 ) {
-    @Path("/hit/{pagePath}")
+    @Path("/hit")
     @POST
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    fun hit(@Context request: HttpServerRequest, @PathParam("pagePath") pagePath: String): Uni<Response> =
-        Uni.combine().all().unis(
-            pageRepository.findPageByPath(pagePath),
-            visitorRepository.findByInfo(request.remoteAddress().host())
-        ).asTuple().chain { tuple ->
+    fun hit(@Context request: HttpServerRequest, body: String): Uni<Response> =
+        pageRepository.findPageByPath(body).flatMap { page ->
+            visitorRepository.findByInfo(request.remoteAddress().host()).map { visitor ->
+                Tuple2.of(page, visitor)
+            }
+        }.chain { tuple ->
             val page = tuple.item1!!
             val visitor = tuple.item2
 
@@ -36,7 +36,7 @@ class PageVisitResource(
                 pageVisitRepository.countVisitsForVisitor(page.id, visitor.id).chain { count ->
                     if (count <= 0) {
                         pageVisitRepository.addVisit(page.id, visitor.id)
-                    } else Uni.createFrom().item(null)
+                    } else Uni.createFrom().voidItem()
                 }
             }
         }.onItem().transform { Response.ok().build() }
