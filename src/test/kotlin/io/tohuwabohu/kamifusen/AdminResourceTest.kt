@@ -38,7 +38,7 @@ class AdminResourceTest {
         QuarkusMock.installMockForInstance(PageRepositoryMock(), pageRepository)
 
         Given {
-            header("Authorization", "550e8400-e29b-41d4-a716-446655440000")
+            header("Authorization", "api-key-admin")
             body("/page/test-page")
         } When {
             post("/add")
@@ -61,7 +61,7 @@ class AdminResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
 
         Given {
-            header("Authorization", "550e8400-e29b-41d4-a716-446655440000")
+            header("Authorization", "api-key-admin")
             body("/page/test-page")
         } When {
             post("/add")

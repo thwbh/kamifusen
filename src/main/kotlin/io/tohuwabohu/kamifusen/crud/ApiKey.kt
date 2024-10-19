@@ -1,21 +1,34 @@
 package io.tohuwabohu.kamifusen.crud
 
+import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.NamedQueries
+import jakarta.persistence.NamedQuery
+import jakarta.persistence.PrePersist
 import org.hibernate.proxy.HibernateProxy
 import java.time.LocalDateTime
-import java.util.*
 
+@NamedQueries(
+    NamedQuery(
+        name = "ApiKey.findValidKey",
+        query = "FROM ApiKey a WHERE a.apiKey = :apiKey AND a.expiresAt > :now")
+)
 @Entity
 data class ApiKey (
     @Id
-    var apiKey: UUID,
+    var apiKey: String,
     var name: String,
     var role: String,
     var expiresAt: LocalDateTime? = null
 ) {
+    @PrePersist
+    fun obfuscateKey() {
+        apiKey = BcryptUtil.bcryptHash(apiKey)
+    }
+
     final override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null) return false
@@ -39,6 +52,6 @@ data class ApiKey (
 }
 
 @ApplicationScoped
-class ApiKeyRepository : PanacheRepositoryBase<ApiKey, UUID> {
-    fun findKey(key: UUID) = findById(key)
+class ApiKeyRepository : PanacheRepositoryBase<ApiKey, String> {
+    fun findKey(key: String) = find("#ApiKey.findValidKey", BcryptUtil.bcryptHash(key)).firstResult()
 }

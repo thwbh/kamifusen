@@ -15,6 +15,7 @@ val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
 dependencies {
+    implementation("io.quarkus:quarkus-elytron-security-common")
     implementation("io.quarkus:quarkus-security")
     implementation("io.quarkus:quarkus-reactive-pg-client")
     implementation("io.quarkus:quarkus-hibernate-reactive-panache-kotlin")

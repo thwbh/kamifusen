@@ -1,5 +1,6 @@
 package io.tohuwabohu.kamifusen.crud
 
+import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
@@ -28,7 +29,7 @@ data class Visitor (
         if (thisEffectiveClass != oEffectiveClass) return false
         other as Visitor
 
-        return id != null && id == other.id
+        return id == other.id
     }
 
     final override fun hashCode(): Int =
@@ -44,10 +45,10 @@ data class Visitor (
 class VisitorRepository : PanacheRepositoryBase<Visitor, UUID> {
     @WithTransaction
     fun addVisitor(remoteAddress: String, userAgent: String): Uni<Visitor> {
-        val visitor = Visitor(UUID.randomUUID(), sha256("$remoteAddress $userAgent"))
+        val visitor = Visitor(UUID.randomUUID(), BcryptUtil.bcryptHash("$remoteAddress $userAgent"))
 
         return persist(visitor)
     }
 
-    fun findByInfo(remoteAddress: String, userAgent: String) = find("info", sha256("$remoteAddress $userAgent")).firstResult()
+    fun findByInfo(remoteAddress: String, userAgent: String) = find("info", BcryptUtil.bcryptHash("$remoteAddress $userAgent")).firstResult()
 }

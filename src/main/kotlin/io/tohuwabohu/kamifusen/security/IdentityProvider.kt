@@ -18,7 +18,6 @@ import jakarta.ws.rs.container.ContainerRequestFilter
 import jakarta.ws.rs.core.SecurityContext
 import jakarta.ws.rs.ext.Provider
 import java.security.Principal
-import java.util.*
 
 class ApiKeyAuthenticationRequest(val apiKey: String) : AuthenticationRequest {
 
@@ -49,9 +48,7 @@ class ApiKeyIdentityProvider(
         credentials: ApiKeyAuthenticationRequest,
         context: AuthenticationRequestContext
     ): Uni<SecurityIdentity> {
-        val challenge = UUID.fromString(credentials.apiKey)
-
-        return apiKeyRepository.findKey(challenge).flatMap { apiKey ->
+        return apiKeyRepository.findKey(credentials.apiKey).flatMap { apiKey ->
             if (apiKey != null) {
                 Uni.createFrom().item(QuarkusSecurityIdentity.builder()
                     .addRole(apiKey.role)

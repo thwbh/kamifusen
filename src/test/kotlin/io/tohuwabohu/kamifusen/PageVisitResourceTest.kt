@@ -54,7 +54,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+            header("Authorization", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -85,7 +85,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+            header("Authorization", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -118,7 +118,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+            header("Authorization", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -151,7 +151,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+            header("Authorization", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -181,7 +181,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+            header("Authorization", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -211,7 +211,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
 
         val count = Given {
-            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+            header("Authorization", "api-key-user")
         } When {
             get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
         } Then {
@@ -233,7 +233,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         val count = Given {
-            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+            header("Authorization", "api-key-user")
         } When {
             get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
         } Then {
@@ -255,7 +255,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         Given {
-            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+            header("Authorization", "api-key-user")
         } When {
             get("/count/${URLEncoder.encode("/page/test-page2", "UTF-8")}")
         } Then {

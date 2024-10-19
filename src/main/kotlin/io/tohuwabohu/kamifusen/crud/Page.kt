@@ -35,7 +35,7 @@ data class Page (
         if (thisEffectiveClass != oEffectiveClass) return false
         other as Page
 
-        return id != null && id == other.id
+        return id == other.id
     }
 
     final override fun hashCode(): Int =

@@ -25,7 +25,7 @@ data class PageVisit (
         if (thisEffectiveClass != oEffectiveClass) return false
         other as PageVisit
 
-        return pageId != null && pageId == other.pageId
+        return pageId == other.pageId
     }
 
     final override fun hashCode(): Int =
