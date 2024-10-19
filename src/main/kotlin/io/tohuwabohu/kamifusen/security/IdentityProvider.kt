@@ -1,0 +1,98 @@
+package io.tohuwabohu.kamifusen.security
+
+import io.quarkus.security.UnauthorizedException
+import io.quarkus.security.identity.AuthenticationRequestContext
+import io.quarkus.security.identity.IdentityProvider
+import io.quarkus.security.identity.IdentityProviderManager
+import io.quarkus.security.identity.SecurityIdentity
+import io.quarkus.security.identity.request.AuthenticationRequest
+import io.quarkus.security.runtime.QuarkusSecurityIdentity
+import io.smallrye.mutiny.Uni
+import jakarta.annotation.Priority
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.inject.Inject
+import jakarta.ws.rs.Priorities
+import jakarta.ws.rs.container.ContainerRequestContext
+import jakarta.ws.rs.container.ContainerRequestFilter
+import jakarta.ws.rs.core.SecurityContext
+import jakarta.ws.rs.ext.Provider
+import java.security.Principal
+
+class ApiKeyAuthenticationRequest(val apiKey: String) : AuthenticationRequest {
+
+    private val attributes: MutableMap<String, Any> = mutableMapOf()
+
+    override fun <T : Any?> getAttribute(name: String?): T? {
+        @Suppress("UNCHECKED_CAST")
+        return attributes[name] as T?
+    }
+
+    override fun setAttribute(name: String?, value: Any?) {
+        if (name != null && value != null) {
+            attributes[name] = value
+        }
+    }
+
+    override fun getAttributes(): MutableMap<String, Any> {
+        return attributes
+    }
+}
+
+@ApplicationScoped
+class ApiKeyIdentityProvider : IdentityProvider<ApiKeyAuthenticationRequest> {
+    private val validApiKeys = setOf("my-secure-api-key")
+
+    override fun authenticate(
+        credentials: ApiKeyAuthenticationRequest,
+        context: AuthenticationRequestContext
+    ): Uni<SecurityIdentity> {
+        val apiKey = credentials.apiKey
+
+        return if (validApiKeys.contains(apiKey)) {
+            Uni.createFrom().item(
+                QuarkusSecurityIdentity.builder()
+                .addRole("api-user")
+                .setPrincipal { apiKey }
+                .build())
+        } else {
+            Uni.createFrom().failure(UnauthorizedException())
+        }
+    }
+
+    override fun getRequestType(): Class<ApiKeyAuthenticationRequest> {
+        return ApiKeyAuthenticationRequest::class.java
+    }
+}
+
+@Provider
+@Priority(Priorities.AUTHENTICATION)
+class ApiKeyFilter @Inject constructor(
+    private val identityProviderManager: IdentityProviderManager
+) : ContainerRequestFilter {
+
+    override fun filter(requestContext: ContainerRequestContext) {
+        val apiKey = requestContext.getHeaderString("X-API-Key")
+            ?: throw UnauthorizedException()
+
+        val authRequest = ApiKeyAuthenticationRequest(apiKey)
+        val uni: Uni<SecurityIdentity> = identityProviderManager.authenticate(authRequest)
+
+        // Block until result is available
+        uni.subscribe().with(
+            { identity -> requestContext.securityContext = ApiKeySecurityContext(identity) },
+            { throw UnauthorizedException() }
+        )
+    }
+}
+
+class ApiKeySecurityContext(
+    private val securityIdentity: SecurityIdentity
+) : SecurityContext {
+    override fun getUserPrincipal(): Principal = securityIdentity.principal
+
+    override fun isUserInRole(role: String?) = securityIdentity.roles.contains(role)
+
+    override fun isSecure() = true
+
+    override fun getAuthenticationScheme() = "API_KEY"
+}
