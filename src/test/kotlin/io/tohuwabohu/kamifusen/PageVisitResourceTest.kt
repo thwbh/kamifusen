@@ -11,17 +11,21 @@ import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.tohuwabohu.kamifusen.crud.*
+import io.tohuwabohu.kamifusen.mock.ApiKeyRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageVisitRepositoryMock
-import io.tohuwabohu.kamifusen.mock.VisitorMockRepository
+import io.tohuwabohu.kamifusen.mock.VisitorRepositoryMock
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.net.URLEncoder
 import java.util.*
 
 @QuarkusTest
 @TestHTTPEndpoint(PageVisitResource::class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class PageVisitResourceTest {
     @Inject
     lateinit var pageRepository: PageRepository
@@ -32,6 +36,11 @@ class PageVisitResourceTest {
     @Inject
     lateinit var visitorRepository: VisitorRepository
 
+    @BeforeAll
+    fun init() {
+        QuarkusMock.installMockForType(ApiKeyRepositoryMock(), ApiKeyRepository::class.java)
+    }
+
     @Test
     @RunOnVertxContext
     fun `should register a new visitor`(uniAsserter: UniAsserter) {
@@ -40,11 +49,12 @@ class PageVisitResourceTest {
 
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
-        QuarkusMock.installMockForInstance(VisitorMockRepository(), visitorRepository)
+        QuarkusMock.installMockForInstance(VisitorRepositoryMock(), visitorRepository)
 
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
+            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -64,7 +74,7 @@ class PageVisitResourceTest {
         val pageRepositoryMock = PageRepositoryMock()
         pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
 
-        val visitorRepositoryMock = VisitorMockRepository()
+        val visitorRepositoryMock = VisitorRepositoryMock()
         visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent")))
 
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
@@ -75,6 +85,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
+            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -94,7 +105,7 @@ class PageVisitResourceTest {
         val pageRepositoryMock = PageRepositoryMock()
         pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
 
-        val visitorRepositoryMock = VisitorMockRepository()
+        val visitorRepositoryMock = VisitorRepositoryMock()
         visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent")))
 
         val pageVisitRepositoryMock = PageVisitRepositoryMock()
@@ -107,6 +118,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
+            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -126,7 +138,7 @@ class PageVisitResourceTest {
         val pageRepositoryMock = PageRepositoryMock()
         pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
 
-        val visitorRepositoryMock = VisitorMockRepository()
+        val visitorRepositoryMock = VisitorRepositoryMock()
         visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("localhost test-user-agent")))
 
         val pageVisitRepositoryMock = PageVisitRepositoryMock()
@@ -139,6 +151,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
+            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -158,7 +171,7 @@ class PageVisitResourceTest {
         val pageRepositoryMock = PageRepositoryMock()
         pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
 
-        val visitorRepositoryMock = VisitorMockRepository()
+        val visitorRepositoryMock = VisitorRepositoryMock()
         visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent")))
 
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
@@ -168,6 +181,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
+            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -196,7 +210,9 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
 
-        val count = When {
+        val count = Given {
+            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+        } When {
             get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
         } Then {
             statusCode(200)
@@ -216,7 +232,9 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
-        val count = When {
+        val count = Given {
+            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+        } When {
             get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
         } Then {
             statusCode(200)
@@ -236,10 +254,34 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
-        When {
+        Given {
+            header("Authorization", "123e4567-e89b-12d3-a456-426614174000")
+        } When {
             get("/count/${URLEncoder.encode("/page/test-page2", "UTF-8")}")
         } Then {
             statusCode(404)
+        }
+    }
+
+    @Test
+    @RunOnVertxContext
+    fun `should return a 403 without api key for hit`(uniAsserter: UniAsserter) {
+        Given {
+            body("does-not-matter")
+        } When {
+            post("/hit")
+        } Then {
+            statusCode(403)
+        }
+    }
+
+    @Test
+    @RunOnVertxContext
+    fun `should return a 403 without api key for hit count`(uniAsserter: UniAsserter) {
+        When {
+            get("/count/foo")
+        } Then {
+            statusCode(403)
         }
     }
 }

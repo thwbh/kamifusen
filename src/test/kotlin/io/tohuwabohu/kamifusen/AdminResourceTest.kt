@@ -8,19 +8,29 @@ import io.quarkus.test.vertx.UniAsserter
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
+import io.tohuwabohu.kamifusen.crud.ApiKeyRepository
 import io.tohuwabohu.kamifusen.crud.Page
 import io.tohuwabohu.kamifusen.crud.PageRepository
+import io.tohuwabohu.kamifusen.mock.ApiKeyRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageRepositoryMock
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.util.*
 
 @QuarkusTest
 @TestHTTPEndpoint(AdminResource::class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AdminResourceTest {
     @Inject
     lateinit var pageRepository: PageRepository
+
+    @BeforeAll
+    fun init() {
+        QuarkusMock.installMockForType(ApiKeyRepositoryMock(), ApiKeyRepository::class.java)
+    }
 
     @Test
     @RunOnVertxContext
@@ -28,6 +38,7 @@ class AdminResourceTest {
         QuarkusMock.installMockForInstance(PageRepositoryMock(), pageRepository)
 
         Given {
+            header("Authorization", "550e8400-e29b-41d4-a716-446655440000")
             body("/page/test-page")
         } When {
             post("/add")
@@ -50,6 +61,7 @@ class AdminResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
 
         Given {
+            header("Authorization", "550e8400-e29b-41d4-a716-446655440000")
             body("/page/test-page")
         } When {
             post("/add")
@@ -61,5 +73,17 @@ class AdminResourceTest {
             { pageRepository.findPageByPath("/page/test-page") },
             { result -> Assertions.assertEquals(pageRepositoryMock.pages[0].id, result!!.id)}
         )
+    }
+
+    @Test
+    @RunOnVertxContext
+    fun `should not add a page without api key`(uniAsserter: UniAsserter) {
+        Given {
+            body("/page/test-page")
+        } When {
+            post("/add")
+        } Then {
+            statusCode(403)
+        }
     }
 }

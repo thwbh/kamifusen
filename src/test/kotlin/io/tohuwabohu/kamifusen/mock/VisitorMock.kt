@@ -6,7 +6,7 @@ import io.tohuwabohu.kamifusen.crud.Visitor
 import io.tohuwabohu.kamifusen.crud.VisitorRepository
 import java.util.*
 
-class VisitorMockRepository : VisitorRepository() {
+class VisitorRepositoryMock : VisitorRepository() {
     val visitors = mutableListOf<Visitor>()
 
     override fun addVisitor(remoteAddress: String, userAgent: String): Uni<Visitor> {

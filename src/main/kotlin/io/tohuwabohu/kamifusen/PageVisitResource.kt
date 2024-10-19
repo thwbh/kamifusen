@@ -2,7 +2,9 @@ package io.tohuwabohu.kamifusen
 
 import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.tuples.Tuple2
-import io.tohuwabohu.kamifusen.crud.*
+import io.tohuwabohu.kamifusen.crud.PageRepository
+import io.tohuwabohu.kamifusen.crud.PageVisitRepository
+import io.tohuwabohu.kamifusen.crud.VisitorRepository
 import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
 import io.vertx.core.http.HttpServerRequest
 import jakarta.ws.rs.*

@@ -8,6 +8,7 @@ import io.quarkus.security.identity.SecurityIdentity
 import io.quarkus.security.identity.request.AuthenticationRequest
 import io.quarkus.security.runtime.QuarkusSecurityIdentity
 import io.smallrye.mutiny.Uni
+import io.tohuwabohu.kamifusen.crud.ApiKeyRepository
 import jakarta.annotation.Priority
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
@@ -17,6 +18,7 @@ import jakarta.ws.rs.container.ContainerRequestFilter
 import jakarta.ws.rs.core.SecurityContext
 import jakarta.ws.rs.ext.Provider
 import java.security.Principal
+import java.util.*
 
 class ApiKeyAuthenticationRequest(val apiKey: String) : AuthenticationRequest {
 
@@ -39,23 +41,26 @@ class ApiKeyAuthenticationRequest(val apiKey: String) : AuthenticationRequest {
 }
 
 @ApplicationScoped
-class ApiKeyIdentityProvider : IdentityProvider<ApiKeyAuthenticationRequest> {
-    private val validApiKeys = setOf("my-secure-api-key")
+class ApiKeyIdentityProvider(
+    private val apiKeyRepository: ApiKeyRepository
+) : IdentityProvider<ApiKeyAuthenticationRequest> {
 
     override fun authenticate(
         credentials: ApiKeyAuthenticationRequest,
         context: AuthenticationRequestContext
     ): Uni<SecurityIdentity> {
-        val apiKey = credentials.apiKey
+        val challenge = UUID.fromString(credentials.apiKey)
 
-        return if (validApiKeys.contains(apiKey)) {
-            Uni.createFrom().item(
-                QuarkusSecurityIdentity.builder()
-                .addRole("api-user")
-                .setPrincipal { apiKey }
-                .build())
-        } else {
-            Uni.createFrom().failure(UnauthorizedException())
+        return apiKeyRepository.findKey(challenge).flatMap { apiKey ->
+            if (apiKey != null) {
+                Uni.createFrom().item(QuarkusSecurityIdentity.builder()
+                    .addRole(apiKey.role)
+                    .setPrincipal { credentials.apiKey }
+                    .build()
+                )
+            } else {
+                Uni.createFrom().failure(UnauthorizedException())
+            }
         }
     }
 
@@ -71,7 +76,7 @@ class ApiKeyFilter @Inject constructor(
 ) : ContainerRequestFilter {
 
     override fun filter(requestContext: ContainerRequestContext) {
-        val apiKey = requestContext.getHeaderString("X-API-Key")
+        val apiKey = requestContext.getHeaderString("Authorization")
             ?: throw UnauthorizedException()
 
         val authRequest = ApiKeyAuthenticationRequest(apiKey)
