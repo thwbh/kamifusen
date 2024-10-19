@@ -1,5 +1,6 @@
 package io.tohuwabohu.kamifusen.crud
 
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepository
 import jakarta.enterprise.context.ApplicationScoped
@@ -24,7 +25,7 @@ data class PageVisit (
         if (thisEffectiveClass != oEffectiveClass) return false
         other as PageVisit
 
-        return pageId != null && pageId == other.pageId
+        return pageId == other.pageId
     }
 
     final override fun hashCode(): Int =
@@ -40,5 +41,7 @@ data class PageVisit (
 class PageVisitRepository: PanacheRepository<PageVisit> {
     fun countVisits(pageId: UUID) = count("pageId = ?1", pageId)
     fun countVisitsForVisitor(pageId: UUID, visitorId: UUID) = count("visitorId = ?1", visitorId)
+
+    @WithTransaction
     fun addVisit(pageId: UUID, visitorId: UUID) = persist(PageVisit(pageId, visitorId))
 }

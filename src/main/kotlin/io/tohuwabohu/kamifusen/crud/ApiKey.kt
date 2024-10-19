@@ -1,24 +1,34 @@
 package io.tohuwabohu.kamifusen.crud
 
 import io.quarkus.elytron.security.common.BcryptUtil
-import io.quarkus.hibernate.reactive.panache.common.WithTransaction
-import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
-import io.quarkus.runtime.util.HashUtil.sha256
-import io.smallrye.mutiny.Uni
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.NamedQueries
+import jakarta.persistence.NamedQuery
+import jakarta.persistence.PrePersist
 import org.hibernate.proxy.HibernateProxy
-import java.awt.SystemColor.info
-import java.util.*
+import java.time.LocalDateTime
 
+@NamedQueries(
+    NamedQuery(
+        name = "ApiKey.findValidKey",
+        query = "FROM ApiKey a WHERE a.apiKey = :apiKey AND a.expiresAt > :now")
+)
 @Entity
-data class Visitor (
+data class ApiKey (
     @Id
-    var id: UUID,
-    var info: String
-) : PanacheEntityBase {
+    var apiKey: String,
+    var name: String,
+    var role: String,
+    var expiresAt: LocalDateTime? = null
+) {
+    @PrePersist
+    fun obfuscateKey() {
+        apiKey = BcryptUtil.bcryptHash(apiKey)
+    }
+
     final override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null) return false
@@ -27,9 +37,9 @@ data class Visitor (
         val thisEffectiveClass =
             if (this is HibernateProxy) this.hibernateLazyInitializer.persistentClass else this.javaClass
         if (thisEffectiveClass != oEffectiveClass) return false
-        other as Visitor
+        other as ApiKey
 
-        return id == other.id
+        return apiKey != null && apiKey == other.apiKey
     }
 
     final override fun hashCode(): Int =
@@ -37,18 +47,11 @@ data class Visitor (
 
     @Override
     override fun toString(): String {
-        return this::class.simpleName + "(  id = $id   ,   info = $info )"
+        return this::class.simpleName + "(  apiKey = $apiKey   ,   name = $name   ,   role = $role   ,   expiresAt = $expiresAt )"
     }
 }
 
 @ApplicationScoped
-class VisitorRepository : PanacheRepositoryBase<Visitor, UUID> {
-    @WithTransaction
-    fun addVisitor(remoteAddress: String, userAgent: String): Uni<Visitor> {
-        val visitor = Visitor(UUID.randomUUID(), BcryptUtil.bcryptHash("$remoteAddress $userAgent"))
-
-        return persist(visitor)
-    }
-
-    fun findByInfo(remoteAddress: String, userAgent: String) = find("info", BcryptUtil.bcryptHash("$remoteAddress $userAgent")).firstResult()
+class ApiKeyRepository : PanacheRepositoryBase<ApiKey, String> {
+    fun findKey(key: String) = find("#ApiKey.findValidKey", BcryptUtil.bcryptHash(key)).firstResult()
 }

@@ -1,5 +1,6 @@
 package io.tohuwabohu.kamifusen.crud
 
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
 import io.smallrye.mutiny.Uni
@@ -34,7 +35,7 @@ data class Page (
         if (thisEffectiveClass != oEffectiveClass) return false
         other as Page
 
-        return id != null && id == other.id
+        return id == other.id
     }
 
     final override fun hashCode(): Int =
@@ -50,6 +51,7 @@ data class Page (
 class PageRepository : PanacheRepositoryBase<Page, UUID> {
     fun findPageByPath(path: String) = find("path", path).firstResult()
 
+    @WithTransaction
     fun addPage(path: String): Uni<Page> {
         val page = Page(UUID.randomUUID(), path)
 
