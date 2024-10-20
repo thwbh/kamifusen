@@ -31,6 +31,7 @@ jobs:
 
       - name: Increment version
         uses: SOLIDSoftworks/semver-tags@v1.5.3
+        id: semver
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           default-version: '0.0.1'
