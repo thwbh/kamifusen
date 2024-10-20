@@ -15,6 +15,7 @@ val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
 dependencies {
+    implementation("io.quarkus:quarkus-jacoco")
     implementation("io.quarkus:quarkus-elytron-security-common")
     implementation("io.quarkus:quarkus-security")
     implementation("io.quarkus:quarkus-reactive-pg-client")
@@ -54,6 +55,8 @@ noArg {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-    kotlinOptions.javaParameters = true
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        javaParameters.set(true)
+    }
 }

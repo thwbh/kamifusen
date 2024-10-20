@@ -86,4 +86,17 @@ class AdminResourceTest {
             statusCode(403)
         }
     }
+
+    @Test
+    @RunOnVertxContext
+    fun `should not add a page with user api key`(uniAsserter: UniAsserter) {
+        Given {
+            body("/page/test-page")
+            header("Authorization", "api-key-user")
+        } When {
+            post("/add")
+        } Then {
+            statusCode(403)
+        }
+    }
 }
