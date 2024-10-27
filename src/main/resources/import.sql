@@ -1,0 +1,1 @@
+insert into api_user (id, username, role) values (gen_random_uuid(), 'admin', 'app-admin');

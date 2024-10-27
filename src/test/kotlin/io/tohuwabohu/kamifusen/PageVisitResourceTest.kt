@@ -11,7 +11,7 @@ import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.tohuwabohu.kamifusen.crud.*
-import io.tohuwabohu.kamifusen.mock.ApiKeyRepositoryMock
+import io.tohuwabohu.kamifusen.mock.ApiUserRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageVisitRepositoryMock
 import io.tohuwabohu.kamifusen.mock.VisitorRepositoryMock
@@ -38,7 +38,7 @@ class PageVisitResourceTest {
 
     @BeforeAll
     fun init() {
-        QuarkusMock.installMockForType(ApiKeyRepositoryMock(), ApiKeyRepository::class.java)
+        QuarkusMock.installMockForType(ApiUserRepositoryMock(), ApiUserRepository::class.java)
     }
 
     @Test
@@ -54,7 +54,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "api-key-user")
+            auth().preemptive().basic("api-key-user", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -85,7 +85,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "api-key-user")
+            auth().preemptive().basic("api-key-user", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -118,7 +118,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "api-key-user")
+            auth().preemptive().basic("api-key-user", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -151,7 +151,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "api-key-user")
+            auth().preemptive().basic("api-key-user", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -181,7 +181,7 @@ class PageVisitResourceTest {
         Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
-            header("Authorization", "api-key-user")
+            auth().preemptive().basic("api-key-user", "api-key-user")
             body("/page/test-page")
         } When {
             post("/hit")
@@ -211,7 +211,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
 
         val count = Given {
-            header("Authorization", "api-key-user")
+            auth().preemptive().basic("api-key-user", "api-key-user")
         } When {
             get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
         } Then {
@@ -233,7 +233,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         val count = Given {
-            header("Authorization", "api-key-user")
+            auth().preemptive().basic("api-key-user", "api-key-user")
         } When {
             get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
         } Then {
@@ -255,7 +255,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         Given {
-            header("Authorization", "api-key-user")
+            auth().preemptive().basic("api-key-user", "api-key-user")
         } When {
             get("/count/${URLEncoder.encode("/page/test-page2", "UTF-8")}")
         } Then {
@@ -266,22 +266,26 @@ class PageVisitResourceTest {
     @Test
     @RunOnVertxContext
     fun `should return a 403 without api key for hit`(uniAsserter: UniAsserter) {
+        QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
+
         Given {
             body("does-not-matter")
         } When {
             post("/hit")
         } Then {
-            statusCode(403)
+            statusCode(401)
         }
     }
 
     @Test
     @RunOnVertxContext
     fun `should return a 403 without api key for hit count`(uniAsserter: UniAsserter) {
+        QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
+
         When {
             get("/count/foo")
         } Then {
-            statusCode(403)
+            statusCode(401)
         }
     }
 }

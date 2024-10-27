@@ -1,20 +1,23 @@
 package io.tohuwabohu.kamifusen
 
 import io.smallrye.mutiny.Uni
+import io.smallrye.mutiny.helpers.spies.Spy.onItem
 import io.smallrye.mutiny.tuples.Tuple2
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.PageVisitRepository
 import io.tohuwabohu.kamifusen.crud.VisitorRepository
 import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
 import io.vertx.core.http.HttpServerRequest
+import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.core.SecurityContext
 import java.net.URLDecoder
 import java.nio.charset.Charset
 
-@Path("/visits")
+@Path("/public/visits")
 class PageVisitResource(
     private val pageRepository: PageRepository,
     private val pageVisitRepository: PageVisitRepository,
@@ -24,7 +27,8 @@ class PageVisitResource(
     @POST
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    fun hit(@Context request: HttpServerRequest, body: String): Uni<Response> =
+    @RolesAllowed("api-user")
+    fun hit(@Context securityContext: SecurityContext, @Context request: HttpServerRequest, body: String): Uni<Response> =
         pageRepository.findPageByPath(body).flatMap { page ->
             visitorRepository.findByInfo(
                 remoteAddress = request.remoteAddress().host(),
@@ -55,7 +59,8 @@ class PageVisitResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    fun count(@Context request: HttpServerRequest, @PathParam("pagePath") pagePath: String): Uni<Response> =
+    @RolesAllowed("api-user")
+    fun count(@Context securityContext: SecurityContext, @Context request: HttpServerRequest, @PathParam("pagePath") pagePath: String): Uni<Response> =
         pageRepository.findPageByPath(URLDecoder.decode(pagePath,
             request.headers().get("Accept-Charset")?.let { Charset.forName(it) } ?: Charsets.UTF_8)
         ).chain { page ->

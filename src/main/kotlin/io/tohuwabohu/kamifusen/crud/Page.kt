@@ -13,13 +13,13 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Entity
-data class Page (
+data class Page(
     @Id
     var id: UUID,
     var path: String,
     val pageAdded: LocalDateTime = LocalDateTime.now(),
-    var lastHit: LocalDateTime? = null
-): PanacheEntityBase {
+    var lastHit: LocalDateTime? = null,
+) : PanacheEntityBase {
     @PreUpdate
     fun updateLastHit() {
         lastHit = LocalDateTime.now()
@@ -53,7 +53,10 @@ class PageRepository : PanacheRepositoryBase<Page, UUID> {
 
     @WithTransaction
     fun addPage(path: String): Uni<Page> {
-        val page = Page(UUID.randomUUID(), path)
+        val page = Page(
+            id = UUID.randomUUID(),
+            path = path
+        )
 
         return persist(page)
     }

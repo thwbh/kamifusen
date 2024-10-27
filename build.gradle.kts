@@ -2,6 +2,7 @@ plugins {
     kotlin("jvm") version "2.0.10"
     kotlin("plugin.allopen") version "2.0.10"
     kotlin("plugin.noarg") version "2.0.10"
+    kotlin("plugin.serialization") version "2.0.10"
     id("io.quarkus")
 }
 
@@ -15,6 +16,8 @@ val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
 dependencies {
+    implementation("io.quarkus:quarkus-rest-jackson")
+    implementation("io.quarkus:quarkus-security-jpa-reactive")
     implementation("io.quarkus:quarkus-jacoco")
     implementation("io.quarkus:quarkus-elytron-security-common")
     implementation("io.quarkus:quarkus-security")
