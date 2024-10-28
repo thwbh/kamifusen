@@ -107,8 +107,8 @@ class AdminResourceTest {
     @RunOnVertxContext
     fun `should update admin password`(uniAsserter: UniAsserter) {
         Given {
-            header("Content-Type", ContentType.TEXT)
-            body("admin")
+            header("Content-Type", ContentType.URLENC)
+            formParam("password", "admin")
         } When {
             post("/register")
         } Then {

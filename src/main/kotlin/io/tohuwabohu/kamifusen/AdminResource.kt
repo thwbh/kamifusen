@@ -33,17 +33,17 @@ class AdminResource(
 
     @Path("/register")
     @POST
-    @Consumes("text/plain")
-    @Produces("text/plain")
-    fun registerAdmin(password: String): Uni<Response> =
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    fun registerAdmin(@FormParam("password") password: String): Uni<Response> =
         apiUserRepository.setAdminPassword(password).onItem().transform { Response.status(Response.Status.CREATED).build() }
             .onFailure().invoke { e -> Log.error("Error during admin user creation.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 
     @Path("/keygen")
     @POST
-    @Consumes("application/json")
-    @Produces("text/plain")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
     @RolesAllowed("app-admin")
     fun generateApiKey(body: ApiUser): Uni<Response> =
         apiUserRepository.addUser(apiUser = body).onItem().transform { keyRaw -> Response.ok(keyRaw.username).build() }
@@ -52,8 +52,8 @@ class AdminResource(
 
     @Path("/pages")
     @GET
-    @Consumes("text/plain")
-    @Produces("application/json")
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("api-admin", "app-admin")
     fun listPages(): Uni<Response> =
         pageRepository.listAllPages().onItem().transform { pages -> Response.ok(pages).build()}
