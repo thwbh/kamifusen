@@ -136,4 +136,53 @@ class AdminResourceTest {
             { result -> Assertions.assertEquals(keyRaw, result!!.username)}
         )
     }
+
+    @Test
+    fun `should list all pages`() {
+        val pageRepositoryMock = PageRepositoryMock()
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page-1"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page-2"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page-3"))
+
+        QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
+
+        val pages = Given {
+            auth().preemptive().basic("api-key-admin", "api-key-admin")
+        } When {
+            get("/pages")
+        } Then {
+            statusCode(200)
+        } Extract {
+            body().`as`(Array<Page>::class.java)
+        }
+
+        val paths = pageRepositoryMock.pages.map { it.path }
+        val ids = pageRepositoryMock.pages.map { it.id }
+
+        Assertions.assertEquals(3, pages.size)
+        Assertions.assertEquals(paths, pages.map { it.path })
+        Assertions.assertEquals(ids, pages.map { it.id })
+    }
+
+    @Test
+    fun `should list all pages for admin`() {
+        Given {
+            auth().preemptive().basic("admin", "admin")
+        } When {
+            get("/pages")
+        } Then {
+            statusCode(200)
+        }
+    }
+
+    @Test
+    fun `should return 401 when listing all pages`() {
+        Given {
+            auth().preemptive().basic("api-key-user", "api-key-user")
+        } When {
+            get("/pages")
+        } Then {
+            statusCode(403)
+        }
+    }
 }

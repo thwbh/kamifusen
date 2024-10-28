@@ -16,6 +16,10 @@ class PageRepositoryMock : PageRepository() {
         return Uni.createFrom().item(pages.find { it.path == path })
     }
 
+    override fun listAllPages(): Uni<List<Page>> {
+        return Uni.createFrom().item(pages)
+    }
+
     override fun addPage(path: String): Uni<Page> {
         val page = Page(UUID.randomUUID(), path)
 

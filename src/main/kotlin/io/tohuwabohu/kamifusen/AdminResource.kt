@@ -4,10 +4,7 @@ import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.crud.*
 import jakarta.annotation.security.RolesAllowed
-import jakarta.ws.rs.Consumes
-import jakarta.ws.rs.POST
-import jakarta.ws.rs.Path
-import jakarta.ws.rs.Produces
+import jakarta.ws.rs.*
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
@@ -51,5 +48,15 @@ class AdminResource(
     fun generateApiKey(body: ApiUser): Uni<Response> =
         apiUserRepository.addUser(apiUser = body).onItem().transform { keyRaw -> Response.ok(keyRaw.username).build() }
             .onFailure().invoke { e -> Log.error("Error during keygen.", e) }
+            .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
+
+    @Path("/pages")
+    @GET
+    @Consumes("text/plain")
+    @Produces("application/json")
+    @RolesAllowed("api-admin", "app-admin")
+    fun listPages(): Uni<Response> =
+        pageRepository.listAllPages().onItem().transform { pages -> Response.ok(pages).build()}
+            .onFailure().invoke { e -> Log.error("Error creating page list.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 }

@@ -53,6 +53,8 @@ class PageRepository : PanacheRepositoryBase<Page, UUID> {
 
     fun findPageByPath(path: String) = find("path", path).firstResult()
 
+    fun listAllPages() = listAll()
+
     @WithTransaction
     fun addPage(path: String): Uni<Page> {
         val page = Page(
