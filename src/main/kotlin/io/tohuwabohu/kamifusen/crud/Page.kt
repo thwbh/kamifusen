@@ -49,6 +49,8 @@ data class Page(
 
 @ApplicationScoped
 class PageRepository : PanacheRepositoryBase<Page, UUID> {
+    fun findByPageId(id: UUID) = find("id", id).firstResult()
+
     fun findPageByPath(path: String) = find("path", path).firstResult()
 
     @WithTransaction

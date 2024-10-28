@@ -10,6 +10,7 @@ import io.restassured.module.kotlin.extensions.Extract
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
+import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.crud.*
 import io.tohuwabohu.kamifusen.mock.ApiUserRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageRepositoryMock
@@ -70,7 +71,7 @@ class PageVisitResourceTest {
 
     @Test
     @RunOnVertxContext
-    fun `should increase the hit count`(uniAsserter: UniAsserter) {
+    fun `should increase and return the hit count`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
         pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
 
@@ -82,7 +83,7 @@ class PageVisitResourceTest {
 
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
-        Given {
+        val count = Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
             auth().preemptive().basic("api-key-user", "api-key-user")
@@ -91,11 +92,18 @@ class PageVisitResourceTest {
             post("/hit")
         } Then {
             statusCode(200)
+        } Extract {
+            body().asString()
         }
 
         uniAsserter.assertThat(
             { pageVisitRepository.countVisits(pageRepositoryMock.pages[0].id) },
             { result -> Assertions.assertEquals(1, result) }
+        )
+
+        uniAsserter.assertThat(
+            { Uni.createFrom().item(count) },
+            { result -> Assertions.assertEquals(1, result.toLong()) }
         )
     }
 
@@ -134,7 +142,7 @@ class PageVisitResourceTest {
 
     @Test
     @RunOnVertxContext
-    fun `should increase the hit count for a different visitor`(uniAsserter: UniAsserter) {
+    fun `should increase and return the hit count for a different visitor`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
         pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
 
@@ -148,7 +156,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(visitorRepositoryMock, visitorRepository)
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
 
-        Given {
+        val count = Given {
             header("Content-Type", "text/plain")
             header("User-Agent", "test-user-agent")
             auth().preemptive().basic("api-key-user", "api-key-user")
@@ -157,11 +165,18 @@ class PageVisitResourceTest {
             post("/hit")
         } Then {
             statusCode(200)
+        } Extract {
+            body().asString()
         }
 
         uniAsserter.assertThat(
             { pageVisitRepository.countVisits(pageRepositoryMock.pages[0].id) },
             { result -> Assertions.assertEquals(2, result) }
+        )
+
+        uniAsserter.assertThat(
+            { Uni.createFrom().item(count) },
+            { result -> Assertions.assertEquals(2, result.toLong()) }
         )
     }
 
@@ -211,9 +226,9 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
 
         val count = Given {
-            auth().preemptive().basic("api-key-user", "api-key-user")
+            auth().preemptive().basic("api-key-admin", "api-key-admin")
         } When {
-            get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
+            get("/count/${pageRepositoryMock.pages[0].id}")
         } Then {
             statusCode(200)
         } Extract {
@@ -233,9 +248,9 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         val count = Given {
-            auth().preemptive().basic("api-key-user", "api-key-user")
+            auth().preemptive().basic("api-key-admin", "api-key-admin")
         } When {
-            get("/count/${URLEncoder.encode("/page/test-page", "UTF-8")}")
+            get("/count/${pageRepositoryMock.pages[0].id}")
         } Then {
             statusCode(200)
         } Extract {
@@ -255,7 +270,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         Given {
-            auth().preemptive().basic("api-key-user", "api-key-user")
+            auth().preemptive().basic("api-key-admin", "api-key-admin")
         } When {
             get("/count/${URLEncoder.encode("/page/test-page2", "UTF-8")}")
         } Then {

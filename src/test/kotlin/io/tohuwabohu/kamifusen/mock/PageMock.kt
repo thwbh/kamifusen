@@ -8,6 +8,10 @@ import java.util.*
 class PageRepositoryMock : PageRepository() {
     val pages = mutableListOf<Page>()
 
+    override fun findByPageId(id: UUID): Uni<Page?> {
+        return pages.find { it.id == id }.let { Uni.createFrom().item(it) }
+    }
+
     override fun findPageByPath(path: String): Uni<Page?> {
         return Uni.createFrom().item(pages.find { it.path == path })
     }
