@@ -16,6 +16,7 @@ val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
 dependencies {
+    // quarkus & reactive JPA
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-security-jpa-reactive")
     implementation("io.quarkus:quarkus-jacoco")
@@ -25,9 +26,12 @@ dependencies {
     implementation("io.quarkus:quarkus-hibernate-reactive-panache-kotlin")
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation("io.quarkus:quarkus-kotlin")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-rest")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    // ssr
+    implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.11.0")
+    // testing
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.quarkus:quarkus-test-vertx")
     testImplementation("io.rest-assured:rest-assured")
