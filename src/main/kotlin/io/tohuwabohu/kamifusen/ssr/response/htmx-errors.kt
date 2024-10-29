@@ -4,7 +4,7 @@ import io.quarkus.logging.Log
 import io.smallrye.common.annotation.CheckReturnValue
 import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.groups.UniOnFailure
-import io.tohuwabohu.kamifusen.ssr.errorDiv
+import io.tohuwabohu.kamifusen.ssr.createErrorDiv
 import jakarta.ws.rs.core.Response
 
 /**
@@ -15,7 +15,7 @@ import jakarta.ws.rs.core.Response
  * @return A `Uni` that emits the `Response` containing the HTML error message.
  */
 fun createHtmxErrorResponse(status: Response.Status): Uni<Response> {
-    return Uni.createFrom().item(Response.status(Response.Status.PARTIAL_CONTENT).entity(errorDiv { status }).build())
+    return Uni.createFrom().item(Response.status(Response.Status.PARTIAL_CONTENT).entity(createErrorDiv { status }).build())
 }
 
 /**

@@ -30,7 +30,7 @@ data class ApiUser(
     @Username
     var username: String,
     @Password
-    var password: String,
+    var password: String? = null,
     @Roles
     var role: String,
     var expiresAt: LocalDateTime? = null

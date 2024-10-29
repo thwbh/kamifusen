@@ -21,9 +21,9 @@ import org.junit.jupiter.api.TestInstance
 import java.util.*
 
 @QuarkusTest
-@TestHTTPEndpoint(AdminResource::class)
+@TestHTTPEndpoint(ApiAdminResource::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AdminResourceTest {
+class ApiAdminResourceTest {
     @Inject
     private lateinit var apiUserRepository: ApiUserRepository
 
@@ -100,19 +100,6 @@ class AdminResourceTest {
             post("/add")
         } Then {
             statusCode(403)
-        }
-    }
-
-    @Test
-    @RunOnVertxContext
-    fun `should update admin password`(uniAsserter: UniAsserter) {
-        Given {
-            header("Content-Type", ContentType.URLENC)
-            formParam("password", "admin")
-        } When {
-            post("/register")
-        } Then {
-            statusCode(201)
         }
     }
 

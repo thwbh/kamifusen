@@ -2,7 +2,9 @@ package io.tohuwabohu.kamifusen
 
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.*
+import io.tohuwabohu.kamifusen.crud.ApiUser
+import io.tohuwabohu.kamifusen.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.crud.PageRepository
 import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.Context
@@ -11,7 +13,7 @@ import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.core.SecurityContext
 
 @Path("/admin")
-class AdminResource(
+class ApiAdminResource(
     val pageRepository: PageRepository,
     val apiUserRepository: ApiUserRepository
 ) {
@@ -30,15 +32,6 @@ class AdminResource(
                 Uni.createFrom().item(Response.noContent().build())
             }
         }
-
-    @Path("/register")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
-    fun registerAdmin(@FormParam("password") password: String): Uni<Response> =
-        apiUserRepository.setAdminPassword(password).onItem().transform { Response.status(Response.Status.CREATED).build() }
-            .onFailure().invoke { e -> Log.error("Error during admin user creation.", e) }
-            .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 
     @Path("/keygen")
     @POST

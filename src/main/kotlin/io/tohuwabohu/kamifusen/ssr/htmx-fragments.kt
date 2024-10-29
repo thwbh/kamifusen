@@ -32,7 +32,7 @@ fun createPasswordUpdateDiv() =
         }
     }.toString()
 
-fun createSuccessfulLoginDiv() =
+fun createSuccessfulPasswordUpdateDiv() =
     createHTML().div {
         h1 { +"Admin password set!" }
         p { +"You can now login with your new password." }
@@ -42,7 +42,7 @@ fun createSuccessfulLoginDiv() =
         }
     }.toString()
 
-fun errorDiv(function: () -> Response.Status): String =
+fun createErrorDiv(function: () -> Response.Status): String =
     createHTML().div {
         id = "error"
         h1 { +function().reasonPhrase }
