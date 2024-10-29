@@ -1,8 +1,18 @@
 <html lang="EN">
     <head>
         <title>kamifusen</title>
+        <script src="/scripts/htmx.min.js"></script>
     </head>
     <body>
-        <p>Welcome, Commander</p>
+        <div id="login">
+            <h1>Login</h1>
+            <p>Welcome to kamifusen!</p>
+            <p>This is a web application for managing kamifusen.</p>
+            <p>Please log in to proceed.</p>
+            <form hx-post="/admin/login" hx-swap="outerHTML" hx-target="#login" hx-trigger="submit">
+                <label>Password: <input type="password" name="password" id="password"/></label>
+                <input type="submit" value="Submit"/>
+            </form>
+        </div>
     </body>
 </html>
