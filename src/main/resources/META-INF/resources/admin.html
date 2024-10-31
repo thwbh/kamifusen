@@ -1,0 +1,27 @@
+<html lang="EN">
+<head>
+    <title>kamifusen - admin</title>
+    <script src="/scripts/htmx.min.js"></script>
+</head>
+<body>
+<div id="nav">
+    <div>
+        <button>Home</button>
+    </div>
+    <div>
+        <button>Pages</button>
+    </div>
+    <div>
+        <button hx-get="/admin/stats" hx-swap-oob="true" hx-target="#main">Stats</button>
+    </div>
+    <div>
+        <button hx-get="/admin/logout">Logout</button>
+    </div>
+</div>
+<div id="main">
+    <h1>Welcome, Commander</h1>
+    <h2>Managing stuff!</h2>
+    <p>This is a web application for managing kamifusen.</p>
+</div>
+</body>
+</html>

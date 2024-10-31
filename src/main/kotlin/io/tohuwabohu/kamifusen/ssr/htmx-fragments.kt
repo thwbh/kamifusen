@@ -1,8 +1,11 @@
 package io.tohuwabohu.kamifusen.ssr
 
+import io.tohuwabohu.kamifusen.crud.Page
+import io.tohuwabohu.kamifusen.crud.dto.PageVisitDto
 import jakarta.ws.rs.core.Response
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
+import java.time.format.DateTimeFormatter
 
 fun createPasswordUpdateDiv() =
     createHTML().div {
@@ -42,6 +45,35 @@ fun createSuccessfulPasswordUpdateDiv() =
         }
     }.toString()
 
+fun createPageVisitsTable(pageVisits: List<PageVisitDto>) =
+    createHTML().div {
+        id = "pages"
+        table {
+            thead {
+                tr {
+                    th {
+                        +"Path"
+                    }
+                    th {
+                        +"Visits"
+                    }
+                    th {
+                        +"Added"
+                    }
+                }
+            }
+            tbody {
+                pageVisits.forEach { visit ->
+                    tr {
+                        td { +visit.path }
+                        td { +visit.visits.toString() }
+                        td { +visit.pageAdded.format(DateTimeFormatter.ISO_DATE_TIME) }
+                    }
+                }
+            }
+        }
+    }.toString()
+
 fun createErrorDiv(function: () -> Response.Status): String =
     createHTML().div {
         id = "error"
@@ -51,4 +83,4 @@ fun createErrorDiv(function: () -> Response.Status): String =
             onClick = "window.location.href = '/'"
             +"Go back"
         }
-    }.toString().trim()
+    }.toString()
