@@ -4,22 +4,23 @@ import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
-import io.tohuwabohu.kamifusen.ssr.renderStats
-import io.tohuwabohu.kamifusen.ssr.renderPasswordFlow
-import io.tohuwabohu.kamifusen.ssr.renderPasswordFlowSuccess
+import io.tohuwabohu.kamifusen.ssr.*
 import io.tohuwabohu.kamifusen.ssr.response.createHtmxErrorResponse
 import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
 import io.vertx.ext.web.RoutingContext
+import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.*
 import java.time.Instant
 import java.util.*
 
-@Path("/admin")
+@Path("/admin/render")
 class AppAdminResource(
     private val apiUserRepository: ApiUserRepository,
-    private val pageVisitDtoRepository: PageVisitDtoRepository
+    private val pageVisitDtoRepository: PageVisitDtoRepository,
+    private val pageRepository: PageRepository
 ) {
     @Path("/register")
     @POST
@@ -41,15 +42,17 @@ class AppAdminResource(
                 null -> Uni.createFrom().item(Response.accepted(renderPasswordFlow()).build())
                 else -> {
                     if (BcryptUtil.matches(password, apiUser.password)) {
-                        val basicAuthToken = "${apiUser.username}:${password}".toByteArray();
+                        val basicAuthToken =
+                            Base64.getEncoder().encodeToString("${apiUser.username}:${password}".toByteArray())
 
                         Uni.createFrom().item(
-                            Response.ok().cookie(
+                            Response.ok()/*.cookie(
                                 NewCookie.Builder(Cookie("AuthToken", "Basic $basicAuthToken"))
                                     .expiry(Date.from(Instant.now().plusSeconds(3600)))
                                     .sameSite(NewCookie.SameSite.LAX)
                                     .secure(routingContext.request().isSSL)
-                                    .path("/").build())
+                                    .path("/").build())*/
+                                .header("Authorization", "Basic leckdumirdieeier")
                                 .header("hx-redirect", "/admin.html")
                                 .build()
                         )
@@ -60,13 +63,64 @@ class AppAdminResource(
             }
         }
 
+    @Path("/logout")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed("app-admin")
+    fun logoutAdmin(@Context routingContext: RoutingContext): Uni<Response> =
+        Uni.createFrom().item(
+            Response.noContent().cookie(
+                NewCookie.Builder("AuthToken")
+                    .maxAge(0)
+                    .expiry(Date.from(Instant.EPOCH))
+                    .sameSite(NewCookie.SameSite.LAX)
+                    .secure(routingContext.request().isSSL)
+                    .path("/").build()
+            ).header("hx-redirect", "/")
+                .header("Authorization", "")
+                .build()
+        )
+
+    @Path("/dashboard")
+    @GET
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
+    fun renderAdminDashboard(): Uni<Response> =
+        Uni.createFrom().item(Response.ok(renderDashboard()).build())
+            .onFailure().invoke { e -> Log.error("Error during dashboard rendering.", e) }
+            .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
+
     @Path("/stats")
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
     fun renderVisits(): Uni<Response> =
         pageVisitDtoRepository.getAllPageVisits()
             .flatMap { Uni.createFrom().item(Response.ok(renderStats(it)).build()) }
-            .onFailure().invoke { e -> Log.error("Error during admin user creation.", e) }
+            .onFailure().invoke { e -> Log.error("Error during stats rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
+
+    @Path("/pages")
+    @GET
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
+    fun renderPageList(): Uni<Response> =
+        pageRepository.listAllPages().flatMap { Uni.createFrom().item(Response.ok(renderPages(it)).build()) }
+            .onFailure().invoke { e -> Log.error("Error during pages rendering.", e) }
+            .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
+
+    @Path("/users")
+    @GET
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
+    fun renderUserList(): Uni<Response> =
+        apiUserRepository.listAll().flatMap { Uni.createFrom().item(Response.ok(renderUserManagement(it)).build()) }
+            .onFailure().invoke { e -> Log.error("Error during user list rendering.", e) }
+            .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
+
 }

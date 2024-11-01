@@ -33,12 +33,14 @@ data class ApiUser(
     var password: String? = null,
     @Roles
     var role: String,
-    var expiresAt: LocalDateTime? = null
+    var expiresAt: LocalDateTime? = null,
+    var added: LocalDateTime? = null
 ) {
     @PrePersist
     fun beforePersist() {
         id = UUID.randomUUID()
         password = BcryptUtil.bcryptHash(password)
+        added = LocalDateTime.now()
     }
 
     final override fun equals(other: Any?): Boolean {
@@ -59,7 +61,7 @@ data class ApiUser(
 
     @Override
     override fun toString(): String {
-        return this::class.simpleName + "(  id = $id   ,   apiUser = $username   ,   password = $password   ,   role = $role   ,   expiresAt = $expiresAt )"
+        return this::class.simpleName + "(  id = $id   ,   username = $username   ,   password = $password   ,   role = $role   ,   expiresAt = $expiresAt   ,   added = $added )"
     }
 
 }

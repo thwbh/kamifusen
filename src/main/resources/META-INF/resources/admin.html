@@ -1,7 +1,7 @@
 <!DOCTYPE "html">
 <html lang="EN" class="h-full bg-gray-100">
 <head>
-    <title>kamifusen</title>
+    <title>kamifusen - Dashboard</title>
     <script src="/scripts/htmx.min.js"></script>
     <link rel="stylesheet" href="/styles/main.css"/>
 </head>
@@ -17,12 +17,14 @@
                     </div>
                     <div class="hidden md:block">
                         <div class="ml-10 flex items-baseline space-x-4">
-                            <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-                            <a href="#" class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white"
+                            <a href="#" hx-get="/admin/render/dashboard" hx-swap-oob="true" hx-target="#main-content"
+                               class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white"
                                aria-current="page">Dashboard</a>
-                            <a href="#"
+                            <a href="#" hx-get="/admin/render/pages" hx-swap-oob="true" hx-target="#main-content"
                                class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Pages</a>
-                            <a href="#" hx-get="/admin/stats" hx-swap-oob="true" hx-target="#main-content"
+                            <a href="#" hx-get="/admin/render/users" hx-swap-oob="true" hx-target="#main-content"
+                               class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Users</a>
+                            <a href="#" hx-get="/admin/render/stats" hx-swap-oob="true" hx-target="#main-content"
                                class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Stats</a>
                         </div>
                     </div>
@@ -41,7 +43,7 @@
                         </button>
 
                         <div class="ml-10 flex items-baseline space-x-4">
-                            <a href="#" hx-post="/admin/logout"
+                            <a href="#" hx-post="/admin/render/logout"
                                class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white">Logout</a>
                         </div>
                     </div>
