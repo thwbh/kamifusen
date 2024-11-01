@@ -12,8 +12,8 @@ import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.mock.ApiUserRepositoryMock
-import io.tohuwabohu.kamifusen.ssr.createPasswordUpdateDiv
-import io.tohuwabohu.kamifusen.ssr.createSuccessfulPasswordUpdateDiv
+import io.tohuwabohu.kamifusen.ssr.renderPasswordFlow
+import io.tohuwabohu.kamifusen.ssr.renderPasswordFlowSuccess
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
@@ -36,7 +36,7 @@ class AppAdminResourceTest {
     @RunOnVertxContext
     fun `should update admin password`(uniAsserter: UniAsserter) {
         val expectedPassword = "awesome-administrator"
-        val expectedHtmlBody = createSuccessfulPasswordUpdateDiv()
+        val expectedHtmlBody = renderPasswordFlowSuccess()
 
         val actualHtmlBody = Given {
             header("Content-Type", ContentType.URLENC)
@@ -64,7 +64,7 @@ class AppAdminResourceTest {
 
         QuarkusMock.installMockForInstance(specificApiUserRepositoryMock, apiUserRepository)
 
-        val expectedHtmlBody = createPasswordUpdateDiv()
+        val expectedHtmlBody = renderPasswordFlow()
 
         val actualHtmlBody = Given {
             header("Content-Type", ContentType.URLENC)
