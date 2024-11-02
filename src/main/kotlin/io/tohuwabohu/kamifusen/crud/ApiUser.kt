@@ -67,7 +67,7 @@ data class ApiUser(
 }
 
 @ApplicationScoped
-class ApiUserRepository : PanacheRepositoryBase<ApiUser, String> {
+class ApiUserRepository : PanacheRepositoryBase<ApiUser, UUID> {
 
     @WithTransaction
     fun addUser(apiUser: ApiUser): Uni<String> {
@@ -101,4 +101,12 @@ class ApiUserRepository : PanacheRepositoryBase<ApiUser, String> {
             Panache.getSession().call { s -> s.merge(user) }
         }.onItem().ifNull().failWith(EntityNotFoundException())
     }
+
+    @WithTransaction
+    fun expireUser(userId: UUID): Uni<ApiUser> =
+        findById(userId).onItem().ifNotNull().call { user ->
+            user.expiresAt = LocalDateTime.now()
+
+            Panache.getSession().call { s -> s.merge(user) }
+        }.onItem().ifNull().failWith(EntityNotFoundException())
 }

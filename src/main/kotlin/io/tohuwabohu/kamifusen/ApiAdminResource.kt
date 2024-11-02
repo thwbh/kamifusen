@@ -13,8 +13,7 @@ import jakarta.ws.rs.core.SecurityContext
 
 @Path("/admin")
 class ApiAdminResource(
-    val pageRepository: PageRepository,
-    val apiUserRepository: ApiUserRepository
+    val pageRepository: PageRepository
 ) {
     @Path("/add")
     @POST

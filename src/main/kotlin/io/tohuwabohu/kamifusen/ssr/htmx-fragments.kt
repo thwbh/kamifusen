@@ -200,6 +200,12 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
 
     contentHeader("Users")
     contentDiv {
+        div {
+            classes = setOf("p-2")
+
+            p { +"You can issue and revoke new API Keys here. Immediately copy and distribute the API Key after generation, you will be able to do that only once." }
+        }
+
         form {
             table {
                 classes = setOf("table-auto", "rounded-md")
@@ -208,8 +214,8 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
                     tr {
                         styledTh { +"Username" }
                         styledTh { +"Role" }
-                        styledTh { +"Added" }
                         styledTh { +"Expires" }
+                        styledTh { +"Added" }
                         styledTh { +"Actions" }
                     }
                 }
@@ -217,6 +223,8 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
                 tbody {
                     users.forEachIndexed { index, user ->
                         tr {
+                            id = "user-${user.id.toString()}"
+
                             classes = setOf("font-medium")
 
                             classes = when (index % 2 == 0) {
@@ -229,13 +237,13 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
                             styledTd {
                                 when (user.expiresAt) {
                                     null -> +"-"
-                                    else -> user.expiresAt!!.format(displayDateFormat)
+                                    else -> +user.expiresAt!!.format(displayDateTimeFormat)
                                 }
                             }
                             styledTd {
                                 when (user.added) {
                                     null -> +"-"
-                                    else -> user.added!!.format(displayDateFormat)
+                                    else -> +user.added!!.format(displayDateFormat)
                                 }
                             }
                             td {
@@ -243,15 +251,33 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
 
                                 if (user.username != "admin") {
                                     button {
-                                        attributes["hx-post"] = "/admin/user/retire/${user.id}"
+                                        if (user.expiresAt == null) {
+                                            attributes["hx-post"] = "/admin/render/retire/${user.id}"
+                                            attributes["hx-swap"] = "outerHTML"
+                                            attributes["hx-target"] = "#user-${user.id.toString()}"
+                                            attributes["hx-confirm"] = "This will revoke any access granted by this API Key. Do you want to proceed?"
 
-                                        span {
-                                            classes = setOf("tabler--key-off")
-                                        }
+                                            span {
+                                                classes = setOf("tabler--key-off")
+                                            }
 
-                                        span {
-                                            classes = setOf("sr-only")
-                                            p { +"Retire user" }
+                                            span {
+                                                classes = setOf("sr-only")
+                                                p { +"Retire user" }
+                                            }
+                                        } else {
+                                            attributes["hx-post"] = "/admin/render/refresh/${user.id}"
+                                            attributes["hx-swap"] = "outerHTML"
+                                            attributes["hx-target"] = "#user-${user.id.toString()}"
+
+                                            span {
+                                                classes = setOf("tabler--refresh")
+                                            }
+
+                                            span {
+                                                classes = setOf("sr-only")
+                                                p { + "Regenerate" }
+                                            }
                                         }
                                     }
                                 }
@@ -301,9 +327,9 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
                                 button {
                                     id = "key"
 
-                                    attributes["hx-post"] = "/admin/render/keygen"
                                     attributes["hx-swap"] = "outerHTML"
                                     attributes["hx-target"] = "#key"
+                                    attributes["hx-post"] = "/admin/render/keygen"
 
                                     span {
                                         classes = setOf("tabler--user-plus")

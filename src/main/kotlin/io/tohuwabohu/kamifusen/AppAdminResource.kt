@@ -141,4 +141,12 @@ class AppAdminResource(
         ).onItem().transform { keyRaw -> Response.ok(renderCreatedApiKey(keyRaw)).build() }
             .onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
+
+    @Path("/retire/{userId}")
+    @POST
+    @Produces(MediaType.TEXT_HTML)
+    fun retireApiKey(userId: UUID): Uni<Response> =
+        apiUserRepository.expireUser(userId).onItem().transform { Response.ok().header("hx-trigger", "reload-users").build() }
+            .onFailure().invoke { e -> Log.error("Error during key retirement", e)}
+            .onFailure().recoverWithItem(Response.serverError().build())
 }
