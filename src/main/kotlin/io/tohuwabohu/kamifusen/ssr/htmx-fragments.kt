@@ -27,6 +27,11 @@ private val passwordButtonStyles: Set<String> = setOf(
     "focus-visible:outline-indigo-600"
 )
 
+private fun rowClass(index: Int): Set<String> = when (index % 2 == 0) {
+    true -> setOf("bg-slate-100")
+    false -> setOf("bg-slate-300")
+}
+
 private val displayDateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 private val displayDateTimeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -162,32 +167,96 @@ fun renderPages(pages: List<Page>) = createHTML().main {
 
     contentHeader("Pages")
     contentDiv {
-        table {
-            classes = setOf("table-auto", "rounded-md")
+        form {
 
-            thead {
-                tr {
-                    styledTh { +"Path" }
-                    styledTh { +"Last Hit" }
-                    styledTh { +"Added" }
-                }
-            }
-            tbody {
-                pages.forEachIndexed { index, visit ->
+            table {
+                classes = setOf("table-auto", "rounded-md")
+
+                thead {
                     tr {
-                        classes = when (index % 2 == 0) {
-                            true -> setOf("bg-slate-100")
-                            false -> setOf("bg-slate-300")
-                        }
+                        styledTh { +"Path" }
+                        styledTh { +"Last Hit" }
+                        styledTh { +"Added" }
+                        styledTh { +"Action" }
+                    }
+                }
+                tbody {
+                    pages.forEachIndexed { index, page ->
+                        tr {
+                            classes = rowClass(index)
 
-                        styledTd { +visit.path }
-                        styledTd {
-                            when (visit.lastHit) {
-                                null -> +"-"
-                                else -> visit.lastHit!!.format(displayDateFormat)
+                            styledTd { +page.path }
+                            styledTd {
+                                when (page.lastHit) {
+                                    null -> +"-"
+                                    else -> page.lastHit!!.format(displayDateFormat)
+                                }
+                            }
+                            styledTd { +page.pageAdded.format(displayDateTimeFormat) }
+
+                            td {
+                                classes = setOf("flex", "justify-center", "px-3", "py-2", "text-sm", "font-medium")
+                                div {
+                                    button {
+                                        id = "delete"
+
+                                        attributes["hx-swap"] = "outerHTML"
+                                        attributes["hx-target"] = "#delete"
+                                        attributes["hx-post"] = "/admin/render/pagedel/${page.id}"
+                                        attributes["hx-confirm"] = "This will remove tracking for this page. Do you want to proceed?"
+
+                                        span {
+                                            classes = setOf("tabler--world-cancel")
+                                        }
+
+                                        span {
+                                            classes = setOf("sr-only")
+                                            p { +"Remove page" }
+                                        }
+                                    }
+                                }
                             }
                         }
-                        styledTd { +visit.pageAdded.format(displayDateTimeFormat) }
+                    }
+
+                    tr {
+                        classes = rowClass(pages.size)
+
+                        td {
+                            div {
+                                input(InputType.text) {
+                                    classes = setOf("table-input-inline", "h-8")
+
+                                    name = "path"
+                                    required = true
+                                }
+                            }
+                        }
+
+                        td {}
+                        td {}
+
+                        td {
+                            classes = setOf("flex", "justify-center", "px-3", "py-2", "text-sm", "font-medium")
+                            div {
+                                button {
+                                    id = "add"
+
+                                    attributes["hx-swap"] = "outerHTML"
+                                    attributes["hx-target"] = "#add"
+                                    attributes["hx-post"] = "/admin/render/pageadd"
+
+                                    span {
+                                        classes = setOf("tabler--world-plus")
+                                    }
+
+                                    span {
+                                        classes = setOf("sr-only")
+                                        p { +"Add user" }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -225,12 +294,7 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
                         tr {
                             id = "user-${user.id.toString()}"
 
-                            classes = setOf("font-medium")
-
-                            classes = when (index % 2 == 0) {
-                                true -> setOf("bg-slate-100")
-                                false -> setOf("bg-slate-300")
-                            }
+                            classes = rowClass(index)
 
                             styledTd { +user.username }
                             styledTd { +user.role }
@@ -286,12 +350,12 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
                     }
 
                     tr {
-                        classes = setOf("font-medium")
+                        classes = rowClass(users.size)
 
                         td {
                             div {
                                 input(InputType.text) {
-                                    classes = setOf("table-input-inline", "rounded-sm", "h-10")
+                                    classes = setOf("table-input-inline", "h-8")
 
                                     name = "username"
                                     required = true
@@ -301,7 +365,7 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
                         td {
                             div {
                                 select {
-                                    classes = setOf("table-input-inline", "rounded-sm", "h-10")
+                                    classes = setOf("table-input-inline", "h-8")
 
                                     name = "role"
 
@@ -314,7 +378,7 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
                         td {
                             div {
                                 input(InputType.date) {
-                                    classes = setOf("table-input-inline", "rounded-sm", "h-10")
+                                    classes = setOf("table-input-inline", "h-8")
 
                                     name = "expiresAt"
                                     required = false

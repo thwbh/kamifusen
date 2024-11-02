@@ -2,7 +2,6 @@ package io.tohuwabohu.kamifusen
 
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*

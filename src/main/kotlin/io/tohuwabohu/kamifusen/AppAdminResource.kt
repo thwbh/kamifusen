@@ -54,7 +54,6 @@ class AppAdminResource(
                                     .sameSite(NewCookie.SameSite.LAX)
                                     .secure(routingContext.request().isSSL)
                                     .path("/").build())*/
-                                .header("Authorization", "Basic leckdumirdieeier")
                                 .header("hx-redirect", "/admin.html")
                                 .build()
                         )
@@ -148,5 +147,23 @@ class AppAdminResource(
     fun retireApiKey(userId: UUID): Uni<Response> =
         apiUserRepository.expireUser(userId).onItem().transform { Response.ok().header("hx-trigger", "reload-users").build() }
             .onFailure().invoke { e -> Log.error("Error during key retirement", e)}
+            .onFailure().recoverWithItem(Response.serverError().build())
+
+    @Path("/pageadd")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    fun registerNewPage(@FormParam("path") path: String): Uni<Response> =
+        pageRepository.addPage(path).map { Response.ok().header("hx-trigger", "reload-pages").build() }
+            .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
+            .onFailure().recoverWithItem(Response.serverError().build())
+
+    @Path("/pagedel/{pageId}")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    fun unregisterPage(pageId: UUID): Uni<Response> =
+        pageRepository.deleteById(pageId).map { Response.ok().header("hx-trigger", "reload-pages").build() }
+            .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
             .onFailure().recoverWithItem(Response.serverError().build())
 }
