@@ -3,6 +3,7 @@ package io.tohuwabohu.kamifusen
 import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
+import io.tohuwabohu.kamifusen.crud.ApiUser
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
@@ -14,6 +15,7 @@ import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.*
 import java.time.Instant
+import java.time.LocalDateTime
 import java.util.*
 
 @Path("/admin/render")
@@ -67,7 +69,6 @@ class AppAdminResource(
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
-    @RolesAllowed("app-admin")
     fun logoutAdmin(@Context routingContext: RoutingContext): Uni<Response> =
         Uni.createFrom().item(
             Response.noContent().cookie(
@@ -86,7 +87,6 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
-    @RolesAllowed("app-admin")
     fun renderAdminDashboard(): Uni<Response> =
         Uni.createFrom().item(Response.ok(renderDashboard()).build())
             .onFailure().invoke { e -> Log.error("Error during dashboard rendering.", e) }
@@ -96,7 +96,6 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
-    @RolesAllowed("app-admin")
     fun renderVisits(): Uni<Response> =
         pageVisitDtoRepository.getAllPageVisits()
             .flatMap { Uni.createFrom().item(Response.ok(renderStats(it)).build()) }
@@ -107,7 +106,6 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
-    @RolesAllowed("app-admin")
     fun renderPageList(): Uni<Response> =
         pageRepository.listAllPages().flatMap { Uni.createFrom().item(Response.ok(renderPages(it)).build()) }
             .onFailure().invoke { e -> Log.error("Error during pages rendering.", e) }
@@ -117,10 +115,30 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
-    @RolesAllowed("app-admin")
     fun renderUserList(): Uni<Response> =
         apiUserRepository.listAll().flatMap { Uni.createFrom().item(Response.ok(renderUserManagement(it)).build()) }
             .onFailure().invoke { e -> Log.error("Error during user list rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
+    @Path("/keygen")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    fun renderNewApiKey(
+        @FormParam("username") username: String,
+        @FormParam("role") role: String,
+        @FormParam("expiresAt") expiresAt: String
+    ): Uni<Response> =
+        apiUserRepository.addUser(
+            ApiUser(
+            username = username,
+            role = role,
+            expiresAt = when (expiresAt) {
+                "" -> null
+                else -> LocalDateTime.parse(expiresAt)
+            },
+        )
+        ).onItem().transform { keyRaw -> Response.ok(renderCreatedApiKey(keyRaw)).build() }
+            .onFailure().invoke { e -> Log.error("Error during keygen.", e) }
+            .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 }

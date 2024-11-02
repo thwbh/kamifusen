@@ -25,7 +25,7 @@ fun MAIN.contentDiv(block: () -> Unit) = div {
 }
 
 fun TR.styledTh(block: () -> Unit) = th {
-    classes = setOf("bg-gray-600", "px-3", "py-2", "text-sm", "font-medium", "text-white")
+    classes = setOf("bg-gray-800", "px-3", "py-2", "text-sm", "font-medium", "text-white")
 
     block()
 }

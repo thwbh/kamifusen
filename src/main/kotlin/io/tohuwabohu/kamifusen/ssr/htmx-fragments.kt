@@ -200,49 +200,147 @@ fun renderUserManagement(users: List<ApiUser>) = createHTML().main {
 
     contentHeader("Users")
     contentDiv {
-        table {
-            classes = setOf("table-auto", "rounded-md")
+        form {
+            table {
+                classes = setOf("table-auto", "rounded-md")
 
-            thead {
-                tr {
-                    styledTh { +"Username" }
-                    styledTh { +"Role" }
-                    styledTh { +"Added" }
-                    styledTh { +"Expires" }
-                    styledTh { +"Actions" }
-                }
-            }
-
-            tbody {
-                users.forEachIndexed { index, user ->
+                thead {
                     tr {
-                        classes = when (index % 2 == 0) {
-                            true -> setOf("bg-slate-100")
-                            false -> setOf("bg-slate-300")
-                        }
+                        styledTh { +"Username" }
+                        styledTh { +"Role" }
+                        styledTh { +"Added" }
+                        styledTh { +"Expires" }
+                        styledTh { +"Actions" }
+                    }
+                }
 
-                        styledTd { +user.username }
-                        styledTd { +user.role }
-                        styledTd {
-                            when (user.expiresAt) {
-                                null -> +"-"
-                                else -> user.expiresAt!!.format(displayDateFormat)
+                tbody {
+                    users.forEachIndexed { index, user ->
+                        tr {
+                            classes = setOf("font-medium")
+
+                            classes = when (index % 2 == 0) {
+                                true -> setOf("bg-slate-100")
+                                false -> setOf("bg-slate-300")
+                            }
+
+                            styledTd { +user.username }
+                            styledTd { +user.role }
+                            styledTd {
+                                when (user.expiresAt) {
+                                    null -> +"-"
+                                    else -> user.expiresAt!!.format(displayDateFormat)
+                                }
+                            }
+                            styledTd {
+                                when (user.added) {
+                                    null -> +"-"
+                                    else -> user.added!!.format(displayDateFormat)
+                                }
+                            }
+                            td {
+                                classes = setOf("flex", "justify-center", "px-3", "py-2", "text-sm", "font-medium")
+
+                                if (user.username != "admin") {
+                                    button {
+                                        attributes["hx-post"] = "/admin/user/retire/${user.id}"
+
+                                        span {
+                                            classes = setOf("tabler--key-off")
+                                        }
+
+                                        span {
+                                            classes = setOf("sr-only")
+                                            p { +"Retire user" }
+                                        }
+                                    }
+                                }
                             }
                         }
-                        styledTd {
-                            when (user.added) {
-                                null -> +"-"
-                                else -> user.added!!.format(displayDateFormat)
+                    }
+
+                    tr {
+                        classes = setOf("font-medium")
+
+                        td {
+                            div {
+                                input(InputType.text) {
+                                    classes = setOf("table-input-inline", "rounded-sm", "h-10")
+
+                                    name = "username"
+                                    required = true
+                                }
                             }
                         }
                         td {
-                            button {
-                                attributes["hx-post"] = "/admin/user/retire/${user.id}"
+                            div {
+                                select {
+                                    classes = setOf("table-input-inline", "rounded-sm", "h-10")
+
+                                    name = "role"
+
+                                    option { +"api-user" }
+                                    option { +"api-admin" }
+                                }
+                            }
+                        }
+                        td {}
+                        td {
+                            div {
+                                input(InputType.date) {
+                                    classes = setOf("table-input-inline", "rounded-sm", "h-10")
+
+                                    name = "expiresAt"
+                                    required = false
+                                }
+                            }
+                        }
+                        td {
+                            classes = setOf("flex", "justify-center", "px-3", "py-2", "text-sm", "font-medium")
+                            div {
+                                button {
+                                    id = "key"
+
+                                    attributes["hx-post"] = "/admin/render/keygen"
+                                    attributes["hx-swap"] = "outerHTML"
+                                    attributes["hx-target"] = "#key"
+
+                                    span {
+                                        classes = setOf("tabler--user-plus")
+                                    }
+
+                                    span {
+                                        classes = setOf("sr-only")
+                                        p { +"Add user" }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+fun renderCreatedApiKey(keyRaw: String) = createHTML().button {
+    button {
+        id = "key"
+        classes = setOf("flex", "w-full")
+
+        onClick = "navigator.clipboard.writeText('$keyRaw')"
+
+        span {
+            classes = setOf("tabler--key-filled")
+        }
+
+        span {
+            classes = setOf("sr-only")
+            p { +"API Key: " }
+        }
+
+        p {
+            +"Copy to clipboard"
         }
     }
 }

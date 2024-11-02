@@ -19,9 +19,9 @@ class ApiUserRepositoryMock : ApiUserRepository() {
         return apiUsers.find { it.username == username && it.password == password }.let { Uni.createFrom().item(it)}
     }
 
-    override fun addUser(apiUser: ApiUser): Uni<ApiUser> {
+    override fun addUser(apiUser: ApiUser): Uni<String> {
         apiUsers.add(apiUser)
-        return Uni.createFrom().item(apiUser)
+        return Uni.createFrom().item(apiUser.password)
     }
 
     override fun setAdminPassword(password: String): Uni<ApiUser?> {

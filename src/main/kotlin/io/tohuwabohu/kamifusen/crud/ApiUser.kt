@@ -70,8 +70,11 @@ data class ApiUser(
 class ApiUserRepository : PanacheRepositoryBase<ApiUser, String> {
 
     @WithTransaction
-    fun addUser(apiUser: ApiUser): Uni<ApiUser> {
-        return persist(apiUser)
+    fun addUser(apiUser: ApiUser): Uni<String> {
+        val randomPwd = UUID.randomUUID().toString()
+        apiUser.password = randomPwd
+
+        return persist(apiUser).map { Base64.getEncoder().encodeToString("${it.username}:${randomPwd}".toByteArray()) }
     }
 
     @WithTransaction

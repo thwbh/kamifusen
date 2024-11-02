@@ -2,7 +2,6 @@ package io.tohuwabohu.kamifusen
 
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.ApiUser
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import jakarta.annotation.security.RolesAllowed
@@ -33,23 +32,13 @@ class ApiAdminResource(
             }
         }
 
-    @Path("/keygen")
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.TEXT_PLAIN)
-    @RolesAllowed("app-admin")
-    fun generateApiKey(body: ApiUser): Uni<Response> =
-        apiUserRepository.addUser(apiUser = body).onItem().transform { keyRaw -> Response.ok(keyRaw.username).build() }
-            .onFailure().invoke { e -> Log.error("Error during keygen.", e) }
-            .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
-
     @Path("/pages")
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("api-admin", "app-admin")
+    @RolesAllowed("api-admin")
     fun listPages(): Uni<Response> =
-        pageRepository.listAllPages().onItem().transform { pages -> Response.ok(pages).build()}
+        pageRepository.listAllPages().onItem().transform { pages -> Response.ok(pages).build() }
             .onFailure().invoke { e -> Log.error("Error creating page list.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 }
