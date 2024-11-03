@@ -11,20 +11,19 @@ import io.tohuwabohu.kamifusen.ssr.*
 import io.tohuwabohu.kamifusen.ssr.response.createHtmxErrorResponse
 import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
 import io.vertx.ext.web.RoutingContext
-import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.*
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
 
-@Path("/admin/render")
+@Path("/")
 class AppAdminResource(
     private val apiUserRepository: ApiUserRepository,
     private val pageVisitDtoRepository: PageVisitDtoRepository,
     private val pageRepository: PageRepository
 ) {
-    @Path("/register")
+    @Path("/fragment/register")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
@@ -54,7 +53,7 @@ class AppAdminResource(
                                     .sameSite(NewCookie.SameSite.LAX)
                                     .secure(routingContext.request().isSSL)
                                     .path("/").build())*/
-                                .header("hx-redirect", "/admin.html")
+                                .header("hx-redirect", "/dashboard")
                                 .build()
                         )
                     } else {
@@ -87,7 +86,9 @@ class AppAdminResource(
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
     fun renderAdminDashboard(): Uni<Response> =
-        Uni.createFrom().item(Response.ok(renderDashboard()).build())
+        Uni.createFrom().item(Response.ok(renderAdminPage("Dashboard") {
+            dashboard()
+        }).build())
             .onFailure().invoke { e -> Log.error("Error during dashboard rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
@@ -97,7 +98,9 @@ class AppAdminResource(
     @Produces(MediaType.TEXT_HTML)
     fun renderVisits(): Uni<Response> =
         pageVisitDtoRepository.getAllPageVisits()
-            .flatMap { Uni.createFrom().item(Response.ok(renderStats(it)).build()) }
+            .flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Stats") {
+                stats(it)
+            }).build()) }
             .onFailure().invoke { e -> Log.error("Error during stats rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
@@ -106,7 +109,9 @@ class AppAdminResource(
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
     fun renderPageList(): Uni<Response> =
-        pageRepository.listAllPages().flatMap { Uni.createFrom().item(Response.ok(renderPages(it)).build()) }
+        pageRepository.listAllPages().flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Pages") {
+            pages(it)
+        }).build()) }
             .onFailure().invoke { e -> Log.error("Error during pages rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
@@ -115,11 +120,13 @@ class AppAdminResource(
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
     fun renderUserList(): Uni<Response> =
-        apiUserRepository.listAll().flatMap { Uni.createFrom().item(Response.ok(renderUserManagement(it)).build()) }
+        apiUserRepository.listAll().flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Stats") {
+            users(it)
+        }).build()) }
             .onFailure().invoke { e -> Log.error("Error during user list rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
-    @Path("/keygen")
+    @Path("/fragment/keygen")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
@@ -141,29 +148,29 @@ class AppAdminResource(
             .onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 
-    @Path("/retire/{userId}")
+    @Path("/fragment/retire/{userId}")
     @POST
     @Produces(MediaType.TEXT_HTML)
     fun retireApiKey(userId: UUID): Uni<Response> =
-        apiUserRepository.expireUser(userId).onItem().transform { Response.ok().header("hx-trigger", "reload-users").build() }
+        apiUserRepository.expireUser(userId).onItem().transform { Response.ok().header("hx-redirect", "/users").build() }
             .onFailure().invoke { e -> Log.error("Error during key retirement", e)}
             .onFailure().recoverWithItem(Response.serverError().build())
 
-    @Path("/pageadd")
+    @Path("/fragment/pageadd")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
     fun registerNewPage(@FormParam("path") path: String): Uni<Response> =
-        pageRepository.addPage(path).map { Response.ok().header("hx-trigger", "reload-pages").build() }
+        pageRepository.addPage(path).map { Response.ok().header("hx-redirect", "/pages").build() }
             .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
             .onFailure().recoverWithItem(Response.serverError().build())
 
-    @Path("/pagedel/{pageId}")
+    @Path("/fragment/pagedel/{pageId}")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
     fun unregisterPage(pageId: UUID): Uni<Response> =
-        pageRepository.deleteById(pageId).map { Response.ok().header("hx-trigger", "reload-pages").build() }
+        pageRepository.deletePage(pageId).map { Response.ok().header("hx-redirect", "/pages").build() }
             .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
             .onFailure().recoverWithItem(Response.serverError().build())
 }

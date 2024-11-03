@@ -22,6 +22,7 @@ class PageVisitDtoRepository() : PanacheRepository<PageVisitDto> {
             FROM Page p
             LEFT JOIN PageVisit pv ON p.id = pv.pageId
             GROUP BY p.id
+            ORDER BY p.path, p.pageAdded DESC
         """
 
     fun getAllPageVisits() : Uni<List<PageVisitDto>> =

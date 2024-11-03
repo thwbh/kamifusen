@@ -6,6 +6,7 @@ import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
 import io.smallrye.mutiny.Uni
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Entity
+import jakarta.persistence.EntityNotFoundException
 import jakarta.persistence.Id
 import jakarta.persistence.PreUpdate
 import org.hibernate.proxy.HibernateProxy
@@ -64,4 +65,8 @@ class PageRepository : PanacheRepositoryBase<Page, UUID> {
 
         return persist(page)
     }
+
+    @WithTransaction
+    fun deletePage(pageId: UUID) = findById(pageId).onItem().ifNull().failWith(EntityNotFoundException()).onItem()
+        .ifNotNull().transformToUni { entry -> deleteById(entry.id)}
 }
