@@ -1,6 +1,5 @@
 package io.tohuwabohu.kamifusen
 
-import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.crud.ApiUser
@@ -8,15 +7,19 @@ import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
 import io.tohuwabohu.kamifusen.ssr.*
-import io.tohuwabohu.kamifusen.ssr.response.createHtmxErrorResponse
 import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
 import io.vertx.ext.web.RoutingContext
 import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
-import jakarta.ws.rs.core.*
+import jakarta.ws.rs.core.Context
+import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.NewCookie
+import jakarta.ws.rs.core.Response
+import org.eclipse.microprofile.config.inject.ConfigProperty
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
+
 
 @Path("/")
 class AppAdminResource(
@@ -24,6 +27,9 @@ class AppAdminResource(
     private val pageVisitDtoRepository: PageVisitDtoRepository,
     private val pageRepository: PageRepository
 ) {
+    @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
+    lateinit var cookieName: String
+
     @Path("/fragment/register")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -35,31 +41,6 @@ class AppAdminResource(
             .onFailure().invoke { e -> Log.error("Error during admin user creation.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
-    @Path("/login")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_HTML)
-    fun loginAdmin(@Context routingContext: RoutingContext, @FormParam("password") password: String): Uni<Response> =
-        apiUserRepository.findByUsername("admin").chain { apiUser ->
-            when (apiUser?.password) {
-                null -> Uni.createFrom().item(Response.accepted(renderPasswordFlow()).build())
-                else -> {
-                    if (BcryptUtil.matches(password, apiUser.password)) {
-                        val basicAuthToken =
-                            Base64.getEncoder().encodeToString("${apiUser.username}:${password}".toByteArray())
-
-                        Uni.createFrom().item(
-                            Response.ok()
-                                .header("Authorization", basicAuthToken)
-                                .build()
-                        )
-                    } else {
-                        createHtmxErrorResponse(Response.Status.UNAUTHORIZED)
-                    }
-                }
-            }
-        }
-
     @Path("/logout")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -67,7 +48,12 @@ class AppAdminResource(
     fun logoutAdmin(@Context routingContext: RoutingContext): Uni<Response> =
         Uni.createFrom().item(
             Response.noContent().header("hx-redirect", "/")
-                .header("Authorization", "")
+                .cookie(
+                    NewCookie.Builder(cookieName)
+                    .maxAge(0)
+                    .expiry(Date.from(Instant.EPOCH))
+                    .path("/")
+                    .build())
                 .build()
         )
 
@@ -90,9 +76,11 @@ class AppAdminResource(
     @RolesAllowed("app-admin")
     fun renderVisits(): Uni<Response> =
         pageVisitDtoRepository.getAllPageVisits()
-            .flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Stats") {
-                stats(it)
-            }).build()) }
+            .flatMap {
+                Uni.createFrom().item(Response.ok(renderAdminPage("Stats") {
+                    stats(it)
+                }).build())
+            }
             .onFailure().invoke { e -> Log.error("Error during stats rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
@@ -102,9 +90,11 @@ class AppAdminResource(
     @Produces(MediaType.TEXT_HTML)
     @RolesAllowed("app-admin")
     fun renderPageList(): Uni<Response> =
-        pageRepository.listAllPages().flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Pages") {
-            pages(it)
-        }).build()) }
+        pageRepository.listAllPages().flatMap {
+            Uni.createFrom().item(Response.ok(renderAdminPage("Pages") {
+                pages(it)
+            }).build())
+        }
             .onFailure().invoke { e -> Log.error("Error during pages rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
@@ -114,9 +104,11 @@ class AppAdminResource(
     @Produces(MediaType.TEXT_HTML)
     @RolesAllowed("app-admin")
     fun renderUserList(): Uni<Response> =
-        apiUserRepository.listAll().flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Users") {
-            users(it)
-        }).build()) }
+        apiUserRepository.listAll().flatMap {
+            Uni.createFrom().item(Response.ok(renderAdminPage("Users") {
+                users(it)
+            }).build())
+        }
             .onFailure().invoke { e -> Log.error("Error during user list rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
@@ -132,13 +124,13 @@ class AppAdminResource(
     ): Uni<Response> =
         apiUserRepository.addUser(
             ApiUser(
-            username = username,
-            role = role,
-            expiresAt = when (expiresAt) {
-                "" -> null
-                else -> LocalDateTime.parse(expiresAt)
-            },
-        )
+                username = username,
+                role = role,
+                expiresAt = when (expiresAt) {
+                    "" -> null
+                    else -> LocalDateTime.parse(expiresAt)
+                },
+            )
         ).onItem().transform { keyRaw -> Response.ok(renderCreatedApiKey(keyRaw)).build() }
             .onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
@@ -148,8 +140,9 @@ class AppAdminResource(
     @Produces(MediaType.TEXT_HTML)
     @RolesAllowed("app-admin")
     fun retireApiKey(userId: UUID): Uni<Response> =
-        apiUserRepository.expireUser(userId).onItem().transform { Response.ok().header("hx-redirect", "/users").build() }
-            .onFailure().invoke { e -> Log.error("Error during key retirement", e)}
+        apiUserRepository.expireUser(userId).onItem()
+            .transform { Response.ok().header("hx-redirect", "/users").build() }
+            .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
             .onFailure().recoverWithItem(Response.serverError().build())
 
     @Path("/fragment/pageadd")

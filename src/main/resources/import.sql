@@ -1,4 +1,4 @@
-insert into api_user (id, username, role) values (gen_random_uuid(), 'admin', 'app-admin');
+insert into api_user (id, username, role, password) values (gen_random_uuid(), 'admin', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW');
 
 insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a641', '/test/path-1', NOW());
 insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a642', '/test/path-2', NOW());
