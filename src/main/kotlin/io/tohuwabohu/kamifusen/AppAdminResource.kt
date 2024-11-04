@@ -11,6 +11,7 @@ import io.tohuwabohu.kamifusen.ssr.*
 import io.tohuwabohu.kamifusen.ssr.response.createHtmxErrorResponse
 import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
 import io.vertx.ext.web.RoutingContext
+import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.*
 import java.time.Instant
@@ -27,6 +28,7 @@ class AppAdminResource(
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
     fun registerAdmin(@FormParam("password") password: String): Uni<Response> =
         apiUserRepository.setAdminPassword(password).onItem()
             .transform { Response.ok(renderPasswordFlowSuccess()).build() }
@@ -47,13 +49,8 @@ class AppAdminResource(
                             Base64.getEncoder().encodeToString("${apiUser.username}:${password}".toByteArray())
 
                         Uni.createFrom().item(
-                            Response.ok()/*.cookie(
-                                NewCookie.Builder(Cookie("AuthToken", "Basic $basicAuthToken"))
-                                    .expiry(Date.from(Instant.now().plusSeconds(3600)))
-                                    .sameSite(NewCookie.SameSite.LAX)
-                                    .secure(routingContext.request().isSSL)
-                                    .path("/").build())*/
-                                .header("hx-redirect", "/dashboard")
+                            Response.ok()
+                                .header("Authorization", basicAuthToken)
                                 .build()
                         )
                     } else {
@@ -69,14 +66,7 @@ class AppAdminResource(
     @Produces(MediaType.TEXT_PLAIN)
     fun logoutAdmin(@Context routingContext: RoutingContext): Uni<Response> =
         Uni.createFrom().item(
-            Response.noContent().cookie(
-                NewCookie.Builder("AuthToken")
-                    .maxAge(0)
-                    .expiry(Date.from(Instant.EPOCH))
-                    .sameSite(NewCookie.SameSite.LAX)
-                    .secure(routingContext.request().isSSL)
-                    .path("/").build()
-            ).header("hx-redirect", "/")
+            Response.noContent().header("hx-redirect", "/")
                 .header("Authorization", "")
                 .build()
         )
@@ -85,6 +75,7 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
     fun renderAdminDashboard(): Uni<Response> =
         Uni.createFrom().item(Response.ok(renderAdminPage("Dashboard") {
             dashboard()
@@ -96,6 +87,7 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
     fun renderVisits(): Uni<Response> =
         pageVisitDtoRepository.getAllPageVisits()
             .flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Stats") {
@@ -108,6 +100,7 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
     fun renderPageList(): Uni<Response> =
         pageRepository.listAllPages().flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Pages") {
             pages(it)
@@ -119,8 +112,9 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
     fun renderUserList(): Uni<Response> =
-        apiUserRepository.listAll().flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Stats") {
+        apiUserRepository.listAll().flatMap { Uni.createFrom().item(Response.ok(renderAdminPage("Users") {
             users(it)
         }).build()) }
             .onFailure().invoke { e -> Log.error("Error during user list rendering.", e) }
@@ -130,6 +124,7 @@ class AppAdminResource(
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed("app-admin")
     fun renderNewApiKey(
         @FormParam("username") username: String,
         @FormParam("role") role: String,
@@ -151,6 +146,7 @@ class AppAdminResource(
     @Path("/fragment/retire/{userId}")
     @POST
     @Produces(MediaType.TEXT_HTML)
+    @RolesAllowed("app-admin")
     fun retireApiKey(userId: UUID): Uni<Response> =
         apiUserRepository.expireUser(userId).onItem().transform { Response.ok().header("hx-redirect", "/users").build() }
             .onFailure().invoke { e -> Log.error("Error during key retirement", e)}
@@ -160,6 +156,7 @@ class AppAdminResource(
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed("app-admin")
     fun registerNewPage(@FormParam("path") path: String): Uni<Response> =
         pageRepository.addPage(path).map { Response.ok().header("hx-redirect", "/pages").build() }
             .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
@@ -169,6 +166,7 @@ class AppAdminResource(
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed("app-admin")
     fun unregisterPage(pageId: UUID): Uni<Response> =
         pageRepository.deletePage(pageId).map { Response.ok().header("hx-redirect", "/pages").build() }
             .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
