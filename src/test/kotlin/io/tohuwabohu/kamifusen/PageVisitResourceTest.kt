@@ -284,6 +284,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         Given {
+            header("Authorization", "")
             body("does-not-matter")
         } When {
             post("/hit")
@@ -297,7 +298,9 @@ class PageVisitResourceTest {
     fun `should return a 403 without api key for hit count`(uniAsserter: UniAsserter) {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
-        When {
+        Given {
+            header("Authorization", "")
+        } When {
             get("/count/foo")
         } Then {
             statusCode(401)

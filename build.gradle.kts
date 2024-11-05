@@ -29,6 +29,7 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-rest")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.jetbrains.kotlin:kotlin-noarg")
     // ssr
     implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.11.0")
     // testing
@@ -59,6 +60,7 @@ allOpen {
 
 noArg {
     annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.Embeddable")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

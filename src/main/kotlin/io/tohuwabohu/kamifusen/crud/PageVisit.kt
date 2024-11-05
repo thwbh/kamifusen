@@ -4,6 +4,7 @@ import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepository
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.IdClass
@@ -50,4 +51,5 @@ class PageVisitRepository: PanacheRepository<PageVisit> {
     fun addVisit(pageId: UUID, visitorId: UUID) = persist(PageVisit(pageId, visitorId))
 }
 
-private class CompositeKey(val pageId: UUID, val visitorId: UUID) : Serializable
+@Embeddable
+class CompositeKey(val pageId: UUID, val visitorId: UUID) : Serializable
