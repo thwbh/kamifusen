@@ -150,8 +150,8 @@ class AppAdminResource(
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
     @RolesAllowed("app-admin")
-    fun registerNewPage(@FormParam("path") path: String): Uni<Response> =
-        pageRepository.addPage(path).map { Response.ok().header("hx-redirect", "/pages").build() }
+    fun registerNewPage(@FormParam("path") path: String, @FormParam("domain") domain: String): Uni<Response> =
+        pageRepository.addPage(path, domain).map { Response.ok().header("hx-redirect", "/pages").build() }
             .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
             .onFailure().recoverWithItem(Response.serverError().build())
 

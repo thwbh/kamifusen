@@ -18,6 +18,7 @@ data class Page(
     @Id
     var id: UUID,
     var path: String,
+    var domain: String? = null,
     val pageAdded: LocalDateTime = LocalDateTime.now(),
     var lastHit: LocalDateTime? = null,
 ) : PanacheEntityBase {
@@ -36,7 +37,7 @@ data class Page(
         if (thisEffectiveClass != oEffectiveClass) return false
         other as Page
 
-        return id == other.id
+        return id != null && id == other.id
     }
 
     final override fun hashCode(): Int =
@@ -44,7 +45,7 @@ data class Page(
 
     @Override
     override fun toString(): String {
-        return this::class.simpleName + "(  id = $id   ,   path = $path   ,   pageAdded = $pageAdded   ,   lastHit = $lastHit )"
+        return this::class.simpleName + "(  id = $id   ,   path = $path   ,   domain = $domain   ,   pageAdded = $pageAdded   ,   lastHit = $lastHit )"
     }
 }
 
@@ -57,16 +58,17 @@ class PageRepository : PanacheRepositoryBase<Page, UUID> {
     fun listAllPages() = listAll()
 
     @WithTransaction
-    fun addPage(path: String): Uni<Page> {
+    fun addPage(path: String, domain: String): Uni<Page> {
         val page = Page(
             id = UUID.randomUUID(),
-            path = path
+            path = path,
+            domain = domain
         )
 
         return persist(page)
     }
 
     @WithTransaction
-    fun deletePage(pageId: UUID) = findById(pageId).onItem().ifNull().failWith(EntityNotFoundException()).onItem()
+    fun deletePage(pageId: UUID): Uni<Boolean> = findById(pageId).onItem().ifNull().failWith(EntityNotFoundException()).onItem()
         .ifNotNull().transformToUni { entry -> deleteById(entry.id)}
 }

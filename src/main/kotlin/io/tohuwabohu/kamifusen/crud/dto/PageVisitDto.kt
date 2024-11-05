@@ -11,6 +11,7 @@ import java.util.*
 data class PageVisitDto(
     var id: UUID,
     var path: String,
+    var domain: String?,
     var pageAdded: LocalDateTime,
     var visits: Long
 )
@@ -18,7 +19,7 @@ data class PageVisitDto(
 @ApplicationScoped
 class PageVisitDtoRepository() : PanacheRepository<PageVisitDto> {
     val query = """
-            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId) AS visits
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain AS visits
             FROM Page p
             LEFT JOIN PageVisit pv ON p.id = pv.pageId
             GROUP BY p.id
@@ -37,5 +38,6 @@ fun Tuple.toPageVisitDto() = PageVisitDto(
     id = this.get(0, UUID::class.java),
     path = this.get(1, String::class.java),
     pageAdded = this.get(2, LocalDateTime::class.java),
-    visits = this.get(3, Long::class.javaObjectType)
+    visits = this.get(3, Long::class.javaObjectType),
+    domain = this.get(4, String::class.java)
 )

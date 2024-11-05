@@ -34,6 +34,7 @@ fun FlowContent.stats(pageVisits: List<PageVisitDto>) = main {
             thead {
                 tr {
                     styledTh { +"Path" }
+                    styledTh { +"Domain" }
                     styledTh { +"Visits" }
                     styledTh { +"Added" }
                 }
@@ -47,6 +48,7 @@ fun FlowContent.stats(pageVisits: List<PageVisitDto>) = main {
                         }
 
                         styledTd { +visit.path }
+                        styledTd { +if(visit.domain == null) "" else visit.domain!! }
                         styledTd { +visit.visits.toString() }
                         styledTd { +visit.pageAdded.format(displayDateTimeFormat) }
                     }
@@ -62,17 +64,9 @@ fun FlowContent.pages(pages: List<Page>) = main {
     contentHeader("Pages")
     contentDiv {
         form {
-            p {
-                +"Add pages to track or remove pages from tracking."
-            }
-
-            p {
-                +"If you use an API Key to track a page that does not show up here, visits won't be tracked."
-            }
-
-            p {
-                +"Create groups to organize page tracking across different domains. Following best practise, each group should have their own API Key."
-            }
+            p { +"Add pages to track or remove pages from tracking." }
+            p { +"If you use an API Key to track a page that does not show up here, visits won't be tracked." }
+            p { +"Add a domain for better oversight. Following best practise, each domain should have their own API Key." }
 
             table {
                 classes = setOf("table-auto", "rounded-md")
@@ -80,6 +74,7 @@ fun FlowContent.pages(pages: List<Page>) = main {
                 thead {
                     tr {
                         styledTh { +"Path" }
+                        styledTh { +"Domain" }
                         styledTh { +"Last Hit" }
                         styledTh { +"Added" }
                         styledTh { +"Action" }
@@ -91,6 +86,7 @@ fun FlowContent.pages(pages: List<Page>) = main {
                             classes = rowClass(index)
 
                             styledTd { +page.path }
+                            styledTd { +if(page.domain == null) "" else page.domain!! }
                             styledTd {
                                 when (page.lastHit) {
                                     null -> +"-"
@@ -112,7 +108,7 @@ fun FlowContent.pages(pages: List<Page>) = main {
                                             "This will remove tracking for this page. Do you want to proceed?"
 
                                         span {
-                                            classes = setOf("tabler--world-cancel")
+                                            classes = setOf("tabler--trash")
                                         }
 
                                         span {
@@ -139,6 +135,16 @@ fun FlowContent.pages(pages: List<Page>) = main {
                             }
                         }
 
+                        td {
+                            div {
+                                input(InputType.text) {
+                                    classes = setOf("table-input-inline", "h-8")
+
+                                    name = "domain"
+                                    required = false
+                                }
+                            }
+                        }
                         td {}
                         td {}
 
@@ -158,7 +164,7 @@ fun FlowContent.pages(pages: List<Page>) = main {
 
                                     span {
                                         classes = setOf("sr-only")
-                                        p { +"Add user" }
+                                        p { +"Add page" }
                                     }
                                 }
                             }
