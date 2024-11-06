@@ -6,15 +6,14 @@ import io.tohuwabohu.kamifusen.crud.ApiUser
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
+import io.tohuwabohu.kamifusen.crud.security.PasswordValidation
+import io.tohuwabohu.kamifusen.crud.security.validatePassword
 import io.tohuwabohu.kamifusen.ssr.*
 import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
 import io.vertx.ext.web.RoutingContext
 import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
-import jakarta.ws.rs.core.Context
-import jakarta.ws.rs.core.MediaType
-import jakarta.ws.rs.core.NewCookie
-import jakarta.ws.rs.core.Response
+import jakarta.ws.rs.core.*
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import java.time.Instant
 import java.time.LocalDateTime
@@ -35,10 +34,15 @@ class AppAdminResource(
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
     @RolesAllowed("app-admin")
-    fun registerAdmin(@FormParam("password") password: String): Uni<Response> =
-        apiUserRepository.setAdminPassword(password).onItem()
-            .transform { Response.ok(renderPasswordFlowSuccess()).build() }
-            .onFailure().invoke { e -> Log.error("Error during admin user creation.", e) }
+    fun registerAdmin(@FormParam("password") password: String, @FormParam("password-confirm") passwordConfirm: String): Uni<Response> =
+        validatePassword(password, passwordConfirm).flatMap { result ->
+            if (result == PasswordValidation.VALID) {
+                apiUserRepository.setAdminPassword(password)
+                    .map { Response.ok(renderPasswordFlow(result)).build() }
+            } else {
+                Uni.createFrom().item(Response.ok(renderPasswordFlow(result)).build())
+            }
+        }.onFailure().invoke { e -> Log.error("Error during admin user creation.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
     @Path("/logout")
@@ -50,10 +54,11 @@ class AppAdminResource(
             Response.noContent().header("hx-redirect", "/")
                 .cookie(
                     NewCookie.Builder(cookieName)
-                    .maxAge(0)
-                    .expiry(Date.from(Instant.EPOCH))
-                    .path("/")
-                    .build())
+                        .maxAge(0)
+                        .expiry(Date.from(Instant.EPOCH))
+                        .path("/")
+                        .build()
+                )
                 .build()
         )
 
@@ -62,11 +67,12 @@ class AppAdminResource(
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_HTML)
     @RolesAllowed("app-admin")
-    fun renderAdminDashboard(): Uni<Response> =
-        Uni.createFrom().item(Response.ok(renderAdminPage("Dashboard") {
-            dashboard()
-        }).build())
-            .onFailure().invoke { e -> Log.error("Error during dashboard rendering.", e) }
+    fun renderAdminDashboard(@Context securityContext: SecurityContext): Uni<Response> =
+        apiUserRepository.findByUsername(securityContext.userPrincipal.name).map { adminUser ->
+            Response.ok(renderAdminPage("Dashboard", isFirstTimeSetup = adminUser!!.updated == null) {
+                dashboard(adminUser)
+            }).build()
+        }.onFailure().invoke { e -> Log.error("Error during dashboard rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
     @Path("/stats")

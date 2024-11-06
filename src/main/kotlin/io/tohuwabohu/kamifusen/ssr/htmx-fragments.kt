@@ -1,118 +1,30 @@
 package io.tohuwabohu.kamifusen.ssr
 
+import io.tohuwabohu.kamifusen.crud.security.PasswordValidation
 import jakarta.ws.rs.core.Response
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 
-private val passwordButtonStyles: Set<String> = setOf(
-    "flex",
-    "w-full",
-    "justify-center",
-    "rounded-md",
-    "bg-indigo-600",
-    "px-3",
-    "py-1.5",
-    "text-sm/6",
-    "font-semibold",
-    "text-white",
-    "shadow-sm",
-    "hover:bg-indigo-500",
-    "focus-visible:outline",
-    "focus-visible:outline-2",
-    "focus-visible:outline-offset-2",
-    "focus-visible:outline-indigo-600"
-)
-
-fun renderPasswordFlow() = createHTML().div {
-    classes = setOf("mt-10", "sm:mx-auto", "sm:w-full", "sm:max-w-sm")
-
-    id = "first-time-setup"
-    p { +"It seems like this is your first visit. Please set an admin password to proceed." }
-    form {
-        classes = setOf("space-y-6")
-
-        attributes["hx-post"] = "/fragment/register"
-        attributes["hx-swap"] = "outerHTML"
-        attributes["hx-target"] = "#first-time-setup"
-        attributes["hx-trigger"] = "submit"
-
-        div {
-            div {
-                classes = setOf("flex", "items-center", "justify-between")
-
-                label {
-                    classes = setOf("block", "text-sm/6", "font-medium", "text-gray-900")
-
-                    attributes["for"] = "password"
-
-                    +"Password: "
-                }
-            }
-            div {
-                classes = setOf("mt-2")
-
-                input(type = InputType.password) {
-                    classes = setOf(
-                        "block",
-                        "w-full",
-                        "rounded-md",
-                        "border-0",
-                        "py-1.5",
-                        "text-gray-900",
-                        "shadow-sm",
-                        "ring-1",
-                        "ring-inset",
-                        "ring-gray-300",
-                        "placeholder:text-gray-400",
-                        "focus:ring-2",
-                        "focus:ring-inset",
-                        "focus:ring-indigo-600",
-                        "sm:text-sm/6"
-                    )
-
-                    id = "password"
-                    name = "password"
-                    autoComplete = true
-                    required = true
-                }
-            }
-        }
-        div {
-            input(type = InputType.submit) {
-                classes = passwordButtonStyles
-
-                attributes["hx-post"] = "/fragment/register"
-
-                value = "Set password"
-            }
-        }
-
-    }
+/**
+ * Renders the HTML content for the password setup flow based on the given validation result.
+ * The generated content includes forms for password entry and messages for different validation outcomes.
+ *
+ * @param validationResult An optional validation result of type [PasswordValidation]. If provided and the validation is not successful,
+ *                         an appropriate error message is displayed in the generated HTML content.
+ */
+fun renderPasswordFlow(validationResult: PasswordValidation?) = createHTML().div {
+    passwordFlow(validationResult)
 }
 
-fun renderPasswordFlowSuccess() = createHTML().div {
-
-    classes = setOf("mt-10", "sm:mx-auto", "sm:w-full", "sm:max-w-sm")
-
-    id = "first-time-setup"
-    p { +"Successfully set password!" }
-    div {
-        div {
-            input(type = InputType.submit) {
-                classes = passwordButtonStyles
-                onClick = "window.location.href = '/'"
-
-                value = "Go back"
-            }
-        }
-
-    }
-}
-
+/**
+ * Renders an HTML button for the provided API key, allowing users to copy the key to their clipboard.
+ *
+ * @param keyRaw The raw API key string to be rendered in the button's click event.
+ */
 fun renderCreatedApiKey(keyRaw: String) = createHTML().button {
     button {
         id = "key"
-        classes = setOf("flex", "w-full")
+        classes = setOf("flex", "w-full", "p-2")
 
         onClick = "navigator.clipboard.writeText('$keyRaw')"
 

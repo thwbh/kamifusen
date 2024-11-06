@@ -35,13 +35,19 @@ data class ApiUser(
     @Roles
     var role: String,
     var expiresAt: LocalDateTime? = null,
-    var added: LocalDateTime? = null
+    var added: LocalDateTime? = null,
+    var updated: LocalDateTime? = null
 ) {
     @PrePersist
     fun beforePersist() {
         id = UUID.randomUUID()
         password = BcryptUtil.bcryptHash(password)
         added = LocalDateTime.now()
+    }
+
+    @PreUpdate
+    fun beforeUpdate() {
+        updated = LocalDateTime.now()
     }
 
     final override fun equals(other: Any?): Boolean {

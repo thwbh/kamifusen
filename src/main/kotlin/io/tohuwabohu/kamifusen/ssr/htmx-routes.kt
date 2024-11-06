@@ -6,6 +6,12 @@ import io.tohuwabohu.kamifusen.crud.dto.PageVisitDto
 import kotlinx.html.*
 import java.time.format.DateTimeFormatter
 
+/**
+ * Determines the CSS class to apply to a row based on its index.
+ *
+ * @param index The index of the row.
+ * @return A set of CSS class names.
+ */
 private fun rowClass(index: Int): Set<String> = when (index % 2 == 0) {
     true -> setOf("bg-slate-100")
     false -> setOf("bg-slate-300")
@@ -14,15 +20,30 @@ private fun rowClass(index: Int): Set<String> = when (index % 2 == 0) {
 private val displayDateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 private val displayDateTimeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-fun FlowContent.dashboard() = main {
+/**
+ * Generates the main dashboard view for the admin user.
+ *
+ * @param adminUser The authenticated admin user for whom the dashboard is generated.
+ */
+fun FlowContent.dashboard(adminUser: ApiUser) = main {
     id = "main-content"
 
     contentHeader("Dashboard")
     contentDiv {
-        p { +"Welcome to kamifusen. Manage your pages and statistics here." }
+        if (adminUser.updated != null) {
+            p { +"Welcome to kamifusen. Manage your pages and statistics here." }
+
+        } else {
+            passwordFlow()
+        }
     }
 }
 
+/**
+ * Renders statistical data of page visits in an HTML table format.
+ *
+ * @param pageVisits List of page visit data transfer objects containing information about visits.
+ */
 fun FlowContent.stats(pageVisits: List<PageVisitDto>) = main {
     id = "main-content"
 
@@ -58,6 +79,11 @@ fun FlowContent.stats(pageVisits: List<PageVisitDto>) = main {
     }
 }
 
+/**
+ * Adds and manages a list of pages for tracking within the main content area.
+ *
+ * @param pages List of pages to be displayed and managed in the table.
+ */
 fun FlowContent.pages(pages: List<Page>) = main {
     id = "main-content"
 
@@ -176,6 +202,13 @@ fun FlowContent.pages(pages: List<Page>) = main {
     }
 }
 
+/**
+ * Renders a HTML content block displaying a table of API users with functionality to issue and revoke API keys.
+ *
+ * @param users A list of `ApiUser` objects to be displayed in the table. Each user includes details such as username, role,
+ *              expiration date, and the date they were added. The table also provides actions to retire or regenerate API keys
+ *              for the users.
+ */
 fun FlowContent.users(users: List<ApiUser>) = main {
     id = "main-content"
 

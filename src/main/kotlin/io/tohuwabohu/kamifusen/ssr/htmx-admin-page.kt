@@ -27,7 +27,7 @@ private val navInactiveClasses = setOf(
     "hover:text-white"
 )
 
-fun renderAdminPage(navId: String, block: FlowContent.() -> Unit) = createHTML().html {
+fun renderAdminPage(navId: String, isFirstTimeSetup: Boolean = false, block: FlowContent.() -> Unit) = createHTML().html {
     attributes["lang"] = "EN"
     classes = setOf("h-full", "bg-gray-100")
 
@@ -43,14 +43,14 @@ fun renderAdminPage(navId: String, block: FlowContent.() -> Unit) = createHTML()
         div {
             classes = setOf("min-h-full")
 
-            renderNavigation(navId)
+            renderNavigation(navId, isFirstTimeSetup)
 
             block()
         }
     }
 }
 
-private fun FlowContent.renderNavigation(navId: String) =
+private fun FlowContent.renderNavigation(navId: String, isFirstTimeSetup: Boolean = false) =
     nav {
         classes = setOf("bg-gray-800")
 
@@ -70,52 +70,54 @@ private fun FlowContent.renderNavigation(navId: String) =
                     }
 
                     div {
-                        classes = setOf("hidden", "md:block")
+                        classes = setOf("block")
 
-                        div {
-                            classes = setOf("ml-10", "flex", "items-baseline", "space-x-4")
+                        if (!isFirstTimeSetup) {
+                            div {
+                                classes = setOf("ml-10", "flex", "items-baseline", "space-x-4")
 
-                            a(href = "/dashboard") {
-                                classes = when (navId) {
-                                    "Dashboard" -> navActiveClasses
-                                    else -> navInactiveClasses
+                                a(href = "/dashboard") {
+                                    classes = when (navId) {
+                                        "Dashboard" -> navActiveClasses
+                                        else -> navInactiveClasses
+                                    }
+
+                                    +"Dashboard"
                                 }
 
-                                +"Dashboard"
-                            }
+                                a(href = "/pages") {
+                                    classes = when (navId) {
+                                        "Pages" -> navActiveClasses
+                                        else -> navInactiveClasses
+                                    }
 
-                            a(href = "/pages") {
-                                classes = when (navId) {
-                                    "Pages" -> navActiveClasses
-                                    else -> navInactiveClasses
+                                    +"Pages"
                                 }
 
-                                +"Pages"
-                            }
+                                a(href = "/users") {
+                                    classes = when (navId) {
+                                        "Users" -> navActiveClasses
+                                        else -> navInactiveClasses
+                                    }
 
-                            a(href = "/users") {
-                                classes = when (navId) {
-                                    "Users" -> navActiveClasses
-                                    else -> navInactiveClasses
+                                    +"Users"
                                 }
 
-                                +"Users"
-                            }
+                                a(href = "/stats") {
+                                    classes = when (navId) {
+                                        "Stats" -> navActiveClasses
+                                        else -> navInactiveClasses
+                                    }
 
-                            a(href = "/stats") {
-                                classes = when (navId) {
-                                    "Stats" -> navActiveClasses
-                                    else -> navInactiveClasses
+                                    +"Stats"
                                 }
-
-                                +"Stats"
                             }
                         }
                     }
                 }
 
                 div {
-                    classes = setOf("hidden", "md:block")
+                    classes = setOf("block")
 
                     div {
                         classes = setOf("ml-4", "flex", "items-center", "md:ml-6")
