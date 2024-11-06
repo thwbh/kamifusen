@@ -1,5 +1,6 @@
 package io.tohuwabohu.kamifusen.ssr
 
+import io.tohuwabohu.kamifusen.crud.security.PageValidation
 import io.tohuwabohu.kamifusen.crud.security.PasswordValidation
 import io.tohuwabohu.kamifusen.crud.security.UserValidation
 import jakarta.ws.rs.core.Response
@@ -60,6 +61,23 @@ fun renderUsernameValidationError(validationResult: UserValidation) = createHTML
         classes = setOf("table-input-inline", "h-8", "!bg-red-200")
         onFocus = "this.classList.remove('!bg-red-200')"
         name = "username"
+        required = true
+
+        placeholder = validationResult.message!!
+    }
+}
+
+fun renderPageValidationError(validationResult: PageValidation) = createHTML().div {
+    id = "page"
+
+    p ("sr-only") {
+        +validationResult.message!!
+    }
+
+    input(InputType.text) {
+        classes = setOf("table-input-inline", "h-8", "!bg-red-200")
+        onFocus = "this.classList.remove('!bg-red-200')"
+        name = "path"
         required = true
 
         placeholder = validationResult.message!!

@@ -5,7 +5,7 @@ import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 
 enum class UserValidation(val valid: Boolean, val message: String? = null) {
     VALID(true),
-    EMPTY(false, "Field must not be empty."),
+    EMPTY(false, "Name must not be empty."),
     EXISTS(false, "Name is already taken.");
 }
 

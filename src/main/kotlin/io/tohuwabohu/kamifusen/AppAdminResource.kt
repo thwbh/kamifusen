@@ -6,10 +6,7 @@ import io.tohuwabohu.kamifusen.crud.ApiUser
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
-import io.tohuwabohu.kamifusen.crud.security.PasswordValidation
-import io.tohuwabohu.kamifusen.crud.security.UserValidation
-import io.tohuwabohu.kamifusen.crud.security.validatePassword
-import io.tohuwabohu.kamifusen.crud.security.validateUser
+import io.tohuwabohu.kamifusen.crud.security.*
 import io.tohuwabohu.kamifusen.ssr.*
 import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
 import io.vertx.ext.web.RoutingContext
@@ -168,8 +165,16 @@ class AppAdminResource(
     @Produces(MediaType.TEXT_PLAIN)
     @RolesAllowed("app-admin")
     fun registerNewPage(@FormParam("path") path: String, @FormParam("domain") domain: String): Uni<Response> =
-        pageRepository.addPage(path, domain).map { Response.ok().header("hx-redirect", "/pages").build() }
-            .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
+        validatePage(path, domain, pageRepository).flatMap { result ->
+            if (result == PageValidation.VALID) {
+                pageRepository.addPage(path, domain).map { Response.ok().header("hx-redirect", "/pages").build() }
+            } else {
+                Uni.createFrom().item(Response
+                    .ok(renderPageValidationError(result))
+                    .header("hx-retarget", "#path")
+                    .build())
+            }
+        }.onFailure().invoke { e -> Log.error("Error during page registration.", e) }
             .onFailure().recoverWithItem(Response.serverError().build())
 
     @Path("/fragment/pagedel/{pageId}")

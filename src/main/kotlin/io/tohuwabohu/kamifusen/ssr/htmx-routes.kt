@@ -152,9 +152,9 @@ fun FlowContent.pages(pages: List<Page>) = main {
 
                         td {
                             div {
-                                input(InputType.text) {
-                                    id = "path"
+                                id = "path"
 
+                                input(InputType.text) {
                                     classes = setOf("table-input-inline", "h-8")
 
                                     name = "path"
@@ -165,9 +165,9 @@ fun FlowContent.pages(pages: List<Page>) = main {
 
                         td {
                             div {
-                                input(InputType.text) {
-                                    id = "domain"
+                                id = "domain"
 
+                                input(InputType.text) {
                                     classes = setOf("table-input-inline", "h-8")
 
                                     name = "domain"

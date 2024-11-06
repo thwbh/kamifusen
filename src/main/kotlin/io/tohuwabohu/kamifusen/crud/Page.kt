@@ -5,15 +5,17 @@ import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
 import io.smallrye.mutiny.Uni
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.persistence.Entity
-import jakarta.persistence.EntityNotFoundException
-import jakarta.persistence.Id
-import jakarta.persistence.PreUpdate
+import jakarta.persistence.*
 import org.hibernate.proxy.HibernateProxy
 import java.time.LocalDateTime
 import java.util.*
 
 @Entity
+@NamedQueries(
+    NamedQuery(
+        name = "Page.findByPath",
+        query = "FROM Page p WHERE p.path = :path")
+)
 data class Page(
     @Id
     var id: UUID,
@@ -53,7 +55,7 @@ data class Page(
 class PageRepository : PanacheRepositoryBase<Page, UUID> {
     fun findByPageId(id: UUID) = find("id", id).firstResult()
 
-    fun findPageByPath(path: String) = find("path", path).firstResult()
+    fun findPageByPath(path: String) = find("#Page.findByPath", mapOf("path" to path)).firstResult()
 
     fun listAllPages() = listAll()
 
