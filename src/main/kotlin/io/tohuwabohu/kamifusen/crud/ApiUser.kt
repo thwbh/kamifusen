@@ -4,6 +4,7 @@ import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.hibernate.reactive.panache.Panache
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
+import io.quarkus.security.UnauthorizedException
 import io.quarkus.security.jpa.Password
 import io.quarkus.security.jpa.Roles
 import io.quarkus.security.jpa.UserDefinition
@@ -89,9 +90,9 @@ class ApiUserRepository : PanacheRepositoryBase<ApiUser, UUID> {
     fun findByUsernameAndPassword(username: String, password: String): Uni<ApiUser?> =
         findByUsername(username).onItem().ifNotNull().invoke(Unchecked.consumer { user ->
             if (!BcryptUtil.matches(password, user!!.password)) {
-                throw EntityNotFoundException()
+                throw UnauthorizedException()
             }
-        }).onItem().ifNull().failWith(EntityNotFoundException())
+        }).onItem().ifNull().failWith(UnauthorizedException())
 
     @WithTransaction
     fun setAdminPassword(password: String): Uni<ApiUser?> {
