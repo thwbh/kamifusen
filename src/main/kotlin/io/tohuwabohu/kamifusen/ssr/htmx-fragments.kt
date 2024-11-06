@@ -1,6 +1,7 @@
 package io.tohuwabohu.kamifusen.ssr
 
 import io.tohuwabohu.kamifusen.crud.security.PasswordValidation
+import io.tohuwabohu.kamifusen.crud.security.UserValidation
 import jakarta.ws.rs.core.Response
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
@@ -40,6 +41,28 @@ fun renderCreatedApiKey(keyRaw: String) = createHTML().button {
         p {
             +"Copy to clipboard"
         }
+    }
+}
+
+/**
+ * Renders the username validation error message and input field with error styling.
+ *
+ * @param validationResult The result of the username validation process containing the validation status and message.
+ */
+fun renderUsernameValidationError(validationResult: UserValidation) = createHTML().div {
+    id = "username"
+
+    p ("sr-only") {
+        +validationResult.message!!
+    }
+
+    input(InputType.text) {
+        classes = setOf("table-input-inline", "h-8", "!bg-red-200")
+        onFocus = "this.classList.remove('!bg-red-200')"
+        name = "username"
+        required = true
+
+        placeholder = validationResult.message!!
     }
 }
 

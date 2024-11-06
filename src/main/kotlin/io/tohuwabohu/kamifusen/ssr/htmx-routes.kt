@@ -153,6 +153,8 @@ fun FlowContent.pages(pages: List<Page>) = main {
                         td {
                             div {
                                 input(InputType.text) {
+                                    id = "path"
+
                                     classes = setOf("table-input-inline", "h-8")
 
                                     name = "path"
@@ -164,6 +166,8 @@ fun FlowContent.pages(pages: List<Page>) = main {
                         td {
                             div {
                                 input(InputType.text) {
+                                    id = "domain"
+
                                     classes = setOf("table-input-inline", "h-8")
 
                                     name = "domain"
@@ -300,6 +304,8 @@ fun FlowContent.users(users: List<ApiUser>) = main {
 
                         td {
                             div {
+                                id = "username"
+
                                 input(InputType.text) {
                                     classes = setOf("table-input-inline", "h-8")
 
@@ -310,6 +316,8 @@ fun FlowContent.users(users: List<ApiUser>) = main {
                         }
                         td {
                             div {
+                                id = "role"
+
                                 select {
                                     classes = setOf("table-input-inline", "h-8")
 

@@ -7,7 +7,9 @@ import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
 import io.tohuwabohu.kamifusen.crud.security.PasswordValidation
+import io.tohuwabohu.kamifusen.crud.security.UserValidation
 import io.tohuwabohu.kamifusen.crud.security.validatePassword
+import io.tohuwabohu.kamifusen.crud.security.validateUser
 import io.tohuwabohu.kamifusen.ssr.*
 import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
 import io.vertx.ext.web.RoutingContext
@@ -34,7 +36,10 @@ class AppAdminResource(
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML)
     @RolesAllowed("app-admin")
-    fun registerAdmin(@FormParam("password") password: String, @FormParam("password-confirm") passwordConfirm: String): Uni<Response> =
+    fun registerAdmin(
+        @FormParam("password") password: String,
+        @FormParam("password-confirm") passwordConfirm: String
+    ): Uni<Response> =
         validatePassword(password, passwordConfirm).flatMap { result ->
             if (result == PasswordValidation.VALID) {
                 apiUserRepository.setAdminPassword(password)
@@ -42,7 +47,7 @@ class AppAdminResource(
             } else {
                 Uni.createFrom().item(Response.ok(renderPasswordFlow(result)).build())
             }
-        }.onFailure().invoke { e -> Log.error("Error during admin user creation.", e) }
+        }.onFailure().invoke { e -> Log.error("Error during admin password update.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
     @Path("/logout")
@@ -100,8 +105,7 @@ class AppAdminResource(
             Uni.createFrom().item(Response.ok(renderAdminPage("Pages") {
                 pages(it)
             }).build())
-        }
-            .onFailure().invoke { e -> Log.error("Error during pages rendering.", e) }
+        }.onFailure().invoke { e -> Log.error("Error during pages rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
     @Path("/users")
@@ -114,8 +118,7 @@ class AppAdminResource(
             Uni.createFrom().item(Response.ok(renderAdminPage("Users") {
                 users(it)
             }).build())
-        }
-            .onFailure().invoke { e -> Log.error("Error during user list rendering.", e) }
+        }.onFailure().invoke { e -> Log.error("Error during user list rendering.", e) }
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
     @Path("/fragment/keygen")
@@ -128,17 +131,25 @@ class AppAdminResource(
         @FormParam("role") role: String,
         @FormParam("expiresAt") expiresAt: String
     ): Uni<Response> =
-        apiUserRepository.addUser(
-            ApiUser(
-                username = username,
-                role = role,
-                expiresAt = when (expiresAt) {
-                    "" -> null
-                    else -> LocalDateTime.parse(expiresAt)
-                },
-            )
-        ).onItem().transform { keyRaw -> Response.ok(renderCreatedApiKey(keyRaw)).build() }
-            .onFailure().invoke { e -> Log.error("Error during keygen.", e) }
+        validateUser(username, apiUserRepository).flatMap { result ->
+            if (result == UserValidation.VALID) {
+                apiUserRepository.addUser(
+                    ApiUser(
+                        username = username,
+                        role = role,
+                        expiresAt = when (expiresAt) {
+                            "" -> null
+                            else -> LocalDateTime.parse(expiresAt)
+                        },
+                    )
+                ).map { keyRaw -> Response.ok(renderCreatedApiKey(keyRaw)).build() }
+            } else {
+                Uni.createFrom().item(Response
+                    .ok(renderUsernameValidationError(result))
+                    .header("hx-retarget", "#username")
+                    .build())
+            }
+        }.onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 
     @Path("/fragment/retire/{userId}")
