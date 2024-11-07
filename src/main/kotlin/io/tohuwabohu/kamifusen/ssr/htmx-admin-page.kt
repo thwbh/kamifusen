@@ -148,10 +148,8 @@ private fun FlowContent.renderNavigation(navId: String, isFirstTimeSetup: Boolea
 
                         div {
                             classes = setOf("ml-10", "flex", "items-baseline", "space-x-4")
-                            a(href = "#") {
+                            a(href = "/logout") {
                                 classes = navInactiveClasses
-
-                                attributes["hx-post"] = "/logout"
 
                                 +"Logout"
                             }

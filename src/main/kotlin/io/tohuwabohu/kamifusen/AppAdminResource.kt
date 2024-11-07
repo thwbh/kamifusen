@@ -48,12 +48,11 @@ class AppAdminResource(
             .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
 
     @Path("/logout")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @GET
     @Produces(MediaType.TEXT_PLAIN)
     fun logoutAdmin(@Context routingContext: RoutingContext): Uni<Response> =
         Uni.createFrom().item(
-            Response.noContent().header("hx-redirect", "/")
+            Response.status(Response.Status.FOUND)
                 .cookie(
                     NewCookie.Builder(cookieName)
                         .maxAge(0)
@@ -61,6 +60,7 @@ class AppAdminResource(
                         .path("/")
                         .build()
                 )
+                .header("Location", "/index.html")
                 .build()
         )
 

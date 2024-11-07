@@ -118,10 +118,8 @@ fun FlowContent.passwordFlow(validation: PasswordValidation? = null) = div {
         p { +"Successfully updated password!" }
         div {
             div {
-                button {
+                a(href = "/logout") {
                     classes = passwordButtonStyles
-
-                    attributes["hx-post"] = "/logout"
 
                     +"Back to login"
                 }
