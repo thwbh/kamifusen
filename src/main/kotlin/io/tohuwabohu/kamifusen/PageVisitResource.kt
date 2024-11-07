@@ -7,14 +7,15 @@ import io.tohuwabohu.kamifusen.crud.PageVisitRepository
 import io.tohuwabohu.kamifusen.crud.VisitorRepository
 import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
 import io.vertx.core.http.HttpServerRequest
+import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
-import java.net.URLDecoder
-import java.nio.charset.Charset
+import jakarta.ws.rs.core.SecurityContext
+import java.util.*
 
-@Path("/visits")
+@Path("/public/visits")
 class PageVisitResource(
     private val pageRepository: PageRepository,
     private val pageVisitRepository: PageVisitRepository,
@@ -24,7 +25,12 @@ class PageVisitResource(
     @POST
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    fun hit(@Context request: HttpServerRequest, body: String): Uni<Response> =
+    @RolesAllowed("api-user")
+    fun hit(
+        @Context securityContext: SecurityContext,
+        @Context request: HttpServerRequest,
+        body: String
+    ): Uni<Response> =
         pageRepository.findPageByPath(body).flatMap { page ->
             visitorRepository.findByInfo(
                 remoteAddress = request.remoteAddress().host(),
@@ -41,24 +47,29 @@ class PageVisitResource(
                     remoteAddress = request.remoteAddress().host(),
                     userAgent = request.headers().get("User-Agent") ?: "unknown"
                 ).chain { newVisitor -> pageVisitRepository.addVisit(page.id, newVisitor.id) }
+                    .map { _ -> page }
             } else {
                 pageVisitRepository.countVisitsForVisitor(page.id, visitor.id).chain { count ->
                     if (count <= 0) {
                         pageVisitRepository.addVisit(page.id, visitor.id)
                     } else Uni.createFrom().voidItem()
-                }
+                }.map { _ -> page }
             }
-        }.onItem().transform { Response.ok().build() }
+        }.flatMap { page -> pageVisitRepository.countVisits(page.id).map { it } }
+            .onItem().transform { count -> Response.ok(count).build() }
             .onFailure().recoverWithResponse()
 
-    @Path("/count/{pagePath}")
+    @Path("/count/{pageId}")
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    fun count(@Context request: HttpServerRequest, @PathParam("pagePath") pagePath: String): Uni<Response> =
-        pageRepository.findPageByPath(URLDecoder.decode(pagePath,
-            request.headers().get("Accept-Charset")?.let { Charset.forName(it) } ?: Charsets.UTF_8)
-        ).chain { page ->
+    @RolesAllowed("api-admin")
+    fun count(
+        @Context securityContext: SecurityContext,
+        @Context request: HttpServerRequest,
+        @PathParam("pageId") pageId: UUID
+    ): Uni<Response> =
+        pageRepository.findByPageId(pageId).chain { page ->
             if (page != null) {
                 pageVisitRepository.countVisits(page.id).map { visits ->
                     Response.ok(visits).build()

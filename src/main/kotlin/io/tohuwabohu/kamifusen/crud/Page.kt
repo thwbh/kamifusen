@@ -5,21 +5,25 @@ import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase
 import io.smallrye.mutiny.Uni
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.PreUpdate
+import jakarta.persistence.*
 import org.hibernate.proxy.HibernateProxy
 import java.time.LocalDateTime
 import java.util.*
 
 @Entity
-data class Page (
+@NamedQueries(
+    NamedQuery(
+        name = "Page.findByPath",
+        query = "FROM Page p WHERE p.path = :path")
+)
+data class Page(
     @Id
     var id: UUID,
     var path: String,
+    var domain: String? = null,
     val pageAdded: LocalDateTime = LocalDateTime.now(),
-    var lastHit: LocalDateTime? = null
-): PanacheEntityBase {
+    var lastHit: LocalDateTime? = null,
+) : PanacheEntityBase {
     @PreUpdate
     fun updateLastHit() {
         lastHit = LocalDateTime.now()
@@ -35,7 +39,7 @@ data class Page (
         if (thisEffectiveClass != oEffectiveClass) return false
         other as Page
 
-        return id == other.id
+        return id != null && id == other.id
     }
 
     final override fun hashCode(): Int =
@@ -43,18 +47,30 @@ data class Page (
 
     @Override
     override fun toString(): String {
-        return this::class.simpleName + "(  id = $id   ,   path = $path   ,   pageAdded = $pageAdded   ,   lastHit = $lastHit )"
+        return this::class.simpleName + "(  id = $id   ,   path = $path   ,   domain = $domain   ,   pageAdded = $pageAdded   ,   lastHit = $lastHit )"
     }
 }
 
 @ApplicationScoped
 class PageRepository : PanacheRepositoryBase<Page, UUID> {
-    fun findPageByPath(path: String) = find("path", path).firstResult()
+    fun findByPageId(id: UUID) = find("id", id).firstResult()
+
+    fun findPageByPath(path: String) = find("#Page.findByPath", mapOf("path" to path)).firstResult()
+
+    fun listAllPages() = listAll()
 
     @WithTransaction
-    fun addPage(path: String): Uni<Page> {
-        val page = Page(UUID.randomUUID(), path)
+    fun addPage(path: String, domain: String): Uni<Page> {
+        val page = Page(
+            id = UUID.randomUUID(),
+            path = path,
+            domain = domain
+        )
 
         return persist(page)
     }
+
+    @WithTransaction
+    fun deletePage(pageId: UUID): Uni<Boolean> = findById(pageId).onItem().ifNull().failWith(EntityNotFoundException()).onItem()
+        .ifNotNull().transformToUni { entry -> deleteById(entry.id)}
 }

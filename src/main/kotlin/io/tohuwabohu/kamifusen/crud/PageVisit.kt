@@ -4,15 +4,20 @@ import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepository
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import org.hibernate.proxy.HibernateProxy
+import java.io.Serializable
 import java.util.*
 
 @Entity
+@IdClass(CompositeKey::class)
 data class PageVisit (
     @Id
     var pageId: UUID,
+    @Id
     var visitorId: UUID,
 ): PanacheEntityBase {
     final override fun equals(other: Any?): Boolean {
@@ -45,3 +50,6 @@ class PageVisitRepository: PanacheRepository<PageVisit> {
     @WithTransaction
     fun addVisit(pageId: UUID, visitorId: UUID) = persist(PageVisit(pageId, visitorId))
 }
+
+@Embeddable
+class CompositeKey(val pageId: UUID, val visitorId: UUID) : Serializable
