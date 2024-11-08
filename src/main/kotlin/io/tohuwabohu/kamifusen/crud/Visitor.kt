@@ -45,10 +45,10 @@ data class Visitor (
 class VisitorRepository : PanacheRepositoryBase<Visitor, UUID> {
     @WithTransaction
     fun addVisitor(remoteAddress: String, userAgent: String): Uni<Visitor> {
-        val visitor = Visitor(UUID.randomUUID(), BcryptUtil.bcryptHash("$remoteAddress $userAgent"))
+        val visitor = Visitor(UUID.randomUUID(), sha256("$remoteAddress $userAgent"))
 
         return persist(visitor)
     }
 
-    fun findByInfo(remoteAddress: String, userAgent: String) = find("info", BcryptUtil.bcryptHash("$remoteAddress $userAgent")).firstResult()
+    fun findByInfo(remoteAddress: String, userAgent: String) = find("info", sha256("$remoteAddress $userAgent")).firstResult()
 }

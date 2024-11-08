@@ -12,11 +12,14 @@ import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.crud.*
+import io.tohuwabohu.kamifusen.crud.dto.PageHitDto
 import io.tohuwabohu.kamifusen.mock.ApiUserRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageVisitRepositoryMock
 import io.tohuwabohu.kamifusen.mock.VisitorRepositoryMock
 import jakarta.inject.Inject
+import jakarta.ws.rs.core.HttpHeaders
+import jakarta.ws.rs.core.MediaType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -44,24 +47,28 @@ class PageVisitResourceTest {
 
     @Test
     @RunOnVertxContext
-    fun `should register a new visitor`(uniAsserter: UniAsserter) {
+    fun `should register a new page and visitor`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
-        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
 
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
         QuarkusMock.installMockForInstance(VisitorRepositoryMock(), visitorRepository)
 
         Given {
-            header("Content-Type", "text/plain")
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             header("User-Agent", "test-user-agent")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body("/page/test-page")
+            body(PageHitDto("/page/test-page", "test.org"))
         } When {
             post("/hit")
         } Then {
             statusCode(200)
         }
+
+        uniAsserter.assertThat(
+            { pageRepository.findPageByPathAndDomain("/page/test-page", "test.org") },
+            { result -> Assertions.assertNotNull(result) }
+        )
 
         uniAsserter.assertThat(
             { visitorRepository.findByInfo("127.0.0.1", "test-user-agent") },
@@ -73,7 +80,7 @@ class PageVisitResourceTest {
     @RunOnVertxContext
     fun `should increase and return the hit count`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
-        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
 
         val visitorRepositoryMock = VisitorRepositoryMock()
         visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent")))
@@ -84,10 +91,10 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         val count = Given {
-            header("Content-Type", "text/plain")
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             header("User-Agent", "test-user-agent")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body("/page/test-page")
+            body(PageHitDto("/page/test-page", "test.org"))
         } When {
             post("/hit")
         } Then {
@@ -111,7 +118,7 @@ class PageVisitResourceTest {
     @RunOnVertxContext
     fun `should not increase the hit count for the same visitor`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
-        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
 
         val visitorRepositoryMock = VisitorRepositoryMock()
         visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent")))
@@ -124,10 +131,10 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
 
         Given {
-            header("Content-Type", "text/plain")
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             header("User-Agent", "test-user-agent")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body("/page/test-page")
+            body(PageHitDto("/page/test-page", "test.org"))
         } When {
             post("/hit")
         } Then {
@@ -144,7 +151,7 @@ class PageVisitResourceTest {
     @RunOnVertxContext
     fun `should increase and return the hit count for a different visitor`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
-        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
 
         val visitorRepositoryMock = VisitorRepositoryMock()
         visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("localhost test-user-agent")))
@@ -157,10 +164,10 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
 
         val count = Given {
-            header("Content-Type", "text/plain")
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             header("User-Agent", "test-user-agent")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body("/page/test-page")
+            body(PageHitDto("/page/test-page", "test.org"))
         } When {
             post("/hit")
         } Then {
@@ -184,7 +191,7 @@ class PageVisitResourceTest {
     @RunOnVertxContext
     fun `should not register the same visitor twice`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
-        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
 
         val visitorRepositoryMock = VisitorRepositoryMock()
         visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent")))
@@ -194,10 +201,10 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
 
         Given {
-            header("Content-Type", "text/plain")
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             header("User-Agent", "test-user-agent")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body("/page/test-page")
+            body(PageHitDto("/page/test-page", "test.org"))
         } When {
             post("/hit")
         } Then {
@@ -214,7 +221,7 @@ class PageVisitResourceTest {
     @RunOnVertxContext
     fun `should return a hit count`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
-        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
 
         val pageVisitRepositoryMock = PageVisitRepositoryMock()
         pageVisitRepositoryMock.visits.add(PageVisit(pageRepositoryMock.pages[0].id, UUID.randomUUID()))
@@ -242,7 +249,7 @@ class PageVisitResourceTest {
     @RunOnVertxContext
     fun `should return no hit count`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
-        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
 
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
@@ -264,7 +271,7 @@ class PageVisitResourceTest {
     @RunOnVertxContext
     fun `should return a 404 hit count`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
-        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page"))
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
 
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
@@ -305,5 +312,74 @@ class PageVisitResourceTest {
         } Then {
             statusCode(401)
         }
+    }
+
+    @Test
+    @RunOnVertxContext
+    fun `should not register the same page twice`(uniAsserter: UniAsserter) {
+        val pageRepositoryMock = PageRepositoryMock()
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
+
+        QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
+        QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
+        QuarkusMock.installMockForInstance(VisitorRepositoryMock(), visitorRepository)
+
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+            header("User-Agent", "test-user-agent")
+            auth().preemptive().basic("api-key-user", "api-key-user")
+            body(PageHitDto("/page/test-page", "test.org"))
+        } When {
+            post("/hit")
+        } Then {
+            statusCode(200)
+        }
+
+        uniAsserter.assertThat(
+            { pageRepository.findPageByPathAndDomain("/page/test-page", "test.org") },
+            { result -> Assertions.assertNotNull(result) }
+        )
+
+        uniAsserter.assertThat(
+            { pageRepository.listAllPages() },
+            { result -> Assertions.assertEquals(1, result.size) }
+        )
+    }
+
+    @Test
+    @RunOnVertxContext
+    fun `should register a the same path for a different domain`(uniAsserter: UniAsserter) {
+        val pageRepositoryMock = PageRepositoryMock()
+        pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
+
+        QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
+        QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
+        QuarkusMock.installMockForInstance(VisitorRepositoryMock(), visitorRepository)
+
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+            header("User-Agent", "test-user-agent")
+            auth().preemptive().basic("api-key-user", "api-key-user")
+            body(PageHitDto("/page/test-page", "test.dev"))
+        } When {
+            post("/hit")
+        } Then {
+            statusCode(200)
+        }
+
+        uniAsserter.assertThat(
+            { pageRepository.findPageByPathAndDomain("/page/test-page", "test.org") },
+            { result -> Assertions.assertNotNull(result) }
+        )
+
+        uniAsserter.assertThat(
+            { pageRepository.findPageByPathAndDomain("/page/test-page", "test.dev") },
+            { result -> Assertions.assertNotNull(result) }
+        )
+
+        uniAsserter.assertThat(
+            { pageRepository.listAllPages() },
+            { result -> Assertions.assertEquals(2, result.size) }
+        )
     }
 }

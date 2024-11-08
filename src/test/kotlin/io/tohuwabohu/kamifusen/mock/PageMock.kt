@@ -12,8 +12,16 @@ class PageRepositoryMock : PageRepository() {
         return pages.find { it.id == id }.let { Uni.createFrom().item(it) }
     }
 
-    override fun findPageByPath(path: String): Uni<Page?> {
-        return Uni.createFrom().item(pages.find { it.path == path })
+    override fun addPageIfAbsent(path: String, domain: String): Uni<Page?> {
+        val existingPage = pages.find { it.path == path && it.domain == domain }
+
+        if (existingPage == null) pages.add(Page(UUID.randomUUID(), path, domain))
+
+        return Uni.createFrom().item(pages.find { it.path == path && it.domain == domain })
+    }
+
+    override fun findPageByPathAndDomain(path: String, domain: String): Uni<Page?> {
+        return Uni.createFrom().item(pages.find { it.path == path && it.domain == domain })
     }
 
     override fun listAllPages(): Uni<List<Page>> {

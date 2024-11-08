@@ -5,6 +5,7 @@ import io.smallrye.mutiny.tuples.Tuple2
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.PageVisitRepository
 import io.tohuwabohu.kamifusen.crud.VisitorRepository
+import io.tohuwabohu.kamifusen.crud.dto.PageHitDto
 import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
 import io.vertx.core.http.HttpServerRequest
 import jakarta.annotation.security.RolesAllowed
@@ -23,15 +24,18 @@ class PageVisitResource(
 ) {
     @Path("/hit")
     @POST
-    @Consumes(MediaType.TEXT_PLAIN)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     @RolesAllowed("api-user")
     fun hit(
         @Context securityContext: SecurityContext,
         @Context request: HttpServerRequest,
-        body: String
+        body: PageHitDto
     ): Uni<Response> =
-        pageRepository.findPageByPath(body).flatMap { page ->
+        pageRepository.addPageIfAbsent(
+            path = body.path,
+            domain = body.domain
+        ).flatMap { page ->
             visitorRepository.findByInfo(
                 remoteAddress = request.remoteAddress().host(),
                 userAgent = request.headers().get("User-Agent") ?: "unknown"

@@ -13,8 +13,8 @@ import java.util.*
 @Entity
 @NamedQueries(
     NamedQuery(
-        name = "Page.findByPath",
-        query = "FROM Page p WHERE p.path = :path")
+        name = "Page.findByPathAndDomain",
+        query = "FROM Page p WHERE p.path = :path AND p.domain = :domain")
 )
 data class Page(
     @Id
@@ -55,7 +55,13 @@ data class Page(
 class PageRepository : PanacheRepositoryBase<Page, UUID> {
     fun findByPageId(id: UUID) = find("id", id).firstResult()
 
-    fun findPageByPath(path: String) = find("#Page.findByPath", mapOf("path" to path)).firstResult()
+    @WithTransaction
+    fun addPageIfAbsent(path: String, domain: String): Uni<Page?> = findPageByPathAndDomain(path, domain)
+        .onItem().ifNull().switchTo(addPage(path, domain))
+
+    fun findPageByPathAndDomain(path: String, domain: String) = find("#Page.findByPathAndDomain",
+        mapOf("path" to path, "domain" to domain)
+    ).firstResult()
 
     fun listAllPages() = listAll()
 
