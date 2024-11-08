@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script language="JavaScript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const url = new URL(window.location.href);
+
+            fetch('http://localhost:8080/public/visits/hit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic <API-KEY>'
+                },
+                body: JSON.stringify({
+                    path: url.pathname,
+                    domain: url.hostname
+                })
+            });
+        })
+    </script>
+</head>
+<body>
+<div>
+    <h1>Hi</h1>
+</div>
+</body>
+</html>
