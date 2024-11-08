@@ -1,6 +1,6 @@
 ###
 POST localhost:8080/public/visits/hit
-Authorization: Basic dG9odXdhYm9odTo1MDM2NGIzOC1mODI0LTRhODQtOGEzMS0wMWI3MjRmZjg3M2E=
+Authorization: Basic <API-KEY>
 
 /test/path-9
 ###

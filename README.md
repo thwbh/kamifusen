@@ -1,3 +1,11 @@
+<div align="center">
+    <img src="src/main/resources/META-INF/resources/static/images/kamifusen-logo.png">
+</div>
+
+---
+
+![GitHub Release](https://img.shields.io/github/v/release/tohuwabohu-io/kamifusen) ![Coverage](https://raw.githubusercontent.com/tohuwabohu-io/kamifusen/badges/jacoco.svg)
+
 # kamifusen
 
 > A simple page hit counter written in kotlin.
@@ -5,6 +13,40 @@
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+
+## First time setup
+For development, a default user with username/password `admin` exists. You will be prompted to change your
+password after your first login. For production, access the database and execute the given `insert.sql` in
+`src/main/resources`.
+
+## API Key creation
+Issue a new API Key on: http://localhost:8080/users
+
+The new Key will be visible only once. Copy and distribute it according to your needs. Do not use the same API Key across
+multiple domains (or do, it's not like I can stop you).
+
+## Registering pages
+You need to add some JavaScript to your page if you want the hit counter to work. Use this snippet provided:
+
+```html
+<script language="JavaScript">
+    document.addEventListener('DOMContentLoaded', function () {
+    const url = new URL(window.location.href);
+
+    fetch('http://localhost:8080/public/visits/hit', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic <API-KEY>'
+        },
+        body: JSON.stringify({
+            path: url.pathname,
+            domain: url.hostname
+        })
+    });
+})
+</script>
+```
 
 ## Running the application in dev mode
 
