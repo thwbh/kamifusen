@@ -112,7 +112,7 @@ fun FlowContent.pages(pages: List<Page>) = main {
                             classes = rowClass(index)
 
                             styledTd { +page.path }
-                            styledTd { +if(page.domain == null) "" else page.domain!! }
+                            styledTd { +page.domainGroup.groupName }
                             styledTd {
                                 when (page.lastHit) {
                                     null -> +"-"

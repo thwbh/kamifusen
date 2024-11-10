@@ -29,16 +29,17 @@ data class PageVisitDto(
  * Repository for managing PageVisitDto entities. It does not possess a JPA setup.
  *
  * This repository uses a native query to join the [io.tohuwabohu.kamifusen.crud.Page] and
- * [io.tohuwabohu.kamifusen.PageVisit] entities for receiving a total hit count per page.
+ * [io.tohuwabohu.kamifusen.crud.PageVisit] entities for receiving a total hit count per page.
  */
 @ApplicationScoped
-class PageVisitDtoRepository() : PanacheRepository<PageVisitDto> {
+class PageVisitDtoRepository : PanacheRepository<PageVisitDto> {
     val query = """
-            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain AS visits
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), d.groupName
             FROM Page p
             LEFT JOIN PageVisit pv ON p.id = pv.pageId
-            GROUP BY p.id
-            ORDER BY p.domain, p.path, p.pageAdded DESC
+            LEFT JOIN DomainGroup d ON p.domainGroup.id = d.id
+            GROUP BY p.id, p.path, p.pageAdded, d.groupName
+            ORDER BY d.groupName, p.path, p.pageAdded DESC
         """
 
     fun getAllPageVisits() : Uni<List<PageVisitDto>> =

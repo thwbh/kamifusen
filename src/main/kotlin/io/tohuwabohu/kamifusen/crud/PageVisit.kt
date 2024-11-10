@@ -13,7 +13,7 @@ import java.util.*
     NamedQuery(name = "PageVisit.countVisitsPerPage", query = "SELECT count(*) FROM PageVisit WHERE pageId = :pageId AND visitorId = :visitorId")
 )
 @Entity
-@IdClass(CompositeKey::class)
+@IdClass(PageVisitCompositeKey::class)
 data class PageVisit (
     @Id
     var pageId: UUID,
@@ -55,4 +55,4 @@ class PageVisitRepository: PanacheRepository<PageVisit> {
 }
 
 @Embeddable
-class CompositeKey(val pageId: UUID, val visitorId: UUID) : Serializable
+private class PageVisitCompositeKey(val pageId: UUID, val visitorId: UUID) : Serializable

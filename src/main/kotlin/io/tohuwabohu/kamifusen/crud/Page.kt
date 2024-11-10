@@ -13,14 +13,15 @@ import java.util.*
 @Entity
 @NamedQueries(
     NamedQuery(
-        name = "Page.findByPathAndDomain",
-        query = "FROM Page p WHERE p.path = :path AND p.domain = :domain")
+        name = "Page.findByPathAndDomainGroup",
+        query = "FROM Page p WHERE p.path = :path AND p.domainGroup = :domainGroup")
 )
 data class Page(
     @Id
     var id: UUID,
     var path: String,
-    var domain: String? = null,
+    @ManyToOne
+    var domainGroup: DomainGroup,
     val pageAdded: LocalDateTime = LocalDateTime.now(),
     var lastHit: LocalDateTime? = null,
 ) : PanacheEntityBase {
@@ -47,7 +48,7 @@ data class Page(
 
     @Override
     override fun toString(): String {
-        return this::class.simpleName + "(  id = $id   ,   path = $path   ,   domain = $domain   ,   pageAdded = $pageAdded   ,   lastHit = $lastHit )"
+        return this::class.simpleName + "(  id = $id   ,   path = $path   ,   domainGroup = $domainGroup   ,   pageAdded = $pageAdded   ,   lastHit = $lastHit )"
     }
 }
 
@@ -56,21 +57,22 @@ class PageRepository : PanacheRepositoryBase<Page, UUID> {
     fun findByPageId(id: UUID) = find("id", id).firstResult()
 
     @WithTransaction
-    fun addPageIfAbsent(path: String, domain: String): Uni<Page?> = findPageByPathAndDomain(path, domain)
-        .onItem().ifNull().switchTo(addPage(path, domain))
+    fun addPageIfAbsent(path: String, domainGroup: DomainGroup): Uni<Page?> = findPageByPathAndDomainGroup(path, domainGroup)
+        .onItem().ifNull().switchTo(addPage(path, domainGroup))
 
-    fun findPageByPathAndDomain(path: String, domain: String) = find("#Page.findByPathAndDomain",
-        mapOf("path" to path, "domain" to domain)
+    fun findPageByPathAndDomainGroup(path: String, domainGroup: DomainGroup) = find("#Page.findByPathAndDomainGroup",
+        mapOf("path" to path, "domainGroup" to domainGroup)
     ).firstResult()
 
     fun listAllPages() = listAll()
 
     @WithTransaction
-    fun addPage(path: String, domain: String): Uni<Page> {
+    fun addPage(path: String, domainGroup: DomainGroup): Uni<Page> {
+
         val page = Page(
             id = UUID.randomUUID(),
             path = path,
-            domain = domain
+            domainGroup = domainGroup
         )
 
         return persist(page)

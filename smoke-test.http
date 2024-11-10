@@ -1,6 +1,11 @@
 ###
 POST localhost:8080/public/visits/hit
-Authorization: Basic <API-KEY>
+Content-Type: application/json
+Authorization: Basic RG9uYWxkIER1Y2s6MTc5ZTkyMjItY2NiMi00Y2Q4LTlhYzUtMDBjYmFmODY0ZDI5
 
-/test/path-9
+{
+  "domain": "test2.dev",
+  "path": "/test/path-9"
+}
+
 ###

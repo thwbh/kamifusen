@@ -1,13 +1,18 @@
-insert into api_user (id, username, role, password) values (gen_random_uuid(), 'admin', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW');
+insert into api_user (id, username, role, password, updated) values (gen_random_uuid(), 'admin', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW', NOW());
 
-insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a641', '/test/path-1', NOW());
-insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a642', '/test/path-2', NOW());
-insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a643', '/test/path-3', NOW());
-insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a644', '/test/path-4', NOW());
-insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a645', '/test/path-5', NOW());
-insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a646', '/test/path-6', NOW());
-insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a647', '/test/path-7', NOW());
-insert into page (id, path, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a648', '/test/path-8', NOW());
+insert into domain_group (id, group_name) values ('9f685bd0-90e6-479a-99b6-2fad28d2a641', 'test.dev');
+
+insert into domain_group_domains (domain_group_id, domains) values ('9f685bd0-90e6-479a-99b6-2fad28d2a641', 'test.dev');
+insert into domain_group_domains (domain_group_id, domains) values ('9f685bd0-90e6-479a-99b6-2fad28d2a641', 'test2.dev');
+
+insert into page (id, path, domain_group_id, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a641', '/test/path-1', '9f685bd0-90e6-479a-99b6-2fad28d2a641', NOW());
+insert into page (id, path, domain_group_id, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a642', '/test/path-2', '9f685bd0-90e6-479a-99b6-2fad28d2a641',NOW());
+insert into page (id, path, domain_group_id, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a643', '/test/path-3', '9f685bd0-90e6-479a-99b6-2fad28d2a641',NOW());
+insert into page (id, path, domain_group_id, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a644', '/test/path-4', '9f685bd0-90e6-479a-99b6-2fad28d2a641',NOW());
+insert into page (id, path, domain_group_id, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a645', '/test/path-5', '9f685bd0-90e6-479a-99b6-2fad28d2a641',NOW());
+insert into page (id, path, domain_group_id, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a646', '/test/path-6', '9f685bd0-90e6-479a-99b6-2fad28d2a641',NOW());
+insert into page (id, path, domain_group_id, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a647', '/test/path-7', '9f685bd0-90e6-479a-99b6-2fad28d2a641',NOW());
+insert into page (id, path, domain_group_id, page_added) values ('9f685bd0-90e6-479a-99b6-2fad28d2a648', '/test/path-8', '9f685bd0-90e6-479a-99b6-2fad28d2a641',NOW());
 
 insert into visitor (id, info) VALUES ('9f685bd0-90e6-479a-99b6-2fad28d2a641', 'redacted');
 insert into visitor (id, info) VALUES ('9f685bd0-90e6-479a-99b6-2fad28d2a642', 'redacted');

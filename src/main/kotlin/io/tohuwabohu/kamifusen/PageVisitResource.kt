@@ -2,6 +2,7 @@ package io.tohuwabohu.kamifusen
 
 import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.tuples.Tuple2
+import io.tohuwabohu.kamifusen.crud.DomainGroupRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import io.tohuwabohu.kamifusen.crud.PageVisitRepository
 import io.tohuwabohu.kamifusen.crud.VisitorRepository
@@ -18,6 +19,7 @@ import java.util.*
 
 @Path("/public/visits")
 class PageVisitResource(
+    private val domainGroupRepository: DomainGroupRepository,
     private val pageRepository: PageRepository,
     private val pageVisitRepository: PageVisitRepository,
     private val visitorRepository: VisitorRepository
@@ -32,36 +34,38 @@ class PageVisitResource(
         @Context request: HttpServerRequest,
         body: PageHitDto
     ): Uni<Response> =
-        pageRepository.addPageIfAbsent(
-            path = body.path,
-            domain = body.domain
-        ).flatMap { page ->
-            visitorRepository.findByInfo(
-                remoteAddress = request.remoteAddress().host(),
-                userAgent = request.headers().get("User-Agent") ?: "unknown"
-            ).map { visitor ->
-                Tuple2.of(page, visitor)
-            }
-        }.chain { tuple ->
-            val page = tuple.item1!!
-            val visitor = tuple.item2
-
-            if (visitor == null) {
-                visitorRepository.addVisitor(
+        domainGroupRepository.addGroupIfAbsent(domain = body.domain).flatMap { domainGroup ->
+            pageRepository.addPageIfAbsent(
+                path = body.path,
+                domainGroup = domainGroup!!
+            ).flatMap { page ->
+                visitorRepository.findByInfo(
                     remoteAddress = request.remoteAddress().host(),
                     userAgent = request.headers().get("User-Agent") ?: "unknown"
-                ).chain { newVisitor -> pageVisitRepository.addVisit(page.id, newVisitor.id) }
-                    .map { _ -> page }
-            } else {
-                pageVisitRepository.countVisitsForVisitor(page.id, visitor.id).chain { count ->
-                    if (count <= 0) {
-                        pageVisitRepository.addVisit(page.id, visitor.id)
-                    } else Uni.createFrom().voidItem()
-                }.map { _ -> page }
-            }
-        }.flatMap { page -> pageVisitRepository.countVisits(page.id).map { it } }
-            .onItem().transform { count -> Response.ok(count).build() }
-            .onFailure().recoverWithResponse()
+                ).map { visitor ->
+                    Tuple2.of(page, visitor)
+                }
+            }.chain { tuple ->
+                val page = tuple.item1!!
+                val visitor = tuple.item2
+
+                if (visitor == null) {
+                    visitorRepository.addVisitor(
+                        remoteAddress = request.remoteAddress().host(),
+                        userAgent = request.headers().get("User-Agent") ?: "unknown"
+                    ).chain { newVisitor -> pageVisitRepository.addVisit(page.id, newVisitor.id) }
+                        .map { _ -> page }
+                } else {
+                    pageVisitRepository.countVisitsForVisitor(page.id, visitor.id).chain { count ->
+                        if (count <= 0) {
+                            pageVisitRepository.addVisit(page.id, visitor.id)
+                        } else Uni.createFrom().voidItem()
+                    }.map { _ -> page }
+                }
+            }.flatMap { page -> pageVisitRepository.countVisits(page.id).map { it } }
+                .onItem().transform { count -> Response.ok(count).build() }
+                .onFailure().recoverWithResponse()
+        }
 
     @Path("/count/{pageId}")
     @GET

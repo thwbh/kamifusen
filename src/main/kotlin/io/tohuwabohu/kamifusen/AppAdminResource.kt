@@ -159,24 +159,6 @@ class AppAdminResource(
             .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
             .onFailure().recoverWithItem(Response.serverError().build())
 
-    @Path("/fragment/pageadd")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
-    @RolesAllowed("app-admin")
-    fun registerNewPage(@FormParam("path") path: String, @FormParam("domain") domain: String): Uni<Response> =
-        validatePage(path, domain, pageRepository).flatMap { result ->
-            if (result == PageValidation.VALID) {
-                pageRepository.addPage(path, domain).map { Response.ok().header("hx-redirect", "/pages").build() }
-            } else {
-                Uni.createFrom().item(Response
-                    .ok(renderPageValidationError(result))
-                    .header("hx-retarget", "#path")
-                    .build())
-            }
-        }.onFailure().invoke { e -> Log.error("Error during page registration.", e) }
-            .onFailure().recoverWithItem(Response.serverError().build())
-
     @Path("/fragment/pagedel/{pageId}")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
