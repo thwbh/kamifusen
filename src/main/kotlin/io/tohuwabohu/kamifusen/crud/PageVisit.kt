@@ -4,14 +4,14 @@ import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepository
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.persistence.Embeddable
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.IdClass
+import jakarta.persistence.*
 import org.hibernate.proxy.HibernateProxy
 import java.io.Serializable
 import java.util.*
 
+@NamedQueries(
+    NamedQuery(name = "PageVisit.countVisitsPerPage", query = "SELECT count(*) FROM PageVisit WHERE pageId = :pageId AND visitorId = :visitorId")
+)
 @Entity
 @IdClass(CompositeKey::class)
 data class PageVisit (
@@ -45,7 +45,10 @@ data class PageVisit (
 @ApplicationScoped
 class PageVisitRepository: PanacheRepository<PageVisit> {
     fun countVisits(pageId: UUID) = count("pageId = ?1", pageId)
-    fun countVisitsForVisitor(pageId: UUID, visitorId: UUID) = count("visitorId = ?1", visitorId)
+    fun countVisitsForVisitor(pageId: UUID, visitorId: UUID) = count("#PageVisit.countVisitsPerPage", mapOf(
+        "visitorId" to visitorId,
+        "pageId" to pageId)
+    )
 
     @WithTransaction
     fun addVisit(pageId: UUID, visitorId: UUID) = persist(PageVisit(pageId, visitorId))
