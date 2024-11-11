@@ -1,6 +1,7 @@
 package io.tohuwabohu.kamifusen.ssr
 
 import io.tohuwabohu.kamifusen.crud.ApiUser
+import io.tohuwabohu.kamifusen.crud.DomainGroup
 import io.tohuwabohu.kamifusen.crud.Page
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDto
 import kotlinx.html.*
@@ -363,6 +364,23 @@ fun FlowContent.users(users: List<ApiUser>) = main {
                     }
                 }
             }
+        }
+    }
+}
+
+fun FlowContent.domains(domainGroups: List<DomainGroup>) = main {
+    id = "main-content"
+
+    contentHeader("Users")
+    contentDiv {
+        div {
+            classes = setOf("p-2")
+
+            p { +"Display and manage your domain groups here. This is particularly useful if you want to track across multiple subdomains." }
+        }
+
+        domainGroups.forEach {
+                
         }
     }
 }
