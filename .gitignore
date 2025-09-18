@@ -42,3 +42,9 @@ nb-configuration.xml
 
 # kotlin errors
 .kotlin/
+
+# quinoa cache
+.quinoa/
+
+# webui node
+./src/main/webui/node_modules

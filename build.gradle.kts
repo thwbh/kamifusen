@@ -16,6 +16,7 @@ val quarkusPlatformArtifactId: String by project
 val quarkusPlatformVersion: String by project
 
 dependencies {
+    implementation("io.quarkiverse.quinoa:quarkus-quinoa:2.5.5")
     // quarkus & reactive JPA
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-security-jpa-reactive")
