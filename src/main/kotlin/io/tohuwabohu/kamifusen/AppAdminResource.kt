@@ -58,10 +58,7 @@ class AppAdminResource(
                     )
                 ).map { keyRaw -> Response.ok(keyRaw).build() }
             } else {
-                Uni.createFrom().item(Response
-                    .ok(renderUsernameValidationError(result))
-                    .header("hx-retarget", "#username")
-                    .build())
+                Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST).entity("User validation failed: $result").build())
             }
         }.onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())

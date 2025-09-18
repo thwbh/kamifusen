@@ -1,3 +1,4 @@
 node_modules/
 src/api/gen/
-
+/dist/
+/dist/*
