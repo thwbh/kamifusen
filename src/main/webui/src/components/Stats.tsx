@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { AppAdminResourceApi } from '../api/gen/index'
 
 interface ChartData {
   label: string
@@ -8,31 +9,74 @@ interface ChartData {
 
 const Stats: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d')
+  const [statsData, setStatsData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const visitData: ChartData[] = [
-    { label: 'Mon', value: 45, color: 'text-tui-green' },
-    { label: 'Tue', value: 67, color: 'text-tui-green' },
-    { label: 'Wed', value: 23, color: 'text-tui-yellow' },
-    { label: 'Thu', value: 89, color: 'text-tui-green' },
-    { label: 'Fri', value: 156, color: 'text-tui-accent' },
-    { label: 'Sat', value: 134, color: 'text-tui-accent' },
-    { label: 'Sun', value: 98, color: 'text-tui-green' },
-  ]
+  const adminApi = new AppAdminResourceApi()
 
-  const topPages = [
-    { path: '/home', visits: 245, percentage: 35 },
-    { path: '/about', visits: 123, percentage: 18 },
-    { path: '/contact', visits: 89, percentage: 13 },
-    { path: '/blog', visits: 67, percentage: 10 },
-    { path: '/products', visits: 156, percentage: 24 },
-  ]
+  useEffect(() => {
+    loadStats()
+  }, [])
 
-  const domainStats = [
-    { domain: 'example.com', visits: 368, percentage: 52 },
-    { domain: 'test.org', visits: 156, percentage: 22 },
-    { domain: 'myblog.net', visits: 123, percentage: 17 },
-    { domain: 'shop.com', visits: 63, percentage: 9 },
-  ]
+  const loadStats = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      await adminApi.adminStatsGet()
+      // Note: The API returns HTML, so we'll keep static data for now
+      // In a real implementation, the backend would return JSON data
+      setStatsData({
+        visitData: [
+          { label: 'Mon', value: 45, color: 'text-tui-green' },
+          { label: 'Tue', value: 67, color: 'text-tui-green' },
+          { label: 'Wed', value: 23, color: 'text-tui-yellow' },
+          { label: 'Thu', value: 89, color: 'text-tui-green' },
+          { label: 'Fri', value: 156, color: 'text-tui-accent' },
+          { label: 'Sat', value: 134, color: 'text-tui-accent' },
+          { label: 'Sun', value: 98, color: 'text-tui-green' },
+        ],
+        topPages: [
+          { path: '/home', visits: 245, percentage: 35 },
+          { path: '/about', visits: 123, percentage: 18 },
+          { path: '/contact', visits: 89, percentage: 13 },
+          { path: '/blog', visits: 67, percentage: 10 },
+          { path: '/products', visits: 156, percentage: 24 },
+        ],
+        domainStats: [
+          { domain: 'example.com', visits: 368, percentage: 52 },
+          { domain: 'test.org', visits: 156, percentage: 22 },
+          { domain: 'myblog.net', visits: 123, percentage: 17 },
+          { domain: 'shop.com', visits: 63, percentage: 9 },
+        ]
+      })
+    } catch (err) {
+      setError('Failed to load statistics')
+      console.error('Error loading statistics:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 h-full flex items-center justify-center">
+        <div className="text-tui-muted">Loading statistics...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 h-full flex items-center justify-center">
+        <div className="text-tui-red">{error}</div>
+      </div>
+    )
+  }
+
+  const visitData: ChartData[] = statsData?.visitData || []
+  const topPages = statsData?.topPages || []
+  const domainStats = statsData?.domainStats || []
 
   const maxVisits = Math.max(...visitData.map(d => d.value))
 

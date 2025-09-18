@@ -4,6 +4,7 @@ plugins {
     kotlin("plugin.noarg") version "2.0.10"
     kotlin("plugin.serialization") version "2.0.10"
     id("io.quarkus")
+    id("org.openapi.generator") version "7.8.0"
 }
 
 repositories {
@@ -25,6 +26,8 @@ dependencies {
     implementation("io.quarkus:quarkus-security")
     implementation("io.quarkus:quarkus-reactive-pg-client")
     implementation("io.quarkus:quarkus-hibernate-reactive-panache-kotlin")
+    // OpenAPI
+    implementation("io.quarkus:quarkus-smallrye-openapi")
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
     implementation("io.quarkus:quarkus-kotlin")
     implementation("io.quarkus:quarkus-arc")
@@ -70,4 +73,32 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         javaParameters.set(true)
     }
+}
+
+// OpenAPI Generator Configuration - use schema file
+openApiGenerate {
+    generatorName.set("typescript-axios")
+    inputSpec.set("$projectDir/spec/openapi.yaml")
+    outputDir.set("$projectDir/src/main/webui/src/api/gen")
+    apiPackage.set("api")
+    modelPackage.set("types")
+    configOptions.set(mapOf(
+        "supportsES6" to "true",
+        "withSeparateModelsAndApi" to "true",
+        "modelPropertyNaming" to "camelCase",
+        "apiModulePrefix" to "Api",
+        "npmName" to "",
+        "npmVersion" to "",
+        "snapshot" to "false",
+        "withoutPrefixEnums" to "true"
+    ))
+    skipValidateSpec.set(true)
+    generateModelTests.set(false)
+    generateApiTests.set(false)
+    generateModelDocumentation.set(false)
+    generateApiDocumentation.set(false)
+}
+
+openApiValidate {
+    inputSpec.set("$projectDir/spec/openapi.yaml")
 }

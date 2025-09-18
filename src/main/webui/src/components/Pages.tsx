@@ -1,31 +1,53 @@
-import React, { useState } from 'react'
-
-interface Page {
-  id: number
-  path: string
-  domain: string
-  visits: number
-  lastVisit: string
-}
+import React, { useState, useEffect } from 'react'
+import { AppAdminResourceApi, Page } from '../api/gen/index'
 
 const Pages: React.FC = () => {
-  const [pages] = useState<Page[]>([
-    { id: 1, path: '/home', domain: 'example.com', visits: 245, lastVisit: '2024-01-15 14:30' },
-    { id: 2, path: '/about', domain: 'example.com', visits: 123, lastVisit: '2024-01-15 14:28' },
-    { id: 3, path: '/contact', domain: 'test.org', visits: 67, lastVisit: '2024-01-15 14:25' },
-    { id: 4, path: '/blog', domain: 'myblog.net', visits: 89, lastVisit: '2024-01-15 14:22' },
-    { id: 5, path: '/products', domain: 'shop.com', visits: 156, lastVisit: '2024-01-15 14:20' },
-  ])
-
+  const [pages, setPages] = useState<Page[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [newPage, setNewPage] = useState({ path: '', domain: '' })
   const [showAddForm, setShowAddForm] = useState(false)
 
-  const handleAddPage = () => {
+  const adminApi = new AppAdminResourceApi()
+
+  useEffect(() => {
+    loadPages()
+  }, [])
+
+  const loadPages = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      await adminApi.adminPagesGet().then(response => setPages(response.data));
+      // Note: The API returns HTML, so we'll keep static data for now
+      // In a real implementation, the backend would return JSON data
+      /*      setPages([
+              { id: 1, path: '/home', domain: 'example.com', visits: 245, lastVisit: '2024-01-15 14:30' },
+              { id: 2, path: '/about', domain: 'example.com', visits: 123, lastVisit: '2024-01-15 14:28' },
+              { id: 3, path: '/contact', domain: 'test.org', visits: 67, lastVisit: '2024-01-15 14:25' },
+              { id: 4, path: '/blog', domain: 'myblog.net', visits: 89, lastVisit: '2024-01-15 14:22' },
+              { id: 5, path: '/products', domain: 'shop.com', visits: 156, lastVisit: '2024-01-15 14:20' },
+            ]) */
+    } catch (err) {
+      setError('Failed to load pages')
+      console.error('Error loading pages:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddPage = async () => {
     if (newPage.path && newPage.domain) {
-      // Here you would typically send a POST request to your API
-      console.log('Adding page:', newPage)
-      setNewPage({ path: '', domain: '' })
-      setShowAddForm(false)
+      try {
+        await adminApi.adminPageaddPost(newPage.path, newPage.domain)
+        setNewPage({ path: '', domain: '' })
+        setShowAddForm(false)
+        // Reload pages after adding
+        loadPages()
+      } catch (err) {
+        setError('Failed to add page')
+        console.error('Error adding page:', err)
+      }
     }
   }
 

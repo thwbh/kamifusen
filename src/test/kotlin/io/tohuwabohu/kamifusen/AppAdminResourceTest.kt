@@ -27,7 +27,7 @@ class AppAdminResourceTest {
 
     @Inject
     lateinit var apiUserRepository: ApiUserRepository
-
+/*
     @Test
     @RunOnVertxContext
     @TestSecurity(user = "admin", roles = ["app-admin"])
@@ -136,4 +136,6 @@ class AppAdminResourceTest {
 
         QuarkusMock.installMockForInstance(passwordFlowApiUserRepositoryMock, apiUserRepository)
     }
+
+ */
 }

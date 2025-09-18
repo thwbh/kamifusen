@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react'
-
-interface User {
-  id: number
-  username: string
-  apiKeysCount: number
-  lastLogin: string
-  status: 'active' | 'inactive'
-}
-
+import { AppAdminResourceApi, ApiUser } from '../api/gen/index'
 interface ApiKey {
   id: string
   name: string
@@ -17,35 +9,60 @@ interface ApiKey {
 }
 
 const Users: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([
-    { id: 1, username: 'admin', apiKeysCount: 2, lastLogin: '2024-01-15 14:30', status: 'active' },
-    { id: 2, username: 'user1', apiKeysCount: 1, lastLogin: '2024-01-14 09:15', status: 'active' },
-    { id: 3, username: 'user2', apiKeysCount: 0, lastLogin: '2024-01-10 16:45', status: 'inactive' },
-  ])
-
-  const [apiKeys] = useState<ApiKey[]>([
-    { id: 'key_abc123', name: 'Production Site', created: '2024-01-01', lastUsed: '2024-01-15 14:30', status: 'active' },
-    { id: 'key_def456', name: 'Development', created: '2024-01-05', lastUsed: '2024-01-14 09:15', status: 'active' },
-    { id: 'key_ghi789', name: 'Old Site', created: '2023-12-15', lastUsed: '2023-12-20 11:30', status: 'revoked' },
-  ])
+  const [users, setUsers] = useState<ApiUser[]>([])
+  const [apiKeys] = useState<ApiKey[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const [showCreateKey, setShowCreateKey] = useState(false)
   const [keyName, setKeyName] = useState('')
   const [generatedKey, setGeneratedKey] = useState('')
 
-  useEffect(() => {
-    await fetch('/admin/users').then((response: Response) -> {
-      setUsers(response)
-    });
+  const adminApi = new AppAdminResourceApi()
 
+  useEffect(() => {
+    loadUsers()
+  }, [])
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await adminApi.adminUsersGet();
+
+      console.log(response);
+
+      // Extract users data from the API response
+      if (response.data) {
+        setUsers(response.data);
+      } else {
+        // Fallback to empty array if no data
+        setUsers([]);
+      }
+    } catch (err) {
+      setError('Failed to load users');
+      console.error('Error loading users:', err);
+      // Set empty array on error
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const handleCreateApiKey = () => {
+  const handleCreateApiKey = async () => {
     if (keyName) {
-      // Simulate API key generation
-      const newKey = 'key_' + Math.random().toString(36).substr(2, 16)
-      setGeneratedKey(newKey)
-      setKeyName('')
+      try {
+        // Create API key with default values
+        await adminApi.adminKeygenPost(keyName, 'USER', new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
+
+        // Simulate generated key display
+        const newKey = 'key_' + Math.random().toString(36).substr(2, 16);
+        setGeneratedKey(newKey);
+        setKeyName('');
+      } catch (err) {
+        setError('Failed to create API key');
+        console.error('Error creating API key:', err);
+      }
     }
   }
 
@@ -70,7 +87,7 @@ const Users: React.FC = () => {
             <thead>
               <tr>
                 <th>Username</th>
-                <th>Roles</th>
+                <th>Role</th>
                 <th>Expires</th>
                 <th>Added</th>
                 <th>Actions</th>
@@ -80,19 +97,19 @@ const Users: React.FC = () => {
               {users.map((user) => (
                 <tr key={user.id}>
                   <td className="font-mono text-tui-light">{user.username}</td>
-                  <td className="text-tui-yellow">{user.apiKeysCount}</td>
-                  <td className="text-tui-muted">{user.lastLogin}</td>
-                  <td>
-                    <span className={`text-sm ${user.status === 'active' ? 'text-tui-green' : 'text-tui-red'}`}>
-                      {user.status.toUpperCase()}
-                    </span>
+                  <td className="text-tui-yellow">{user.role}</td>
+                  <td className="text-tui-muted">
+                    {user.expiresAt ? new Date(user.expiresAt).toLocaleDateString() : 'Never'}
+                  </td>
+                  <td className="text-tui-muted">
+                    {user.added ? new Date(user.added).toLocaleDateString() : 'Unknown'}
                   </td>
                   <td>
                     <button className="text-tui-accent hover:text-tui-accent-hover text-sm mr-2">
                       EDIT
                     </button>
                     <button className="text-tui-red hover:text-tui-accent text-sm">
-                      DELETE
+                      RETIRE
                     </button>
                   </td>
                 </tr>

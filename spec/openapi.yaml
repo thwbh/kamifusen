@@ -1,0 +1,286 @@
+---
+openapi: 3.0.3
+info:
+  title: Kamifusen API
+  description: Page hit counter administration API
+  version: 0.9.0
+servers:
+- url: http://localhost:8080
+  description: Auto generated value
+- url: http://0.0.0.0:8080
+  description: Auto generated value
+paths:
+  /admin/keygen:
+    post:
+      tags:
+      - App Admin Resource
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              required:
+              - username
+              - role
+              - expiresAt
+              type: object
+              properties:
+                username:
+                  type: string
+                role:
+                  type: string
+                expiresAt:
+                  type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/pageadd:
+    post:
+      tags:
+      - App Admin Resource
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              required:
+              - path
+              - domain
+              type: object
+              properties:
+                path:
+                  type: string
+                domain:
+                  type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/pagedel/{pageId}:
+    post:
+      tags:
+      - App Admin Resource
+      parameters:
+      - name: pageId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/pages:
+    get:
+      tags:
+      - App Admin Resource
+      responses:
+        "200":
+          description: List of registered pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Page"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/retire/{userId}:
+    post:
+      tags:
+      - App Admin Resource
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/stats:
+    get:
+      tags:
+      - App Admin Resource
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/users:
+    get:
+      tags:
+      - App Admin Resource
+      responses:
+        "200":
+          description: List of API users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiUser"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /public/visits/count/{pageId}:
+    get:
+      tags:
+      - Page Visit Resource
+      parameters:
+      - name: pageId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /public/visits/hit:
+    post:
+      tags:
+      - Page Visit Resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PageHitDto"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+components:
+  schemas:
+    ApiUser:
+      required:
+      - username
+      - role
+      type: object
+      properties:
+        id:
+          type: string
+          allOf:
+          - $ref: "#/components/schemas/UUID"
+          nullable: true
+        username:
+          type: string
+        password:
+          type: string
+          nullable: true
+        role:
+          type: string
+        expiresAt:
+          type: string
+          allOf:
+          - $ref: "#/components/schemas/LocalDateTime"
+          nullable: true
+        added:
+          type: string
+          allOf:
+          - $ref: "#/components/schemas/LocalDateTime"
+          nullable: true
+        updated:
+          type: string
+          allOf:
+          - $ref: "#/components/schemas/LocalDateTime"
+          nullable: true
+    LocalDateTime:
+      format: date-time
+      type: string
+      example: 2022-03-10T12:15:50
+    Page:
+      required:
+      - id
+      - path
+      - pageAdded
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        path:
+          type: string
+        domain:
+          type: string
+          nullable: true
+        pageAdded:
+          $ref: "#/components/schemas/LocalDateTime"
+        lastHit:
+          type: string
+          allOf:
+          - $ref: "#/components/schemas/LocalDateTime"
+          nullable: true
+    PageHitDto:
+      required:
+      - path
+      - domain
+      type: object
+      properties:
+        path:
+          type: string
+        domain:
+          type: string
+    UUID:
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+      type: string
+  securitySchemes:
+    SecurityScheme:
+      type: http
+      description: Authentication
+      scheme: basic
