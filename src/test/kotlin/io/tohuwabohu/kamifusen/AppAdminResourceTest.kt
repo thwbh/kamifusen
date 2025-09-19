@@ -14,7 +14,7 @@ import io.restassured.module.kotlin.extensions.When
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.security.PasswordValidation
 import io.tohuwabohu.kamifusen.mock.ApiUserRepositoryMock
-import io.tohuwabohu.kamifusen.ssr.renderPasswordFlow
+// import io.tohuwabohu.kamifusen.ssr.renderPasswordFlow
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -129,13 +129,11 @@ class AppAdminResourceTest {
 
         QuarkusMock.installMockForType(ApiUserRepositoryMock(), ApiUserRepository::class.java)
     }
-
+*/
     private fun installMockForPasswordFlow() {
         val passwordFlowApiUserRepositoryMock = ApiUserRepositoryMock()
         passwordFlowApiUserRepositoryMock.apiUsers.find { it.username == "admin" }?.let { it.password = null }
 
         QuarkusMock.installMockForInstance(passwordFlowApiUserRepositoryMock, apiUserRepository)
     }
-
- */
 }

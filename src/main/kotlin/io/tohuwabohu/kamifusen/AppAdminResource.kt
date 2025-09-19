@@ -10,18 +10,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
 import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.crud.dto.PageDto
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
 import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
 import io.tohuwabohu.kamifusen.crud.security.*
-import io.tohuwabohu.kamifusen.ssr.*
-import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
-import io.vertx.ext.web.RoutingContext
 import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.*
 import org.eclipse.microprofile.config.inject.ConfigProperty
-import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
 
@@ -40,7 +35,7 @@ class AppAdminResource(
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
     @RolesAllowed("app-admin")
-    fun renderNewApiKey(
+    fun generateApiKey(
         @FormParam("username") username: String,
         @FormParam("role") role: String,
         @FormParam("expiresAt") expiresAt: String
@@ -89,7 +84,7 @@ class AppAdminResource(
         )]
     )
     @RolesAllowed("app-admin")
-    fun renderPageList(): Uni<Response> =
+    fun listPages(): Uni<Response> =
         pageRepository.listAllPages().flatMap {
             Uni.createFrom().item(Response.ok(it).build())
         }.onFailure().invoke { e -> Log.error("Error receiving pages.", e) }
@@ -108,7 +103,7 @@ class AppAdminResource(
         )]
     )
     @RolesAllowed("app-admin")
-    fun renderUserList(): Uni<Response> =
+    fun listUsers(): Uni<Response> =
         apiUserRepository.listAll().flatMap { users ->
             Uni.createFrom().item(Response.ok(users).build())
         }.onFailure().invoke { e -> Log.error("Error receiving users.", e) }
@@ -123,24 +118,6 @@ class AppAdminResource(
         apiUserRepository.expireUser(userId).onItem()
             .transform { Response.ok().build() }
             .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
-            .onFailure().recoverWithItem(Response.serverError().build())
-
-    @Path("/pageadd")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
-    @RolesAllowed("app-admin")
-    fun registerNewPage(@FormParam("path") path: String, @FormParam("domain") domain: String): Uni<Response> =
-        validatePage(path, domain, pageRepository).flatMap { result ->
-            if (result == PageValidation.VALID) {
-                pageRepository.addPage(path, domain).map { Response.ok().build() }
-            } else {
-                Uni.createFrom().item(Response
-                    .ok(renderPageValidationError(result))
-                    .header("hx-retarget", "#path")
-                    .build())
-            }
-        }.onFailure().invoke { e -> Log.error("Error during page registration.", e) }
             .onFailure().recoverWithItem(Response.serverError().build())
 
     @Path("/pagedel/{pageId}")

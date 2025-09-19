@@ -6,7 +6,9 @@ import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepository
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.*
 import org.hibernate.proxy.HibernateProxy
+import io.smallrye.mutiny.Uni
 import java.io.Serializable
+import java.time.LocalDateTime
 import java.util.*
 
 @NamedQueries(
@@ -19,6 +21,7 @@ data class PageVisit (
     var pageId: UUID,
     @Id
     var visitorId: UUID,
+    val visitedAt: LocalDateTime = LocalDateTime.now()
 ): PanacheEntityBase {
     final override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -38,7 +41,7 @@ data class PageVisit (
 
     @Override
     override fun toString(): String {
-        return this::class.simpleName + "(  pageId = $pageId   ,   visitorId = $visitorId )"
+        return this::class.simpleName + "(  pageId = $pageId   ,   visitorId = $visitorId   ,   visitedAt = $visitedAt )"
     }
 }
 
@@ -52,6 +55,36 @@ class PageVisitRepository: PanacheRepository<PageVisit> {
 
     @WithTransaction
     fun addVisit(pageId: UUID, visitorId: UUID) = persist(PageVisit(pageId, visitorId))
+
+    // Time-based analytics methods
+    fun getVisitsByTimeRange(from: LocalDateTime, to: LocalDateTime): Uni<List<PageVisit>> =
+        list("visitedAt >= ?1 AND visitedAt <= ?2", from, to)
+
+    fun countVisitsByTimeRange(pageId: UUID, from: LocalDateTime, to: LocalDateTime): Uni<Long> =
+        count("pageId = ?1 AND visitedAt >= ?2 AND visitedAt <= ?3", pageId, from, to)
+
+    fun getVisitsInLastHours(hours: Int): Uni<List<PageVisit>> =
+        list("visitedAt >= ?1", LocalDateTime.now().minusHours(hours.toLong()))
+
+    fun getVisitsInLastDays(days: Int): Uni<List<PageVisit>> =
+        list("visitedAt >= ?1", LocalDateTime.now().minusDays(days.toLong()))
+
+    fun getTotalVisitsCount(): Uni<Long> = count()
+
+    fun getVisitCountsByDay(days: Int): Uni<List<PageVisit>> =
+        list("visitedAt >= ?1 ORDER BY visitedAt", LocalDateTime.now().minusDays(days.toLong()))
+
+    // Sliding window session support
+    fun findRecentVisitByVisitorOnDomain(visitorId: UUID, domain: String, minutesBack: Int): Uni<PageVisit?> =
+        find("""
+            SELECT pv FROM PageVisit pv
+            JOIN Page p ON pv.pageId = p.id
+            WHERE pv.visitorId = ?1
+            AND p.domain = ?2
+            AND pv.visitedAt >= ?3
+            ORDER BY pv.visitedAt DESC
+        """, visitorId, domain, LocalDateTime.now().minusMinutes(minutesBack.toLong()))
+        .firstResult()
 }
 
 @Embeddable

@@ -17,6 +17,7 @@ import io.tohuwabohu.kamifusen.mock.ApiUserRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageVisitRepositoryMock
 import io.tohuwabohu.kamifusen.mock.VisitorRepositoryMock
+import io.tohuwabohu.kamifusen.mock.SessionRepositoryMock
 import jakarta.inject.Inject
 import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.MediaType
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.net.URLEncoder
+import java.time.LocalDateTime
 import java.util.*
 
 @QuarkusTest
@@ -40,6 +42,9 @@ class PageVisitResourceTest {
     @Inject
     lateinit var visitorRepository: VisitorRepository
 
+    @Inject
+    lateinit var sessionRepository: SessionRepository
+
     @BeforeAll
     fun init() {
         QuarkusMock.installMockForType(ApiUserRepositoryMock(), ApiUserRepository::class.java)
@@ -53,6 +58,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
         QuarkusMock.installMockForInstance(VisitorRepositoryMock(), visitorRepository)
+        QuarkusMock.installMockForInstance(SessionRepositoryMock(), sessionRepository)
 
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
@@ -87,8 +93,8 @@ class PageVisitResourceTest {
 
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(visitorRepositoryMock, visitorRepository)
-
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
+        QuarkusMock.installMockForInstance(SessionRepositoryMock(), sessionRepository)
 
         val count = Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
@@ -162,6 +168,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(visitorRepositoryMock, visitorRepository)
         QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
+        QuarkusMock.installMockForInstance(SessionRepositoryMock(), sessionRepository)
 
         val count = Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
@@ -199,6 +206,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(visitorRepositoryMock, visitorRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
+        QuarkusMock.installMockForInstance(SessionRepositoryMock(), sessionRepository)
 
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
@@ -323,6 +331,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
         QuarkusMock.installMockForInstance(VisitorRepositoryMock(), visitorRepository)
+        QuarkusMock.installMockForInstance(SessionRepositoryMock(), sessionRepository)
 
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
@@ -348,6 +357,175 @@ class PageVisitResourceTest {
 
     @Test
     @RunOnVertxContext
+    fun `should continue existing session when visitor has recent activity within 30 minutes`(uniAsserter: UniAsserter) {
+        val pageRepositoryMock = PageRepositoryMock()
+        val testPage = Page(UUID.randomUUID(), "/page/test-page", "test.org")
+        pageRepositoryMock.pages.add(testPage)
+
+        val visitorRepositoryMock = VisitorRepositoryMock()
+        val visitor = Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent"))
+        visitorRepositoryMock.visitors.add(visitor)
+
+        val pageVisitRepositoryMock = PageVisitRepositoryMock()
+        // Add the page to the mock so domain filtering works
+        pageVisitRepositoryMock.pages.add(testPage)
+        // Add a recent visit (within 30 minutes) to simulate recent activity
+        val recentVisit = PageVisit(testPage.id, visitor.id, LocalDateTime.now().minusMinutes(15))
+        pageVisitRepositoryMock.visits.add(recentVisit)
+
+        val sessionRepositoryMock = SessionRepositoryMock()
+        // Add an existing session for this visitor
+        val existingSession = Session(UUID.randomUUID(), visitor.id, LocalDateTime.now().minusMinutes(20), pageViews = 2)
+        sessionRepositoryMock.sessions.add(existingSession)
+
+        QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
+        QuarkusMock.installMockForInstance(visitorRepositoryMock, visitorRepository)
+        QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
+        QuarkusMock.installMockForInstance(sessionRepositoryMock, sessionRepository)
+
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+            header("User-Agent", "test-user-agent")
+            auth().preemptive().basic("api-key-user", "api-key-user")
+            body(PageHitDto("/page/test-page-2", "test.org")) // Different page to trigger new visit
+        } When {
+            post("/hit")
+        } Then {
+            statusCode(200)
+        }
+
+        // Verify that the existing session was reused and page views incremented
+        uniAsserter.assertThat(
+            { sessionRepository.findActiveSessionByVisitor(visitor.id) },
+            { result ->
+                Assertions.assertNotNull(result)
+                Assertions.assertEquals(existingSession.id, result?.id)
+                Assertions.assertEquals(3, result?.pageViews) // Should be incremented from 2 to 3
+            }
+        )
+    }
+
+    @Test
+    @RunOnVertxContext
+    fun `should start new session when visitor has no recent activity beyond 30 minutes`(uniAsserter: UniAsserter) {
+        val pageRepositoryMock = PageRepositoryMock()
+        val testPage = Page(UUID.randomUUID(), "/page/test-page", "test.org")
+        pageRepositoryMock.pages.add(testPage)
+
+        val visitorRepositoryMock = VisitorRepositoryMock()
+        val visitor = Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent"))
+        visitorRepositoryMock.visitors.add(visitor)
+
+        val pageVisitRepositoryMock = PageVisitRepositoryMock()
+        // Add the page to the mock so domain filtering works
+        pageVisitRepositoryMock.pages.add(testPage)
+        // Add an old visit (beyond 30 minutes) to simulate no recent activity
+        val oldVisit = PageVisit(testPage.id, visitor.id, LocalDateTime.now().minusMinutes(45))
+        pageVisitRepositoryMock.visits.add(oldVisit)
+
+        val sessionRepositoryMock = SessionRepositoryMock()
+        // Add an old session for this visitor
+        val oldSession = Session(UUID.randomUUID(), visitor.id, LocalDateTime.now().minusMinutes(60), pageViews = 2)
+        sessionRepositoryMock.sessions.add(oldSession)
+
+        QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
+        QuarkusMock.installMockForInstance(visitorRepositoryMock, visitorRepository)
+        QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
+        QuarkusMock.installMockForInstance(sessionRepositoryMock, sessionRepository)
+
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+            header("User-Agent", "test-user-agent")
+            auth().preemptive().basic("api-key-user", "api-key-user")
+            body(PageHitDto("/page/test-page-2", "test.org")) // Different page to trigger new visit
+        } When {
+            post("/hit")
+        } Then {
+            statusCode(200)
+        }
+
+        // Verify that a new session was created (not the old one)
+        uniAsserter.assertThat(
+            { sessionRepository.findActiveSessionByVisitor(visitor.id) },
+            { result ->
+                Assertions.assertNotNull(result)
+                Assertions.assertNotEquals(oldSession.id, result?.id) // Should be a different session
+                Assertions.assertEquals(1, result?.pageViews) // New session starts with 1 page view
+            }
+        )
+    }
+
+    @Test
+    @RunOnVertxContext
+    fun `should handle session operation failures gracefully`(uniAsserter: UniAsserter) {
+        val pageRepositoryMock = PageRepositoryMock()
+        val testPage = Page(UUID.randomUUID(), "/page/test-page", "test.org")
+        pageRepositoryMock.pages.add(testPage)
+
+        val visitorRepositoryMock = VisitorRepositoryMock()
+        val visitor = Visitor(UUID.randomUUID(), sha256("127.0.0.1 test-user-agent"))
+        visitorRepositoryMock.visitors.add(visitor)
+
+        val pageVisitRepositoryMock = PageVisitRepositoryMock()
+        pageVisitRepositoryMock.pages.add(testPage)
+
+        // Create a failing session repository that throws exceptions
+        val sessionRepositoryMock = object : SessionRepositoryMock() {
+            override fun incrementPageViews(sessionId: UUID): Uni<Session?> {
+                return Uni.createFrom().failure(RuntimeException("Session increment failed"))
+            }
+        }
+
+        QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
+        QuarkusMock.installMockForInstance(visitorRepositoryMock, visitorRepository)
+        QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
+        QuarkusMock.installMockForInstance(sessionRepositoryMock, sessionRepository)
+
+        // Request should still succeed despite session operation failure
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+            header("User-Agent", "test-user-agent")
+            auth().preemptive().basic("api-key-user", "api-key-user")
+            body(PageHitDto("/page/test-page", "test.org"))
+        } When {
+            post("/hit")
+        } Then {
+            statusCode(200) // Should still return 200 despite session failure
+        }
+
+        // Verify that a page visit was still recorded
+        uniAsserter.assertThat(
+            { pageVisitRepository.countVisits(testPage.id) },
+            { count -> Assertions.assertEquals(1L, count) }
+        )
+    }
+
+    @Test
+    @RunOnVertxContext
+    fun `should return 404 for count method with non-existent page`(uniAsserter: UniAsserter) {
+        val pageRepositoryMock = PageRepositoryMock()
+        val pageVisitRepositoryMock = PageVisitRepositoryMock()
+        val visitorRepositoryMock = VisitorRepositoryMock()
+        val sessionRepositoryMock = SessionRepositoryMock()
+
+        QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
+        QuarkusMock.installMockForInstance(pageVisitRepositoryMock, pageVisitRepository)
+        QuarkusMock.installMockForInstance(visitorRepositoryMock, visitorRepository)
+        QuarkusMock.installMockForInstance(sessionRepositoryMock, sessionRepository)
+
+        val nonExistentPageId = UUID.randomUUID()
+
+        Given {
+            auth().preemptive().basic("api-key-admin", "api-key-admin")
+        } When {
+            get("/count/$nonExistentPageId")
+        } Then {
+            statusCode(404)
+        }
+    }
+
+    @Test
+    @RunOnVertxContext
     fun `should register a the same path for a different domain`(uniAsserter: UniAsserter) {
         val pageRepositoryMock = PageRepositoryMock()
         pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
@@ -355,6 +533,7 @@ class PageVisitResourceTest {
         QuarkusMock.installMockForInstance(pageRepositoryMock, pageRepository)
         QuarkusMock.installMockForInstance(PageVisitRepositoryMock(), pageVisitRepository)
         QuarkusMock.installMockForInstance(VisitorRepositoryMock(), visitorRepository)
+        QuarkusMock.installMockForInstance(SessionRepositoryMock(), sessionRepository)
 
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)

@@ -56,46 +56,6 @@
         } ]
       }
     },
-    "/admin/pageadd" : {
-      "post" : {
-        "tags" : [ "App Admin Resource" ],
-        "requestBody" : {
-          "content" : {
-            "application/x-www-form-urlencoded" : {
-              "schema" : {
-                "required" : [ "path", "domain" ],
-                "type" : "object",
-                "properties" : {
-                  "path" : {
-                    "type" : "string"
-                  },
-                  "domain" : {
-                    "type" : "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/plain" : { }
-            }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          }
-        },
-        "security" : [ {
-          "SecurityScheme" : [ ]
-        } ]
-      }
-    },
     "/admin/pagedel/{pageId}" : {
       "post" : {
         "tags" : [ "App Admin Resource" ],
