@@ -86,37 +86,55 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
     }
 
     private fun getVisitTrendData(session: MutinySession, days: Int): Uni<List<VisitTrendDataDto>> {
-        // For now, return static data - implementing actual trend queries would require complex date functions
-        // Real implementation would use:
-        // SELECT DATE(visited_at) as visit_date, COUNT(*) as visit_count
-        // FROM page_visit
-        // WHERE visited_at >= :startDate
-        // GROUP BY DATE(visited_at)
-        // ORDER BY visit_date
+        val startDate = LocalDateTime.now().minusDays(days.toLong())
 
-        return Uni.createFrom().item(
-            when (days) {
-                1 -> listOf(VisitTrendDataDto("Today", 25, "text-tui-green"))
-                7 -> listOf(
-                    VisitTrendDataDto("Mon", 45, "text-tui-green"),
-                    VisitTrendDataDto("Tue", 67, "text-tui-green"),
-                    VisitTrendDataDto("Wed", 23, "text-tui-yellow"),
-                    VisitTrendDataDto("Thu", 89, "text-tui-green"),
-                    VisitTrendDataDto("Fri", 156, "text-tui-accent"),
-                    VisitTrendDataDto("Sat", 134, "text-tui-accent"),
-                    VisitTrendDataDto("Sun", 98, "text-tui-green")
-                )
-                else -> (1..7).map { day ->
-                    val visits = (15..45).random().toLong()
+        // Query visits grouped by day of week across all pages and domains
+        val query = """
+            SELECT
+                EXTRACT(DOW FROM pv.visited_at) as day_of_week,
+                COUNT(*) as visit_count
+            FROM page_visit pv
+            WHERE pv.visited_at >= :startDate
+            GROUP BY EXTRACT(DOW FROM pv.visited_at)
+            ORDER BY day_of_week
+        """
+
+        return session.createNativeQuery(query, Tuple::class.java)
+            .setParameter("startDate", startDate)
+            .resultList
+            .onItem().transform { results ->
+                // Convert PostgreSQL day of week (0=Sunday, 1=Monday, ..., 6=Saturday) to day names
+                val dayNames = arrayOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+                // Create a map from the results
+                val visitsByDay = results.associate { tuple ->
+                    val dayOfWeek = tuple.get(0, BigDecimal::class.java).toInt()
+                    val visitCount = tuple.get(1, Long::class.javaObjectType)
+                    dayOfWeek to visitCount
+                }
+
+                // Calculate thresholds for color coding based on the data
+                val allCounts = visitsByDay.values
+                val avgVisits = if (allCounts.isNotEmpty()) allCounts.average() else 0.0
+                val lowThreshold = avgVisits * 0.7
+                val highThreshold = avgVisits * 1.3
+
+                // Build result for all 7 days of the week (Monday to Sunday order for better UX)
+                val mondayFirstOrder = listOf(1, 2, 3, 4, 5, 6, 0) // Mon=1, Tue=2, ..., Sun=0
+
+                mondayFirstOrder.map { dayOfWeek ->
+                    val visits = visitsByDay[dayOfWeek] ?: 0L
+                    val dayName = dayNames[dayOfWeek]
+
                     val color = when {
-                        visits < 25 -> "text-tui-yellow"
-                        visits > 35 -> "text-tui-accent"
+                        visits < lowThreshold -> "text-tui-yellow"
+                        visits > highThreshold -> "text-tui-accent"
                         else -> "text-tui-green"
                     }
-                    VisitTrendDataDto("Day $day", visits, color)
+
+                    VisitTrendDataDto(dayName, visits, color)
                 }
             }
-        )
     }
 
     private fun getTopPagesData(session: MutinySession, startDate: LocalDateTime): Uni<List<TopPageDataDto>> {
