@@ -17,39 +17,14 @@ const Stats: React.FC = () => {
 
   useEffect(() => {
     loadStats()
-  }, [])
+  }, [timeRange])
 
   const loadStats = async () => {
     try {
       setLoading(true)
       setError(null)
-      await adminApi.adminStatsGet()
-      // Note: The API returns HTML, so we'll keep static data for now
-      // In a real implementation, the backend would return JSON data
-      setStatsData({
-        visitData: [
-          { label: 'Mon', value: 45, color: 'text-tui-green' },
-          { label: 'Tue', value: 67, color: 'text-tui-green' },
-          { label: 'Wed', value: 23, color: 'text-tui-yellow' },
-          { label: 'Thu', value: 89, color: 'text-tui-green' },
-          { label: 'Fri', value: 156, color: 'text-tui-accent' },
-          { label: 'Sat', value: 134, color: 'text-tui-accent' },
-          { label: 'Sun', value: 98, color: 'text-tui-green' },
-        ],
-        topPages: [
-          { path: '/home', visits: 245, percentage: 35 },
-          { path: '/about', visits: 123, percentage: 18 },
-          { path: '/contact', visits: 89, percentage: 13 },
-          { path: '/blog', visits: 67, percentage: 10 },
-          { path: '/products', visits: 156, percentage: 24 },
-        ],
-        domainStats: [
-          { domain: 'example.com', visits: 368, percentage: 52 },
-          { domain: 'test.org', visits: 156, percentage: 22 },
-          { domain: 'myblog.net', visits: 123, percentage: 17 },
-          { domain: 'shop.com', visits: 63, percentage: 9 },
-        ]
-      })
+      const response = await adminApi.adminStatsGet(timeRange)
+      setStatsData(response.data)
     } catch (err) {
       setError('Failed to load statistics')
       console.error('Error loading statistics:', err)
@@ -178,27 +153,24 @@ const Stats: React.FC = () => {
           </div>
         </div>
 
-        {/* Real-time Stats */}
+        {/* Summary Stats */}
         <div className="tui-panel">
           <div className="tui-panel-header">
-            Real-time Metrics
+            Summary Metrics
           </div>
           <div className="p-6 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-tui-green">47</div>
-                <div className="text-tui-muted text-sm">Active Users</div>
+                <div className="text-2xl font-bold text-tui-green">{statsData?.totalVisits || 0}</div>
+                <div className="text-tui-muted text-sm">Total Visits</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-tui-yellow">12.3s</div>
-                <div className="text-tui-muted text-sm">Avg. Session</div>
+                <div className="text-2xl font-bold text-tui-yellow">{statsData?.totalPages || 0}</div>
+                <div className="text-tui-muted text-sm">Total Pages</div>
               </div>
-            </div>
-
-            <div className="border-t border-tui-border pt-4">
               <div className="text-center">
-                <div className="text-lg font-bold text-tui-accent">98.7%</div>
-                <div className="text-tui-muted text-sm">System Uptime</div>
+                <div className="text-2xl font-bold text-tui-accent">{statsData?.totalDomains || 0}</div>
+                <div className="text-tui-muted text-sm">Domains</div>
               </div>
             </div>
 

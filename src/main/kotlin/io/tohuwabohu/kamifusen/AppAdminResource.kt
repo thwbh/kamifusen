@@ -10,7 +10,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
 import io.tohuwabohu.kamifusen.crud.PageRepository
+import io.tohuwabohu.kamifusen.crud.dto.AggregatedStatsDto
 import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
+import io.tohuwabohu.kamifusen.crud.dto.StatsRepository
 import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
 import io.tohuwabohu.kamifusen.crud.security.*
 import jakarta.annotation.security.RolesAllowed
@@ -25,7 +27,8 @@ import java.util.*
 class AppAdminResource(
     private val apiUserRepository: ApiUserRepository,
     private val pageVisitDtoRepository: PageVisitDtoRepository,
-    private val pageRepository: PageRepository
+    private val pageRepository: PageRepository,
+    private val statsRepository: StatsRepository
 ) {
     @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
     lateinit var cookieName: String
@@ -62,13 +65,32 @@ class AppAdminResource(
     @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
+    @APIResponse(
+        responseCode = "200",
+        description = "Aggregated stats",
+        content = [Content(
+            mediaType = MediaType.APPLICATION_JSON,
+            schema = Schema(implementation = AggregatedStatsDto::class)
+        )]
+    )
+    @RolesAllowed("app-admin")
+    fun getAggregatedStats(@QueryParam("timeRange") timeRange: String?): Uni<Response> =
+        statsRepository.getAggregatedStats(timeRange ?: "7d")
+            .map { stats -> Response.ok(stats).build() }
+            .onFailure().invoke { e -> Log.error("Error receiving aggregated stats.", e) }
+            .onFailure().recoverWithResponse()
+
+    @Path("/visits")
+    @GET
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("app-admin")
     fun renderVisits(): Uni<Response> =
         pageVisitDtoRepository.getAllPageVisits()
             .flatMap {
                 Uni.createFrom().item(Response.ok(it).build())
             }
-            .onFailure().invoke { e -> Log.error("Error receiving stats.", e) }
+            .onFailure().invoke { e -> Log.error("Error receiving visits.", e) }
             .onFailure().recoverWithResponse()
 
     @Path("/pages")
