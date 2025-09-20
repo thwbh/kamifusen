@@ -4,15 +4,16 @@ import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.crud.ApiUser
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
-import io.tohuwabohu.kamifusen.crud.Page
+import io.tohuwabohu.kamifusen.service.PageAdminService
+import io.tohuwabohu.kamifusen.service.dto.PageWithStatsDto
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
 import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.crud.dto.AggregatedStatsDto
-import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
-import io.tohuwabohu.kamifusen.crud.dto.StatsRepository
+import io.tohuwabohu.kamifusen.service.dto.AggregatedStatsDto
+import io.tohuwabohu.kamifusen.service.dto.PageVisitDtoRepository
+import io.tohuwabohu.kamifusen.service.dto.StatsRepository
 import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
 import io.tohuwabohu.kamifusen.crud.security.*
 import jakarta.annotation.security.RolesAllowed
@@ -28,7 +29,8 @@ class AppAdminResource(
     private val apiUserRepository: ApiUserRepository,
     private val pageVisitDtoRepository: PageVisitDtoRepository,
     private val pageRepository: PageRepository,
-    private val statsRepository: StatsRepository
+    private val statsRepository: StatsRepository,
+    private val pageAdminService: PageAdminService
 ) {
     @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
     lateinit var cookieName: String
@@ -99,15 +101,15 @@ class AppAdminResource(
     @Produces(MediaType.APPLICATION_JSON)
     @APIResponse(
         responseCode = "200",
-        description = "List of registered pages",
+        description = "List of registered pages with visit statistics",
         content = [Content(
             mediaType = MediaType.APPLICATION_JSON,
-            schema = Schema(implementation = Page::class, type = SchemaType.ARRAY)
+            schema = Schema(implementation = PageWithStatsDto::class, type = SchemaType.ARRAY)
         )]
     )
     @RolesAllowed("app-admin")
     fun listPages(): Uni<Response> =
-        pageRepository.listAllPages().flatMap {
+        pageAdminService.getPagesWithStats().flatMap {
             Uni.createFrom().item(Response.ok(it).build())
         }.onFailure().invoke { e -> Log.error("Error receiving pages.", e) }
             .onFailure().recoverWithResponse()

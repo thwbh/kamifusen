@@ -7,10 +7,10 @@ import {
   createColumnHelper,
   SortingState
 } from '@tanstack/react-table'
-import { AppAdminResourceApi, Page } from '../api/gen/index'
+import { AppAdminResourceApi, PageWithStatsDto } from '../api/gen/index'
 
 const Pages: React.FC = () => {
-  const [pages, setPages] = useState<Page[]>([])
+  const [pages, setPages] = useState<PageWithStatsDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedDomain, setSelectedDomain] = useState<string>('')
@@ -18,7 +18,7 @@ const Pages: React.FC = () => {
 
   const adminApi = new AppAdminResourceApi()
 
-  const columnHelper = createColumnHelper<Page>()
+  const columnHelper = createColumnHelper<PageWithStatsDto>()
 
   const columns = useMemo(() => [
     columnHelper.accessor('path', {
@@ -29,10 +29,9 @@ const Pages: React.FC = () => {
       header: 'Domain',
       cell: info => <span className="text-tui-muted">{info.getValue()}</span>
     }),
-    columnHelper.display({
-      id: 'visits',
+    columnHelper.accessor('visitCount', {
       header: 'Visits',
-      cell: info => <span className="text-tui-accent">0</span> // TODO: Add visit count from PageRepository
+      cell: info => <span className="text-tui-accent">{info.getValue() || 0}</span>
     }),
     columnHelper.accessor('lastHit', {
       header: 'Last Visit',

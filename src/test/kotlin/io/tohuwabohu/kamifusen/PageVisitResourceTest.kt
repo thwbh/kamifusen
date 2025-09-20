@@ -12,7 +12,7 @@ import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.crud.*
-import io.tohuwabohu.kamifusen.crud.dto.PageHitDto
+import io.tohuwabohu.kamifusen.service.dto.PageHitDto
 import io.tohuwabohu.kamifusen.mock.ApiUserRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageVisitRepositoryMock
@@ -160,7 +160,7 @@ class PageVisitResourceTest {
         pageRepositoryMock.pages.add(Page(UUID.randomUUID(), "/page/test-page", "test.org"))
 
         val visitorRepositoryMock = VisitorRepositoryMock()
-        visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("localhost test-user-agent")))
+        visitorRepositoryMock.visitors.add(Visitor(UUID.randomUUID(), sha256("127.0.0.1 different-user-agent")))
 
         val pageVisitRepositoryMock = PageVisitRepositoryMock()
         pageVisitRepositoryMock.visits.add(PageVisit(pageRepositoryMock.pages[0].id, visitorRepositoryMock.visitors[0].id))

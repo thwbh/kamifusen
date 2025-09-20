@@ -1,4 +1,4 @@
-package io.tohuwabohu.kamifusen.crud.dto
+package io.tohuwabohu.kamifusen.service.dto
 
 import io.quarkus.hibernate.reactive.panache.Panache
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepository
@@ -7,7 +7,6 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Tuple
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import java.util.UUID
 import kotlin.math.roundToInt
 import org.hibernate.reactive.mutiny.Mutiny.Session as MutinySession
 

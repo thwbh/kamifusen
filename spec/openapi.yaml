@@ -68,13 +68,13 @@ paths:
       - App Admin Resource
       responses:
         "200":
-          description: List of registered pages
+          description: List of registered pages with visit statistics
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Page"
+                  $ref: "#/components/schemas/PageWithStatsDto"
         "401":
           description: Not Authorized
         "403":
@@ -173,7 +173,7 @@ paths:
         "200":
           description: OK
           content:
-            text/plain: {}
+            application/json: {}
         "401":
           description: Not Authorized
         "403":
@@ -188,12 +188,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PageHitDto"
+              $ref: "#/components/schemas/PageHitRequestDto"
       responses:
         "200":
           description: OK
           content:
-            text/plain: {}
+            application/json: {}
         "401":
           description: Not Authorized
         "403":
@@ -280,7 +280,17 @@ components:
       format: date-time
       type: string
       example: 2022-03-10T12:15:50
-    Page:
+    PageHitRequestDto:
+      required:
+      - path
+      - domain
+      type: object
+      properties:
+        path:
+          type: string
+        domain:
+          type: string
+    PageWithStatsDto:
       required:
       - id
       - path
@@ -301,16 +311,9 @@ components:
           allOf:
           - $ref: "#/components/schemas/LocalDateTime"
           nullable: true
-    PageHitDto:
-      required:
-      - path
-      - domain
-      type: object
-      properties:
-        path:
-          type: string
-        domain:
-          type: string
+        visitCount:
+          format: int64
+          type: integer
     TopPageDataDto:
       required:
       - path
