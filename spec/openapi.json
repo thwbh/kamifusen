@@ -148,11 +148,23 @@
     "/admin/stats" : {
       "get" : {
         "tags" : [ "App Admin Resource" ],
+        "parameters" : [ {
+          "name" : "timeRange",
+          "in" : "query",
+          "schema" : {
+            "type" : "string",
+            "nullable" : true
+          }
+        } ],
         "responses" : {
           "200" : {
-            "description" : "OK",
+            "description" : "Aggregated stats",
             "content" : {
-              "application/json" : { }
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AggregatedStatsDto"
+                }
+              }
             }
           },
           "401" : {
@@ -182,6 +194,28 @@
                   }
                 }
               }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/admin/visits" : {
+      "get" : {
+        "tags" : [ "App Admin Resource" ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : { }
             }
           },
           "401" : {
@@ -260,6 +294,42 @@
   },
   "components" : {
     "schemas" : {
+      "AggregatedStatsDto" : {
+        "required" : [ "visitData", "topPages", "domainStats" ],
+        "type" : "object",
+        "properties" : {
+          "visitData" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VisitTrendDataDto"
+            }
+          },
+          "topPages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TopPageDataDto"
+            }
+          },
+          "domainStats" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DomainStatDataDto"
+            }
+          },
+          "totalVisits" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalPages" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "totalDomains" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }
+      },
       "ApiUser" : {
         "required" : [ "username", "role" ],
         "type" : "object",
@@ -301,6 +371,22 @@
               "$ref" : "#/components/schemas/LocalDateTime"
             } ],
             "nullable" : true
+          }
+        }
+      },
+      "DomainStatDataDto" : {
+        "required" : [ "domain", "percentage" ],
+        "type" : "object",
+        "properties" : {
+          "domain" : {
+            "type" : "string"
+          },
+          "visits" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "percentage" : {
+            "type" : "number"
           }
         }
       },
@@ -347,10 +433,42 @@
           }
         }
       },
+      "TopPageDataDto" : {
+        "required" : [ "path", "percentage" ],
+        "type" : "object",
+        "properties" : {
+          "path" : {
+            "type" : "string"
+          },
+          "visits" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "percentage" : {
+            "type" : "number"
+          }
+        }
+      },
       "UUID" : {
         "format" : "uuid",
         "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
         "type" : "string"
+      },
+      "VisitTrendDataDto" : {
+        "required" : [ "label", "category" ],
+        "type" : "object",
+        "properties" : {
+          "label" : {
+            "type" : "string"
+          },
+          "value" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "category" : {
+            "type" : "string"
+          }
+        }
       }
     },
     "securitySchemes" : {

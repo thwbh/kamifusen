@@ -17,7 +17,7 @@ import org.hibernate.reactive.mutiny.Mutiny.Session as MutinySession
 data class VisitTrendDataDto(
     val label: String,
     val value: Long,
-    val color: String = "text-tui-green"
+    val category: String = "normal" // "low", "normal", "high"
 )
 
 data class TopPageDataDto(
@@ -126,13 +126,13 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
                     val visits = visitsByDay[dayOfWeek] ?: 0L
                     val dayName = dayNames[dayOfWeek]
 
-                    val color = when {
-                        visits < lowThreshold -> "text-tui-yellow"
-                        visits > highThreshold -> "text-tui-accent"
-                        else -> "text-tui-green"
+                    val category = when {
+                        visits < lowThreshold -> "low"
+                        visits > highThreshold -> "high"
+                        else -> "normal"
                     }
 
-                    VisitTrendDataDto(dayName, visits, color)
+                    VisitTrendDataDto(dayName, visits, category)
                 }
             }
     }

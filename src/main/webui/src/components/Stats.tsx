@@ -4,7 +4,7 @@ import { AppAdminResourceApi } from '../api/gen/index'
 interface ChartData {
   label: string
   value: number
-  color: string
+  category: string
 }
 
 const Stats: React.FC = () => {
@@ -25,6 +25,8 @@ const Stats: React.FC = () => {
       setError(null)
       const response = await adminApi.adminStatsGet(timeRange)
       setStatsData(response.data)
+
+      console.log(response.data);
     } catch (err) {
       setError('Failed to load statistics')
       console.error('Error loading statistics:', err)
@@ -54,6 +56,24 @@ const Stats: React.FC = () => {
   const domainStats = statsData?.domainStats || []
 
   const maxVisits = Math.max(...visitData.map(d => d.value))
+
+  // Map categories to CSS classes
+  const getCategoryColor = (category: string): string => {
+    console.log(`category=${category}`);
+    let color = '';
+
+    switch (category) {
+      case 'low':
+        color = 'text-tui-yellow'; break;
+      case 'high':
+        color = 'text-tui-accent'; break;
+      case 'normal':
+      default:
+        color = 'text-tui-green'; break;
+    }
+
+    return color;
+  }
 
   return (
     <div className="p-6 h-full overflow-auto">
@@ -90,7 +110,7 @@ const Stats: React.FC = () => {
                       className="bg-tui-accent h-6 mr-2 transition-all duration-300"
                       style={{ width: `${(day.value / maxVisits) * 100}%` }}
                     ></div>
-                    <span className={`text-sm font-mono ${day.color}`}>{day.value}</span>
+                    <span className={`text-sm font-mono ${getCategoryColor(day.category)}`}>{day.value}</span>
                   </div>
                 </div>
               ))}
