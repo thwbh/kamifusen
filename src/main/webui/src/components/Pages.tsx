@@ -13,8 +13,7 @@ const Pages: React.FC = () => {
   const [pages, setPages] = useState<Page[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [newPage, setNewPage] = useState({ path: '', domain: '' })
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [selectedDomain, setSelectedDomain] = useState<string>('')
   const [sorting, setSorting] = useState<SortingState>([])
 
   const adminApi = new AppAdminResourceApi()
@@ -30,15 +29,16 @@ const Pages: React.FC = () => {
       header: 'Domain',
       cell: info => <span className="text-tui-muted">{info.getValue()}</span>
     }),
-    columnHelper.accessor('visits', {
+    columnHelper.display({
+      id: 'visits',
       header: 'Visits',
-      cell: info => <span className="text-tui-accent">{info.getValue()}</span>
+      cell: info => <span className="text-tui-accent">0</span> // TODO: Add visit count from PageRepository
     }),
-    columnHelper.accessor('lastVisit', {
+    columnHelper.accessor('lastHit', {
       header: 'Last Visit',
       cell: info => (
         <span className="text-tui-muted">
-          {info.getValue() || 'Never'}
+          {info.getValue() ? new Date(info.getValue()!).toLocaleString() : 'Never'}
         </span>
       )
     }),
@@ -53,8 +53,19 @@ const Pages: React.FC = () => {
     })
   ], [columnHelper])
 
+  // Get unique domains and filter pages by selected domain
+  const domains = useMemo(() => {
+    const uniqueDomains = [...new Set(pages.map(page => page.domain).filter(Boolean))]
+    return uniqueDomains.sort()
+  }, [pages])
+
+  const filteredPages = useMemo(() => {
+    if (!selectedDomain) return pages
+    return pages.filter(page => page.domain === selectedDomain)
+  }, [pages, selectedDomain])
+
   const table = useReactTable({
-    data: pages,
+    data: filteredPages,
     columns,
     state: {
       sorting,
@@ -64,6 +75,13 @@ const Pages: React.FC = () => {
     getSortedRowModel: getSortedRowModel(),
   })
 
+  // Set first domain as default when domains are loaded
+  useEffect(() => {
+    if (domains.length > 0 && !selectedDomain) {
+      setSelectedDomain(domains[0])
+    }
+  }, [domains, selectedDomain])
+
   useEffect(() => {
     loadPages()
   }, [])
@@ -72,36 +90,13 @@ const Pages: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      await adminApi.adminPagesGet().then(response => setPages(response.data));
-      // Note: The API returns HTML, so we'll keep static data for now
-      // In a real implementation, the backend would return JSON data
-      /*      setPages([
-              { id: 1, path: '/home', domain: 'example.com', visits: 245, lastVisit: '2024-01-15 14:30' },
-              { id: 2, path: '/about', domain: 'example.com', visits: 123, lastVisit: '2024-01-15 14:28' },
-              { id: 3, path: '/contact', domain: 'test.org', visits: 67, lastVisit: '2024-01-15 14:25' },
-              { id: 4, path: '/blog', domain: 'myblog.net', visits: 89, lastVisit: '2024-01-15 14:22' },
-              { id: 5, path: '/products', domain: 'shop.com', visits: 156, lastVisit: '2024-01-15 14:20' },
-            ]) */
+      const response = await adminApi.adminPagesGet()
+      setPages(response.data)
     } catch (err) {
       setError('Failed to load pages')
       console.error('Error loading pages:', err)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleAddPage = async () => {
-    if (newPage.path && newPage.domain) {
-      try {
-        await adminApi.adminPageaddPost(newPage.path, newPage.domain)
-        setNewPage({ path: '', domain: '' })
-        setShowAddForm(false)
-        // Reload pages after adding
-        loadPages()
-      } catch (err) {
-        setError('Failed to add page')
-        console.error('Error adding page:', err)
-      }
     }
   }
 
@@ -112,55 +107,25 @@ const Pages: React.FC = () => {
           <h1 className="text-2xl font-bold text-tui-accent mb-2">PAGE MANAGEMENT</h1>
           <p className="text-tui-muted text-sm">Manage tracked pages and domains</p>
         </div>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="tui-button"
-        >
-          {showAddForm ? 'CANCEL' : 'ADD PAGE'}
-        </button>
-      </header>
-
-      {/* Add Page Form */}
-      {showAddForm && (
-        <div className="tui-panel mb-6">
-          <div className="tui-panel-header">
-            Add New Page
-          </div>
-          <div className="p-4 space-y-4">
-            <div>
-              <label className="block text-tui-muted text-sm mb-2">Path</label>
-              <input
-                type="text"
-                value={newPage.path}
-                onChange={(e) => setNewPage({ ...newPage, path: e.target.value })}
-                className="w-full bg-tui-darker border border-tui-border p-2 text-tui-light font-mono focus:border-tui-accent focus:outline-none"
-                placeholder="/example-path"
-              />
-            </div>
-            <div>
-              <label className="block text-tui-muted text-sm mb-2">Domain</label>
-              <input
-                type="text"
-                value={newPage.domain}
-                onChange={(e) => setNewPage({ ...newPage, domain: e.target.value })}
-                className="w-full bg-tui-darker border border-tui-border p-2 text-tui-light font-mono focus:border-tui-accent focus:outline-none"
-                placeholder="example.com"
-              />
-            </div>
-            <button
-              onClick={handleAddPage}
-              className="tui-button"
-            >
-              ADD PAGE
-            </button>
-          </div>
+        <div className="flex items-center space-x-4">
+          <label className="text-tui-muted text-sm">Filter by Domain:</label>
+          <select
+            value={selectedDomain}
+            onChange={(e) => setSelectedDomain(e.target.value)}
+            className="bg-tui-darker border border-tui-border p-2 text-tui-light font-mono focus:border-tui-accent focus:outline-none"
+          >
+            <option value="">All Domains</option>
+            {domains.map(domain => (
+              <option key={domain} value={domain}>{domain}</option>
+            ))}
+          </select>
         </div>
-      )}
+      </header>
 
       {/* Pages Table */}
       <div className="tui-panel">
         <div className="tui-panel-header">
-          Tracked Pages ({pages.length})
+          {selectedDomain ? `Pages for ${selectedDomain}` : 'All Pages'} ({filteredPages.length})
         </div>
         <div className="p-0">
           <table className="tui-table">

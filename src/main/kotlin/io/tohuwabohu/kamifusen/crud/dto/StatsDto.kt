@@ -138,17 +138,19 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
     }
 
     private fun getTopPagesData(session: MutinySession, startDate: LocalDateTime): Uni<List<TopPageDataDto>> {
-        // Query top pages (simplified to work with current schema)
+        // Query top pages within the specified time range
         val query = """
             SELECT p.path, COUNT(pv.page_id) as visits
             FROM page p
             JOIN page_visit pv ON p.id = pv.page_id
+            WHERE pv.visited_at >= :startDate
             GROUP BY p.path
             ORDER BY visits DESC
             LIMIT 5
         """
 
         return session.createNativeQuery(query, Tuple::class.java)
+            .setParameter("startDate", startDate)
             .resultList
             .onItem().transform { results ->
                 val totalVisits = results.sumOf { it.get(1, Long::class.javaObjectType) }
@@ -164,16 +166,18 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
     }
 
     private fun getDomainStatsData(session: MutinySession, startDate: LocalDateTime): Uni<List<DomainStatDataDto>> {
-        // Query domain statistics (simplified to work with current schema)
+        // Query domain statistics within the specified time range
         val query = """
             SELECT COALESCE(p.domain, 'unknown') as domain, COUNT(pv.page_id) as visits
             FROM page p
             JOIN page_visit pv ON p.id = pv.page_id
+            WHERE pv.visited_at >= :startDate
             GROUP BY p.domain
             ORDER BY visits DESC
         """
 
         return session.createNativeQuery(query, Tuple::class.java)
+            .setParameter("startDate", startDate)
             .resultList
             .onItem().transform { results ->
                 val totalVisits = results.sumOf { it.get(1, Long::class.javaObjectType) }
@@ -189,12 +193,22 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
     }
 
     private fun getTotalStats(session: MutinySession, startDate: LocalDateTime): Uni<Triple<Long, Long, Long>> {
-        // Use reactive SQL queries (simplified to work with current schema)
-        val totalVisitsQuery = session.createNativeQuery("SELECT COUNT(*) FROM page_visit", Long::class.javaObjectType)
+        // Use reactive SQL queries with time range filtering
+        val totalVisitsQuery = session.createNativeQuery("""
+            SELECT COUNT(*)
+            FROM page_visit
+            WHERE visited_at >= :startDate
+        """, Long::class.javaObjectType)
+            .setParameter("startDate", startDate)
             .singleResult
             .onItem().transform { result -> result.toLong()}
 
-        val totalPagesQuery = session.createNativeQuery("SELECT COUNT(DISTINCT page_id) FROM page_visit", Long::class.javaObjectType)
+        val totalPagesQuery = session.createNativeQuery("""
+            SELECT COUNT(DISTINCT page_id)
+            FROM page_visit
+            WHERE visited_at >= :startDate
+        """, Long::class.javaObjectType)
+            .setParameter("startDate", startDate)
             .singleResult
             .onItem().transform { result -> result.toLong() }
 
@@ -202,7 +216,9 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
             SELECT COUNT(DISTINCT p.domain)
             FROM page p
             JOIN page_visit pv ON p.id = pv.page_id
+            WHERE pv.visited_at >= :startDate
         """, Long::class.javaObjectType)
+            .setParameter("startDate", startDate)
             .singleResult
             .onItem().transform { result -> result.toLong() }
 
