@@ -8,7 +8,8 @@ CREATE TABLE api_user (
     role VARCHAR(50) NOT NULL,
     password VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP,
-    added TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    added TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated TIMESTAMP
 );
 
 -- Page table for tracking website pages

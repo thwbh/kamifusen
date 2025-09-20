@@ -1,5 +1,6 @@
 package io.tohuwabohu.kamifusen.service
 
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.crud.Page
@@ -30,6 +31,7 @@ class PageVisitService(
     /**
      * Processes a page hit request, handling visitor creation, session management, and visit tracking
      */
+    @WithTransaction
     fun processPageHit(context: VisitContextDto): Uni<VisitResultDto> {
         Log.debug("Processing page hit for ${context.pageHit.domain}${context.pageHit.path}")
 

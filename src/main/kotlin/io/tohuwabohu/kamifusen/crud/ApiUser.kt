@@ -85,6 +85,9 @@ class ApiUserRepository : PanacheRepositoryBase<ApiUser, UUID> {
     }
 
     @WithTransaction
+    fun findByUuid(id: UUID) = findById(id)
+
+    @WithTransaction
     fun findByUsername(username: String) = find(
         "#ApiUser.findValidUser", mapOf(
             "username" to username,

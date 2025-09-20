@@ -9,8 +9,9 @@ import java.util.*
 class PageVisitRepositoryMock : PageVisitRepository() {
     val visits = mutableListOf<PageVisit>()
     val pages = mutableListOf<io.tohuwabohu.kamifusen.crud.Page>()
+    val visitCounts = mutableMapOf<UUID, Long>()
 
-    override fun countVisits(pageId: UUID): Uni<Long> = Uni.createFrom().item(visits.count { it.pageId == pageId }.toLong())
+    override fun countVisits(pageId: UUID): Uni<Long> = Uni.createFrom().item(visitCounts.getOrDefault(pageId, 0L))
 
     override fun countVisitsForVisitor(pageId: UUID, visitorId: UUID): Uni<Long> = Uni.createFrom().item(visits.count { it.pageId == pageId && it.visitorId == visitorId }.toLong())
 

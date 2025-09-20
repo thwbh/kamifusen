@@ -53,12 +53,14 @@ data class Page(
 
 @ApplicationScoped
 class PageRepository : PanacheRepositoryBase<Page, UUID> {
+    @WithTransaction
     fun findByPageId(id: UUID) = find("id", id).firstResult()
 
     @WithTransaction
     fun addPageIfAbsent(path: String, domain: String): Uni<Page?> = findPageByPathAndDomain(path, domain)
         .onItem().ifNull().switchTo(addPage(path, domain))
 
+    @WithTransaction
     fun findPageByPathAndDomain(path: String, domain: String) = find("#Page.findByPathAndDomain",
         mapOf("path" to path, "domain" to domain)
     ).firstResult()

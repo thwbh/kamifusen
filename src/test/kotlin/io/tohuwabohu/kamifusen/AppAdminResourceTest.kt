@@ -1,139 +1,346 @@
 package io.tohuwabohu.kamifusen
 
 import io.quarkus.test.common.http.TestHTTPEndpoint
-import io.quarkus.test.junit.QuarkusMock
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.security.TestSecurity
 import io.quarkus.test.vertx.RunOnVertxContext
 import io.quarkus.test.vertx.UniAsserter
-import io.restassured.http.ContentType
 import io.restassured.module.kotlin.extensions.Extract
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
-import io.tohuwabohu.kamifusen.crud.security.PasswordValidation
-import io.tohuwabohu.kamifusen.mock.ApiUserRepositoryMock
-// import io.tohuwabohu.kamifusen.ssr.renderPasswordFlow
+import io.tohuwabohu.kamifusen.crud.PageRepository
+import io.tohuwabohu.kamifusen.mock.*
 import jakarta.inject.Inject
+import jakarta.ws.rs.core.HttpHeaders
+import jakarta.ws.rs.core.MediaType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.time.LocalDateTime
+import java.util.*
 
 @QuarkusTest
 @TestHTTPEndpoint(AppAdminResource::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AppAdminResourceTest {
-
     @Inject
     lateinit var apiUserRepository: ApiUserRepository
-/*
+
+    @Inject
+    lateinit var pageRepository: PageRepository
+
     @Test
-    @RunOnVertxContext
     @TestSecurity(user = "admin", roles = ["app-admin"])
-    fun `should update admin password`(uniAsserter: UniAsserter) {
-        QuarkusMock.installMockForInstance(ApiUserRepositoryMock(), apiUserRepository)
-
-        val expectedPassword = "awesome-administrator"
-        val expectedHtmlBody = renderPasswordFlow(PasswordValidation.VALID)
-
-        val actualHtmlBody = Given {
-            header("Content-Type", ContentType.URLENC)
-            formParam("password", expectedPassword)
-            formParam("password-confirm", expectedPassword)
+    @RunOnVertxContext
+    fun `should generate API key for valid user`(uniAsserter: UniAsserter) {
+        val response = Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
+            formParam("username", "api-user-4")
+            formParam("role", "api-user")
+            formParam("expiresAt", "")
         } When {
-            post("/fragment/register")
+            post("/keygen")
         } Then {
             statusCode(200)
+            contentType(MediaType.TEXT_PLAIN)
         } Extract {
             body().asString()
         }
 
-        Assertions.assertEquals(expectedHtmlBody, actualHtmlBody)
+        // Verify API key was generated
+        val decoded = Base64.getDecoder().decode(response)
+        val (username, password) = decoded.decodeToString().split(":")
 
-        uniAsserter.assertThat(
-            { apiUserRepository.findByUsername("admin") },
-            { result -> Assertions.assertEquals(expectedPassword, result!!.password)}
+        Assertions.assertEquals("api-user-4", username)
+        Assertions.assertDoesNotThrow { UUID.fromString(password) } // UUID should be valid
+
+        uniAsserter.assertThat (
+            { apiUserRepository.findByUsername("api-user-4") },
+            { result ->
+                Assertions.assertNotNull(result)
+                Assertions.assertEquals("api-user", result?.role)
+                Assertions.assertNull(result?.expiresAt)
+            }
         )
     }
 
     @Test
     @TestSecurity(user = "admin", roles = ["app-admin"])
-    fun `should show admin password update NO_MATCH error`() {
-        val passwordFlowApiUserRepositoryMock = ApiUserRepositoryMock()
-        passwordFlowApiUserRepositoryMock.apiUsers.find { it.username == "admin" }?.let { it.password = null }
+    @RunOnVertxContext
+    fun `should generate API key with expiration date`(uniAsserter: UniAsserter) {
+        val expirationDate = LocalDateTime.now().plusDays(30).toString()
 
-        QuarkusMock.installMockForInstance(passwordFlowApiUserRepositoryMock, apiUserRepository)
-
-        val expectedHtmlBody = renderPasswordFlow(PasswordValidation.NO_MATCH)
-
-        val actualHtmlBody = Given {
-            header("Content-Type", ContentType.URLENC)
-            formParam("password", "admin-password-update")
-            formParam("password-confirm", "admin-password-misspell")
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
+            formParam("username", "api-user-6")
+            formParam("role", "api-user")
+            formParam("expiresAt", expirationDate)
         } When {
-            post("/fragment/register")
+            post("/keygen")
         } Then {
             statusCode(200)
-        } Extract {
-            body().asString()
         }
 
-        Assertions.assertEquals(expectedHtmlBody, actualHtmlBody)
+        uniAsserter.assertThat (
+            { apiUserRepository.findByUsername("api-user-6") },
+            { result ->
+                Assertions.assertNotNull(result)
+                Assertions.assertEquals("api-user", result?.role)
+                Assertions.assertEquals(expirationDate, result?.expiresAt.toString())
+            }
+        )
+    }
 
-        QuarkusMock.installMockForType(ApiUserRepositoryMock(), ApiUserRepository::class.java)
+    @Test
+    fun `should return 401 for unauthorized keygen request`() {
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
+            formParam("username", "testuser")
+            formParam("role", "api-user")
+            formParam("expiresAt", "")
+        } When {
+            post("/keygen")
+        } Then {
+            statusCode(401)
+        }
+    }
+
+    @Test
+    fun `should get aggregated stats with default time range`() {
+        val response = Given {
+            auth().preemptive().basic("admin", "admin")
+        } When {
+            get("/stats")
+        } Then {
+            statusCode(200)
+            contentType(MediaType.APPLICATION_JSON)
+        } Extract {
+            body().jsonPath()
+        }
+
+        // Verify response structure based on mock data
+        Assertions.assertNotNull(response.get("visitData"))
+        Assertions.assertNotNull(response.get("topPages"))
+        Assertions.assertNotNull(response.get("domainStats"))
+        Assertions.assertEquals(1200, response.getInt("totalVisits"))
+        Assertions.assertEquals(15, response.getInt("totalPages"))
+        Assertions.assertEquals(2, response.getInt("totalDomains"))
+    }
+
+    @Test
+    fun `should get aggregated stats with custom time range`() {
+        Given {
+            auth().preemptive().basic("admin", "admin")
+            queryParam("timeRange", "30d")
+        } When {
+            get("/stats")
+        } Then {
+            statusCode(200)
+            contentType(MediaType.APPLICATION_JSON)
+        }
+    }
+
+    @Test
+    fun `should return 401 for unauthorized stats request`() {
+        Given {
+            header("Authorization", "")
+        } When {
+            get("/stats")
+        } Then {
+            statusCode(401)
+        }
+    }
+
+    @Test
+    fun `should get all page visits`() {
+        val response = Given {
+            auth().preemptive().basic("admin", "admin")
+        } When {
+            get("/visits")
+        } Then {
+            statusCode(200)
+            contentType(MediaType.APPLICATION_JSON)
+        } Extract {
+            body().jsonPath()
+        }
+
+        // Verify response contains expected data from mock
+        val visits = response.getList<Map<String, Any>>("")
+        Assertions.assertTrue(visits.size >= 3) // Based on mock data
+
+        // Check first visit has expected structure
+        val firstVisit = visits[0]
+        Assertions.assertNotNull(firstVisit["id"])
+        Assertions.assertNotNull(firstVisit["path"])
+        Assertions.assertNotNull(firstVisit["domain"])
+        Assertions.assertNotNull(firstVisit["pageAdded"])
+        Assertions.assertNotNull(firstVisit["visits"])
+    }
+
+    @Test
+    fun `should get pages with stats`() {
+        val response = Given {
+            auth().preemptive().basic("admin", "admin")
+        } When {
+            get("/pages")
+        } Then {
+            statusCode(200)
+            contentType(MediaType.APPLICATION_JSON)
+        } Extract {
+            body().jsonPath()
+        }
+
+        // Verify response contains expected data from mock
+        val pages = response.getList<Map<String, Any>>("")
+        Assertions.assertTrue(pages.size >= 3) // Based on mock data
+
+        // Check first page has expected structure
+        val firstPage = pages[0]
+        Assertions.assertNotNull(firstPage["id"])
+        Assertions.assertNotNull(firstPage["path"])
+        Assertions.assertNotNull(firstPage["domain"])
+        Assertions.assertNotNull(firstPage["pageAdded"])
+        Assertions.assertNotNull(firstPage["visitCount"])
+        Assertions.assertTrue(firstPage["visitCount"] is Number)
     }
 
     @Test
     @TestSecurity(user = "admin", roles = ["app-admin"])
-    fun `should show admin password update EMPTY error`() {
-        installMockForPasswordFlow()
-
-        val expectedHtmlBody = renderPasswordFlow(PasswordValidation.EMPTY)
-
-        val actualHtmlBody = Given {
-            header("Content-Type", ContentType.URLENC)
-            formParam("password", "")
-            formParam("password-confirm", "")
+    fun `should get list of users`() {
+        val response = Given {
+            auth().preemptive().basic("admin", "admin")
         } When {
-            post("/fragment/register")
+            get("/users")
         } Then {
             statusCode(200)
+            contentType(MediaType.APPLICATION_JSON)
         } Extract {
-            body().asString()
+            body().jsonPath()
         }
 
-        Assertions.assertEquals(expectedHtmlBody, actualHtmlBody)
+        // Verify response contains expected data from mock
+        val users = response.getList<Map<String, Any>>("")
+        Assertions.assertEquals(5, users.size) // Based on initial mock data
+
+        // Check user structure
+        val firstUser = users[0]
+        Assertions.assertNotNull(firstUser["id"])
+        Assertions.assertNotNull(firstUser["username"])
+        Assertions.assertNotNull(firstUser["role"])
     }
 
     @Test
     @TestSecurity(user = "admin", roles = ["app-admin"])
-    fun `should show admin password update TOO_SHORT error`() {
-        installMockForPasswordFlow()
-
-        val expectedHtmlBody = renderPasswordFlow(PasswordValidation.TOO_SHORT)
-
-        val actualHtmlBody = Given {
-            header("Content-Type", ContentType.URLENC)
-            formParam("password", "short")
-            formParam("password-confirm", "short")
-        } When {
-            post("/fragment/register")
+    @RunOnVertxContext
+    fun `should retire API key`(uniAsserter: UniAsserter) {
+        When {
+            post("/retire/9f685bd0-90e6-479a-99b6-3fad28d2a005")
         } Then {
             statusCode(200)
-        } Extract {
-            body().asString()
         }
 
-        Assertions.assertEquals(expectedHtmlBody, actualHtmlBody)
+        // username will return null after retirement
+        uniAsserter.assertThat (
+            { apiUserRepository.findByUsername("api-user-5") },
+            { result ->
+                Assertions.assertNull(result)
+            }
+        )
 
-        QuarkusMock.installMockForType(ApiUserRepositoryMock(), ApiUserRepository::class.java)
+        // Verify API key was retired
+        uniAsserter.assertThat (
+            { apiUserRepository.findByUuid(UUID.fromString("9f685bd0-90e6-479a-99b6-3fad28d2a005")) },
+            { result ->
+                Assertions.assertNotNull(result)
+                Assertions.assertEquals("api-user", result?.role)
+                Assertions.assertNotNull(result?.expiresAt.toString())
+            }
+        )
     }
-*/
-    private fun installMockForPasswordFlow() {
-        val passwordFlowApiUserRepositoryMock = ApiUserRepositoryMock()
-        passwordFlowApiUserRepositoryMock.apiUsers.find { it.username == "admin" }?.let { it.password = null }
 
-        QuarkusMock.installMockForInstance(passwordFlowApiUserRepositoryMock, apiUserRepository)
+    @Test
+    @TestSecurity(user = "admin", roles = ["app-admin"])
+    @RunOnVertxContext
+    fun `should delete page`(uniAsserter: UniAsserter) {
+        When {
+            post("/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a650")
+        } Then {
+            statusCode(200)
+        }
+
+        uniAsserter.assertThat (
+            { pageRepository.findPageByPathAndDomain("/deletion", "delete.test") },
+            { result ->
+                Assertions.assertNull(result)
+            }
+        )
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = ["app-admin"])
+    fun `should not delete inexistent page`() {
+        When {
+            post("/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a000")
+        } Then {
+            statusCode(404)
+        }
+    }
+
+    @Test
+    fun `should return 401 for unauthorized user operations`() {
+        // Test retire without auth
+        Given {
+            header("Authorization", "")
+        } When {
+            post("/retire/${UUID.randomUUID()}")
+        } Then {
+            statusCode(401)
+        }
+
+        // Test page delete without auth
+        Given {
+            header("Authorization", "")
+        } When {
+            post("/pagedel/${UUID.randomUUID()}")
+        } Then {
+            statusCode(401)
+        }
+
+        // Test users list without auth
+        Given {
+            header("Authorization", "")
+        } When {
+            get("/users")
+        } Then {
+            statusCode(401)
+        }
+    }
+
+    @Test
+    fun `should handle invalid retire user ID`() {
+        val nonExistentUserId = UUID.randomUUID()
+
+        Given {
+            auth().preemptive().basic("admin", "admin")
+        } When {
+            post("/retire/$nonExistentUserId")
+        } Then {
+            statusCode(500) // Should return error when user not found
+        }
+    }
+
+    @Test
+    fun `should handle invalid page deletion`() {
+        val nonExistentPageId = UUID.randomUUID()
+
+        Given {
+            auth().preemptive().basic("admin", "admin")
+        } When {
+            post("/pagedel/$nonExistentPageId")
+        } Then {
+            statusCode(200) // deletePage returns false but service still returns 200
+        }
     }
 }

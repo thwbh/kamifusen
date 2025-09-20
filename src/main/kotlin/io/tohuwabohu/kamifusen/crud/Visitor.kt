@@ -61,6 +61,7 @@ class VisitorRepository : PanacheRepositoryBase<Visitor, UUID> {
         return persist(visitor)
     }
 
+    @WithTransaction
     fun findByInfo(remoteAddress: String, userAgent: String) = find("info", sha256("$remoteAddress $userAgent")).firstResult()
 
     @WithTransaction

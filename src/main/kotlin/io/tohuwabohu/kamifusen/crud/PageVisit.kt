@@ -47,7 +47,9 @@ data class PageVisit (
 
 @ApplicationScoped
 class PageVisitRepository: PanacheRepository<PageVisit> {
+    @WithTransaction
     fun countVisits(pageId: UUID) = count("pageId = ?1", pageId)
+    @WithTransaction
     fun countVisitsForVisitor(pageId: UUID, visitorId: UUID) = count("#PageVisit.countVisitsPerPage", mapOf(
         "visitorId" to visitorId,
         "pageId" to pageId)
