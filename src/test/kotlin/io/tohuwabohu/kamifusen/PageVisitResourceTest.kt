@@ -9,15 +9,14 @@ import io.restassured.module.kotlin.extensions.Extract
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
-import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.*
-import io.tohuwabohu.kamifusen.service.dto.PageHitRequestDto
+import io.tohuwabohu.kamifusen.api.generated.model.PageHitRequestDto
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.crud.VisitorRepository
 import jakarta.inject.Inject
 import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.MediaType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import java.util.*
 
 @QuarkusTest
 @TestHTTPEndpoint(PageVisitResource::class)

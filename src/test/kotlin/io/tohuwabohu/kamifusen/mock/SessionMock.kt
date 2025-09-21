@@ -1,8 +1,8 @@
 package io.tohuwabohu.kamifusen.mock
 
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.Session
-import io.tohuwabohu.kamifusen.crud.SessionRepository
+import io.tohuwabohu.kamifusen.service.crud.Session
+import io.tohuwabohu.kamifusen.service.crud.SessionRepository
 import java.time.LocalDateTime
 import java.util.*
 

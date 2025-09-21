@@ -1,4 +1,4 @@
-package io.tohuwabohu.kamifusen.crud.security
+package io.tohuwabohu.kamifusen.security
 
 import io.quarkus.security.UnauthorizedException
 import io.quarkus.security.identity.AuthenticationRequestContext
@@ -7,7 +7,7 @@ import io.quarkus.security.identity.SecurityIdentity
 import io.quarkus.security.identity.request.UsernamePasswordAuthenticationRequest
 import io.quarkus.security.runtime.QuarkusSecurityIdentity
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
 import jakarta.annotation.Priority
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.Priorities

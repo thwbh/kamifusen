@@ -4,10 +4,9 @@ import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.QuarkusMock
 import io.quarkus.test.vertx.RunOnVertxContext
 import io.quarkus.test.vertx.UniAsserter
-import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.Page
-import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.crud.PageVisitRepository
+import io.tohuwabohu.kamifusen.service.crud.Page
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.crud.PageVisitRepository
 import io.tohuwabohu.kamifusen.mock.PageRepositoryMock
 import io.tohuwabohu.kamifusen.mock.PageVisitRepositoryMock
 import jakarta.inject.Inject

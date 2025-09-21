@@ -3,15 +3,16 @@ package io.tohuwabohu.kamifusen.service
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.Page
-import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.crud.PageVisitRepository
-import io.tohuwabohu.kamifusen.crud.SessionRepository
-import io.tohuwabohu.kamifusen.crud.Visitor
-import io.tohuwabohu.kamifusen.crud.VisitorRepository
-import io.tohuwabohu.kamifusen.service.dto.PageHitRequestDto
-import io.tohuwabohu.kamifusen.service.dto.VisitContextDto
-import io.tohuwabohu.kamifusen.service.dto.VisitResultDto
+import io.tohuwabohu.kamifusen.api.generated.model.PageHitRequestDto
+import io.tohuwabohu.kamifusen.service.crud.Page
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.crud.PageVisitRepository
+import io.tohuwabohu.kamifusen.service.crud.SessionRepository
+import io.tohuwabohu.kamifusen.service.crud.Visitor
+import io.tohuwabohu.kamifusen.service.crud.VisitorRepository
+import io.tohuwabohu.kamifusen.service.context.VisitContext
+import io.tohuwabohu.kamifusen.service.context.VisitResult
+import io.tohuwabohu.kamifusen.service.mapper.VisitRequestMapper
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.NotFoundException
 import java.util.*
@@ -32,7 +33,7 @@ class PageVisitService(
      * Processes a page hit request, handling visitor creation, session management, and visit tracking
      */
     @WithTransaction
-    fun processPageHit(context: VisitContextDto): Uni<VisitResultDto> {
+    fun processPageHit(context: VisitContext): Uni<VisitResult> {
         Log.debug("Processing page hit for ${context.pageHit.domain}${context.pageHit.path}")
 
         return validatePageHitRequest(context.pageHit)
@@ -82,7 +83,7 @@ class PageVisitService(
     /**
      * Processes visitor-related logic for the page hit
      */
-    private fun processVisitor(context: VisitContextDto, page: Page): Uni<VisitResultDto> {
+    private fun processVisitor(context: VisitContext, page: Page): Uni<VisitResult> {
         return visitorRepository.findByInfo(context.remoteAddress, context.userAgent)
             .flatMap { visitor ->
                 if (visitor == null) {
@@ -96,7 +97,7 @@ class PageVisitService(
     /**
      * Handles the case where a new visitor is detected
      */
-    private fun handleNewVisitor(context: VisitContextDto, page: Page): Uni<VisitResultDto> {
+    private fun handleNewVisitor(context: VisitContext, page: Page): Uni<VisitResult> {
         Log.debug("Creating new visitor for ${context.remoteAddress}")
 
         return createNewVisitor(context)
@@ -104,7 +105,7 @@ class PageVisitService(
                 recordVisitAndSession(visitor, page, isNewVisitor = true)
                     .flatMap { sessionId ->
                         pageVisitRepository.countVisits(page.id)
-                            .map { count -> VisitResultDto(count, true, sessionId) }
+                            .map { count -> VisitResult(count, true, sessionId) }
                     }
             }
     }
@@ -112,7 +113,7 @@ class PageVisitService(
     /**
      * Handles the case where an existing visitor is detected
      */
-    private fun handleExistingVisitor(context: VisitContextDto, page: Page, visitor: Visitor): Uni<VisitResultDto> {
+    private fun handleExistingVisitor(context: VisitContext, page: Page, visitor: Visitor): Uni<VisitResult> {
         Log.debug("Processing existing visitor ${visitor.id}")
 
         return updateVisitorLastSeen(visitor)
@@ -122,7 +123,7 @@ class PageVisitService(
     /**
      * Creates a new visitor with the provided context information
      */
-    private fun createNewVisitor(context: VisitContextDto): Uni<Visitor> {
+    private fun createNewVisitor(context: VisitContext): Uni<Visitor> {
         return visitorRepository.addVisitor(
             remoteAddress = context.remoteAddress,
             userAgent = context.userAgent,
@@ -164,7 +165,7 @@ class PageVisitService(
     /**
      * Checks if this is a new visit and processes accordingly
      */
-    private fun checkAndProcessVisit(context: VisitContextDto, page: Page, visitor: Visitor): Uni<VisitResultDto> {
+    private fun checkAndProcessVisit(context: VisitContext, page: Page, visitor: Visitor): Uni<VisitResult> {
         return pageVisitRepository.countVisitsForVisitor(page.id, visitor.id)
             .flatMap { existingVisitCount ->
                 if (existingVisitCount <= 0) {
@@ -172,7 +173,7 @@ class PageVisitService(
                 } else {
                     // Visitor has already visited this page, return current count
                     pageVisitRepository.countVisits(page.id)
-                        .map { totalCount -> VisitResultDto(totalCount, false, null) }
+                        .map { totalCount -> VisitResult(totalCount, false, null) }
                 }
             }
     }
@@ -180,7 +181,7 @@ class PageVisitService(
     /**
      * Processes a new visit for an existing visitor
      */
-    private fun processNewVisitForExistingVisitor(context: VisitContextDto, page: Page, visitor: Visitor): Uni<VisitResultDto> {
+    private fun processNewVisitForExistingVisitor(context: VisitContext, page: Page, visitor: Visitor): Uni<VisitResult> {
         return checkForRecentActivity(visitor, context.pageHit.domain)
             .flatMap { hasRecentActivity ->
                 recordVisitAndManageSession(visitor, page, hasRecentActivity)
@@ -199,7 +200,7 @@ class PageVisitService(
     /**
      * Records the visit and manages session based on recent activity
      */
-    private fun recordVisitAndManageSession(visitor: Visitor, page: Page, hasRecentActivity: Boolean): Uni<VisitResultDto> {
+    private fun recordVisitAndManageSession(visitor: Visitor, page: Page, hasRecentActivity: Boolean): Uni<VisitResult> {
         return pageVisitRepository.addVisit(page.id, visitor.id)
             .flatMap { _ ->
                 sessionRepository.findOrCreateSessionForVisitor(visitor.id, hasRecentActivity)
@@ -207,14 +208,14 @@ class PageVisitService(
                         sessionRepository.incrementPageViews(session.id)
                             .flatMap { _ ->
                                 pageVisitRepository.countVisits(page.id)
-                                    .map { count -> VisitResultDto(count, false, session.id) }
+                                    .map { count -> VisitResult(count, false, session.id) }
                             }
                     }
                     .onFailure().recoverWithUni { throwable ->
                         Log.warn("Session management failed for visitor ${visitor.id}", throwable)
                         // Fallback: just return the visit count without session info
                         pageVisitRepository.countVisits(page.id)
-                            .map { count -> VisitResultDto(count, false, null) }
+                            .map { count -> VisitResult(count, false, null) }
                     }
             }
     }

@@ -1,4 +1,4 @@
-package io.tohuwabohu.kamifusen.crud
+package io.tohuwabohu.kamifusen.service.crud
 
 import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.hibernate.reactive.panache.Panache
@@ -11,6 +11,7 @@ import io.quarkus.security.jpa.UserDefinition
 import io.quarkus.security.jpa.Username
 import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.unchecked.Unchecked
+import io.tohuwabohu.kamifusen.api.generated.model.ApiUserDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.*
 import jakarta.ws.rs.NotFoundException
@@ -72,6 +73,7 @@ data class ApiUser(
         return this::class.simpleName + "(  id = $id   ,   username = $username   ,   password = $password   ,   role = $role   ,   expiresAt = $expiresAt   ,   added = $added )"
     }
 
+    final fun toDto() = ApiUserDto(username, role, id, expiresAt, added, updated)
 }
 
 @ApplicationScoped

@@ -2,24 +2,26 @@ package io.tohuwabohu.kamifusen
 
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.ApiUser
-import io.tohuwabohu.kamifusen.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.api.generated.AppAdminResourceApi
+import io.tohuwabohu.kamifusen.api.generated.model.AggregatedStatsDto
+import io.tohuwabohu.kamifusen.api.generated.model.PageWithStatsDto
+import io.tohuwabohu.kamifusen.service.crud.ApiUser
+import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.service.PageAdminService
-import io.tohuwabohu.kamifusen.service.dto.PageWithStatsDto
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
-import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.service.dto.AggregatedStatsDto
-import io.tohuwabohu.kamifusen.service.dto.PageVisitDtoRepository
-import io.tohuwabohu.kamifusen.service.dto.StatsRepository
-import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
-import io.tohuwabohu.kamifusen.crud.security.*
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.PageStatsService
+import io.tohuwabohu.kamifusen.service.StatsService
+import io.tohuwabohu.kamifusen.error.recoverWithResponse
+
+import io.tohuwabohu.kamifusen.service.validator.UserValidation
+import io.tohuwabohu.kamifusen.service.validator.validateUser
 import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.*
-import org.eclipse.microprofile.config.inject.ConfigProperty
 import java.time.LocalDateTime
 import java.util.*
 
@@ -27,17 +29,17 @@ import java.util.*
 @Path("/admin")
 class AppAdminResource(
     private val apiUserRepository: ApiUserRepository,
-    private val pageVisitDtoRepository: PageVisitDtoRepository,
+    private val pageStatsService: PageStatsService,
     private val pageRepository: PageRepository,
-    private val statsRepository: StatsRepository,
+    private val statsService: StatsService,
     private val pageAdminService: PageAdminService
-) {
+): AppAdminResourceApi {
     @Path("/keygen")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
     @RolesAllowed("app-admin")
-    fun generateApiKey(
+    override fun generateApiKey(
         @FormParam("username") username: String,
         @FormParam("role") role: String,
         @FormParam("expiresAt") expiresAt: String
@@ -73,8 +75,8 @@ class AppAdminResource(
         )]
     )
     @RolesAllowed("app-admin")
-    fun getAggregatedStats(@QueryParam("timeRange") timeRange: String?): Uni<Response> =
-        statsRepository.getAggregatedStats(timeRange ?: "7d")
+    override fun getStats(@QueryParam("timeRange") timeRange: String?): Uni<Response> =
+        statsService.getAggregatedStats(timeRange ?: "7d")
             .map { stats -> Response.ok(stats).build() }
             .onFailure().invoke { e -> Log.error("Error receiving aggregated stats.", e) }
             .onFailure().recoverWithResponse()
@@ -84,8 +86,8 @@ class AppAdminResource(
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("app-admin")
-    fun renderVisits(): Uni<Response> =
-        pageVisitDtoRepository.getAllPageVisits()
+    override fun getVisits(): Uni<Response> =
+        pageStatsService.getAllPageVisits()
             .flatMap {
                 Uni.createFrom().item(Response.ok(it).build())
             }
@@ -105,7 +107,7 @@ class AppAdminResource(
         )]
     )
     @RolesAllowed("app-admin")
-    fun listPages(): Uni<Response> =
+    override fun listPages(): Uni<Response> =
         pageAdminService.getPagesWithStats().flatMap {
             Uni.createFrom().item(Response.ok(it).build())
         }.onFailure().invoke { e -> Log.error("Error receiving pages.", e) }
@@ -124,7 +126,7 @@ class AppAdminResource(
         )]
     )
     @RolesAllowed("app-admin")
-    fun listUsers(): Uni<Response> =
+    override fun listUsers(): Uni<Response> =
         apiUserRepository.listAll().flatMap { users ->
             Uni.createFrom().item(Response.ok(users).build())
         }.onFailure().invoke { e -> Log.error("Error receiving users.", e) }
@@ -135,7 +137,7 @@ class AppAdminResource(
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("app-admin")
-    fun retireApiKey(userId: UUID): Uni<Response> =
+    override fun retireApiKey(userId: UUID): Uni<Response> =
         apiUserRepository.expireUser(userId).onItem()
             .transform { Response.ok().build() }
             .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
@@ -146,7 +148,7 @@ class AppAdminResource(
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_PLAIN)
     @RolesAllowed("app-admin")
-    fun unregisterPage(pageId: UUID): Uni<Response> =
+    override fun unregisterPage(pageId: UUID): Uni<Response> =
         pageRepository.deletePage(pageId).map { Response.ok().build() }
             .onFailure().invoke { e -> Log.error("Error during page deletion.", e) }
             .onFailure().recoverWithResponse()

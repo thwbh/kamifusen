@@ -10,10 +10,10 @@ import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.quarkus.test.junit.QuarkusMock
-import io.tohuwabohu.kamifusen.crud.ApiUserRepository
-import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.mock.StatsRepositoryMock
-import io.tohuwabohu.kamifusen.service.dto.StatsRepository
+import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.mock.StatsServiceMock
+import io.tohuwabohu.kamifusen.service.StatsService
 import jakarta.inject.Inject
 import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.MediaType
@@ -36,7 +36,7 @@ class AppAdminResourceTest {
 
     @BeforeAll
     fun init() {
-        QuarkusMock.installMockForType(StatsRepositoryMock(), StatsRepository::class.java)
+        QuarkusMock.installMockForType(StatsServiceMock(), StatsService::class.java)
     }
 
     @Test
@@ -184,7 +184,7 @@ class AppAdminResourceTest {
         Assertions.assertNotNull(firstVisit["path"])
         Assertions.assertNotNull(firstVisit["domain"])
         Assertions.assertNotNull(firstVisit["pageAdded"])
-        Assertions.assertNotNull(firstVisit["visits"])
+        Assertions.assertNotNull(firstVisit["visitCount"])
     }
 
     @Test

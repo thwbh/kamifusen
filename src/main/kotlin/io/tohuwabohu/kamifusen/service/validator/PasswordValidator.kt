@@ -1,4 +1,4 @@
-package io.tohuwabohu.kamifusen.crud.security
+package io.tohuwabohu.kamifusen.service.validator
 
 import io.smallrye.mutiny.Uni
 

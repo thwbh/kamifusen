@@ -1,4 +1,4 @@
-package io.tohuwabohu.kamifusen.crud.error
+package io.tohuwabohu.kamifusen.error
 
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni

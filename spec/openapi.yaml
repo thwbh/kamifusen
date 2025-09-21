@@ -12,6 +12,7 @@ servers:
 paths:
   /admin/keygen:
     post:
+      operationId: generateApiKey
       tags:
       - App Admin Resource
       requestBody:
@@ -43,6 +44,7 @@ paths:
       - SecurityScheme: []
   /admin/pagedel/{pageId}:
     post:
+      operationId: unregisterPage
       tags:
       - App Admin Resource
       parameters:
@@ -64,6 +66,7 @@ paths:
       - SecurityScheme: []
   /admin/pages:
     get:
+      operationId: listPages
       tags:
       - App Admin Resource
       responses:
@@ -83,6 +86,7 @@ paths:
       - SecurityScheme: []
   /admin/retire/{userId}:
     post:
+      operationId: retireApiKey
       tags:
       - App Admin Resource
       parameters:
@@ -104,6 +108,7 @@ paths:
       - SecurityScheme: []
   /admin/stats:
     get:
+      operationId: getStats
       tags:
       - App Admin Resource
       parameters:
@@ -127,6 +132,7 @@ paths:
       - SecurityScheme: []
   /admin/users:
     get:
+      operationId: listUsers
       tags:
       - App Admin Resource
       responses:
@@ -137,7 +143,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ApiUser"
+                  $ref: "#/components/schemas/ApiUserDto"
         "401":
           description: Not Authorized
         "403":
@@ -146,6 +152,7 @@ paths:
       - SecurityScheme: []
   /admin/visits:
     get:
+      operationId: getVisits
       tags:
       - App Admin Resource
       responses:
@@ -161,11 +168,15 @@ paths:
       - SecurityScheme: []
   /public/visits/count/{pageId}:
     get:
+      operationId: count
       tags:
       - Page Visit Resource
+      summary: count
+      description: count
       parameters:
       - name: pageId
         in: path
+        description: pageId
         required: true
         schema:
           $ref: "#/components/schemas/UUID"
@@ -174,16 +185,13 @@ paths:
           description: OK
           content:
             application/json: {}
-        "401":
-          description: Not Authorized
-        "403":
-          description: Not Allowed
-      security:
-      - SecurityScheme: []
   /public/visits/hit:
     post:
+      operationId: hit
       tags:
       - Page Visit Resource
+      summary: hit
+      description: hit
       requestBody:
         content:
           application/json:
@@ -194,12 +202,6 @@ paths:
           description: OK
           content:
             application/json: {}
-        "401":
-          description: Not Authorized
-        "403":
-          description: Not Allowed
-      security:
-      - SecurityScheme: []
 components:
   schemas:
     AggregatedStatsDto:
@@ -207,6 +209,9 @@ components:
       - visitData
       - topPages
       - domainStats
+      - totalVisits
+      - totalPages
+      - totalDomains
       type: object
       properties:
         visitData:
@@ -230,7 +235,7 @@ components:
         totalDomains:
           format: int64
           type: integer
-    ApiUser:
+    ApiUserDto:
       required:
       - username
       - role
@@ -243,9 +248,6 @@ components:
           nullable: true
         username:
           type: string
-        password:
-          type: string
-          nullable: true
         role:
           type: string
         expiresAt:
@@ -267,6 +269,7 @@ components:
       required:
       - domain
       - percentage
+      - visits
       type: object
       properties:
         domain:
@@ -276,6 +279,7 @@ components:
           type: integer
         percentage:
           type: number
+          format: double
     LocalDateTime:
       format: date-time
       type: string
@@ -295,6 +299,7 @@ components:
       - id
       - path
       - pageAdded
+      - visitCount
       type: object
       properties:
         id:
@@ -318,6 +323,7 @@ components:
       required:
       - path
       - percentage
+      - visits
       type: object
       properties:
         path:
@@ -327,6 +333,7 @@ components:
           type: integer
         percentage:
           type: number
+          format: double
     UUID:
       format: uuid
       pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
@@ -335,6 +342,7 @@ components:
       required:
       - label
       - category
+      - value
       type: object
       properties:
         label:

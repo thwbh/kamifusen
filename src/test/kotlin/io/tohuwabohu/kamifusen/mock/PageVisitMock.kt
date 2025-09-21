@@ -1,8 +1,9 @@
 package io.tohuwabohu.kamifusen.mock
 
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.PageVisit
-import io.tohuwabohu.kamifusen.crud.PageVisitRepository
+import io.tohuwabohu.kamifusen.service.crud.PageVisit
+import io.tohuwabohu.kamifusen.service.crud.PageVisitRepository
+import io.tohuwabohu.kamifusen.service.crud.Page
 import java.time.LocalDateTime
 import java.util.*
 
@@ -11,7 +12,7 @@ import java.util.*
  */
 class PageVisitRepositoryMock : PageVisitRepository() {
     val visits = mutableListOf<PageVisit>()
-    val pages = mutableListOf<io.tohuwabohu.kamifusen.crud.Page>()
+    val pages = mutableListOf<Page>()
     val visitCounts = mutableMapOf<UUID, Long>()
 
     override fun countVisits(pageId: UUID): Uni<Long> = Uni.createFrom().item(visitCounts.getOrDefault(pageId, 0L))

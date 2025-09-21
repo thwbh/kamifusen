@@ -1,4 +1,4 @@
-package io.tohuwabohu.kamifusen.crud.security
+package io.tohuwabohu.kamifusen.service.validator
 
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.vertx.RunOnVertxContext

@@ -1,8 +1,8 @@
 package io.tohuwabohu.kamifusen.mock
 
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.ApiUser
-import io.tohuwabohu.kamifusen.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.ApiUser
+import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
 import java.time.LocalDateTime
 import java.util.*
 

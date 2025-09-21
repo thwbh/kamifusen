@@ -1,0 +1,8 @@
+/**
+* {{description}}{{^description}}Values: {{#allowableValues}}{{#enumValues}}{{#values}}{{.}}{{^-last}},{{/-last}}{{/values}}{{/enumValues}}{{/allowableValues}}{{/description}}
+*/
+enum class {{classname}}(val value: {{dataType}}) {
+{{#allowableValues}}{{#enumValues}}
+    {{#values}}@JsonProperty("{{.}}") {{name}}({{#isString}}"{{.}}"{{/isString}}{{^isString}}{{.}}{{/isString}}){{^-last}},{{/-last}}
+    {{/values}}{{/enumValues}}{{/allowableValues}}
+}

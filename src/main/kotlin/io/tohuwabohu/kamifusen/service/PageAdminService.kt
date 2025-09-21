@@ -1,10 +1,10 @@
 package io.tohuwabohu.kamifusen.service
 
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.Page
-import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.crud.PageVisitRepository
-import io.tohuwabohu.kamifusen.service.dto.PageWithStatsDto
+import io.tohuwabohu.kamifusen.service.crud.Page
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.crud.PageVisitRepository
+import io.tohuwabohu.kamifusen.api.generated.model.PageWithStatsDto
 import jakarta.enterprise.context.ApplicationScoped
 
 /**
@@ -23,7 +23,7 @@ class PageAdminService(
         return pageRepository.listAllPages()
             .flatMap { pages ->
                 if (pages.isEmpty()) {
-                    Uni.createFrom().item(emptyList<PageWithStatsDto>())
+                    Uni.createFrom().item(emptyList())
                 } else {
                     // Process pages one by one to avoid complex type inference
                     processPages(pages, emptyList())

@@ -2,14 +2,15 @@ package io.tohuwabohu.kamifusen
 
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.error.recoverWithResponse
+import io.tohuwabohu.kamifusen.api.generated.PageVisitResourceApi
+import io.tohuwabohu.kamifusen.api.generated.model.PageHitRequestDto
+import io.tohuwabohu.kamifusen.error.recoverWithResponse
 import io.tohuwabohu.kamifusen.service.PageVisitService
-import io.tohuwabohu.kamifusen.service.VisitRequestMapper
-import io.tohuwabohu.kamifusen.service.dto.PageHitRequestDto
+import io.tohuwabohu.kamifusen.service.mapper.VisitRequestMapper
 import io.vertx.core.http.HttpServerRequest
 import jakarta.annotation.security.RolesAllowed
+import jakarta.inject.Inject
 import jakarta.ws.rs.*
-import jakarta.ws.rs.core.Context
 import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import java.util.*
@@ -18,19 +19,21 @@ import java.util.*
 class PageVisitResource(
     private val pageVisitService: PageVisitService,
     private val requestMapper: VisitRequestMapper
-) {
+): PageVisitResourceApi {
+    @Inject
+    lateinit var request: HttpServerRequest
+
     @Path("/hit")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("api-user")
-    fun hit(
-        @Context request: HttpServerRequest,
-        body: PageHitRequestDto
+    override fun hit(
+        pageHitRequestDto: PageHitRequestDto
     ): Uni<Response> {
-        Log.debug("Received page hit request for ${body.domain}${body.path}")
+        Log.debug("Received page hit request for ${pageHitRequestDto.domain}${pageHitRequestDto.path}")
 
-        return requestMapper.validatePageHitRequest(body).chain { validationErrors ->
+        return requestMapper.validatePageHitRequest(pageHitRequestDto).chain { validationErrors ->
             if (validationErrors != null) {
                 Log.warn("Invalid page hit request: ${validationErrors.joinToString(", ")}")
                 return@chain Uni.createFrom().item(
@@ -40,7 +43,7 @@ class PageVisitResource(
                 )
             }
 
-            requestMapper.mapToVisitContext(request, body).chain { context ->
+            requestMapper.mapToVisitContext(request, pageHitRequestDto).chain { context ->
                 pageVisitService.processPageHit(context)
                     .map { result ->
                         Log.debug("Page hit processed successfully: ${result.visitCount} visits")
@@ -54,7 +57,7 @@ class PageVisitResource(
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed("api-admin")
-    fun count(@PathParam("pageId") pageId: UUID): Uni<Response> {
+    override fun count(@PathParam("pageId") pageId: UUID): Uni<Response> {
         Log.debug("Received visit count request for page $pageId")
 
         return pageVisitService.getVisitCount(pageId)

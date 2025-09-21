@@ -1,7 +1,7 @@
-package io.tohuwabohu.kamifusen.crud.security
+package io.tohuwabohu.kamifusen.service.validator
 
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
 
 enum class UserValidation(val valid: Boolean, val message: String? = null) {
     VALID(true),

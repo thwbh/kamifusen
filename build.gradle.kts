@@ -71,15 +71,56 @@ noArg {
     annotation("jakarta.persistence.Embeddable")
 }
 
+// Add generated sources to source sets
+sourceSets {
+    main {
+        java {
+            srcDir("build/generated/server-api")
+        }
+    }
+}
+
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    dependsOn("generateServerApi")
+
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         javaParameters.set(true)
     }
 }
 
-// OpenAPI Generator Configuration - use schema file
-openApiGenerate {
+// Server API generation (Kotlin with custom templates)
+tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("generateServerApi") {
+    generatorName.set("kotlin-server")
+    inputSpec.set("$projectDir/spec/openapi.yaml")
+    outputDir.set("$projectDir/build/generated/server-api")
+    templateDir.set("$projectDir/openapi-templates/kotlin-server")
+    apiPackage.set("io.tohuwabohu.kamifusen.api.generated")
+    modelPackage.set("io.tohuwabohu.kamifusen.api.generated.model")
+
+    configOptions.set(mapOf(
+        "library" to "jaxrs-spec",
+        "interfaceOnly" to "true",
+        "returnResponse" to "true",
+        "serializationLibrary" to "jackson",
+        "enumPropertyNaming" to "UPPERCASE",
+    ))
+
+    typeMappings.set(mapOf(
+        "LocalDateTime" to "java.time.LocalDateTime",
+        "DateTime" to "java.time.LocalDateTime",
+        "BigDecimal" to "kotlin.Double"
+    ))
+
+    additionalProperties.set(mapOf(
+        "reactive" to "true",
+        "mutiny" to "true"
+    ))
+}
+
+// Client API generation (TypeScript)
+tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("generateClientApi") {
     generatorName.set("typescript-axios")
     inputSpec.set("$projectDir/spec/openapi.yaml")
     outputDir.set("$projectDir/src/main/webui/src/api/gen")
@@ -100,8 +141,4 @@ openApiGenerate {
     generateApiTests.set(false)
     generateModelDocumentation.set(false)
     generateApiDocumentation.set(false)
-}
-
-openApiValidate {
-    inputSpec.set("$projectDir/spec/openapi.yaml")
 }

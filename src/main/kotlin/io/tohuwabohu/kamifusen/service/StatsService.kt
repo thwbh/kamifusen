@@ -1,51 +1,23 @@
-package io.tohuwabohu.kamifusen.service.dto
+package io.tohuwabohu.kamifusen.service
 
 import io.quarkus.hibernate.reactive.panache.Panache
-import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepository
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.smallrye.mutiny.Uni
+import io.tohuwabohu.kamifusen.api.generated.model.AggregatedStatsDto
+import io.tohuwabohu.kamifusen.api.generated.model.DomainStatDataDto
+import io.tohuwabohu.kamifusen.api.generated.model.TopPageDataDto
+import io.tohuwabohu.kamifusen.api.generated.model.VisitTrendDataDto
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Tuple
+import org.hibernate.reactive.mutiny.Mutiny
 import java.math.BigDecimal
 import java.time.LocalDateTime
-import kotlin.math.roundToInt
-import org.hibernate.reactive.mutiny.Mutiny.Session as MutinySession
-
-/**
- * Data classes for aggregated statistics
- */
-data class VisitTrendDataDto(
-    val label: String,
-    val value: Long,
-    val category: String = "normal" // "low", "normal", "high"
-)
-
-data class TopPageDataDto(
-    val path: String,
-    val visits: Long,
-    val percentage: Number
-)
-
-data class DomainStatDataDto(
-    val domain: String,
-    val visits: Long,
-    val percentage: Number
-)
-
-data class AggregatedStatsDto(
-    val visitData: List<VisitTrendDataDto>,
-    val topPages: List<TopPageDataDto>,
-    val domainStats: List<DomainStatDataDto>,
-    val totalVisits: Long,
-    val totalPages: Long,
-    val totalDomains: Long
-)
 
 /**
  * Repository for generating aggregated statistics from real database data
  */
 @ApplicationScoped
-class StatsRepository : PanacheRepository<PageVisitDto> {
+class StatsService {
 
     @WithTransaction
     fun getAggregatedStats(timeRange: String = "7d"): Uni<AggregatedStatsDto> {
@@ -86,7 +58,7 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
         }
     }
 
-    private fun getVisitTrendData(session: MutinySession, days: Int): Uni<List<VisitTrendDataDto>> {
+    private fun getVisitTrendData(session: Mutiny.Session, days: Int): Uni<List<VisitTrendDataDto>> {
         val startDate = LocalDateTime.now().minusDays(days.toLong())
 
         // Query visits grouped by day of week across all pages and domains
@@ -148,7 +120,7 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
      * @param startDate Start date for the time range
      * @return List of top pages and their visits
      */
-    private fun getTopPagesData(session: MutinySession, startDate: LocalDateTime): Uni<List<TopPageDataDto>> {
+    private fun getTopPagesData(session: Mutiny.Session, startDate: LocalDateTime): Uni<List<TopPageDataDto>> {
         // Query top pages within the specified time range
         val query = """
             SELECT p.path, COUNT(pv.page_id) as visits
@@ -170,7 +142,7 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
                     val visits = tuple.get(1, Long::class.javaObjectType)
                     val percentage = if (totalVisits > 0) (visits.toDouble() / totalVisits.toDouble()) * 100 else 0.0
 
-                    TopPageDataDto(path, visits, percentage.roundToInt())
+                    TopPageDataDto(path, visits, percentage)
                 }
 
                 if (topPagesData.size < 5) return@transform topPagesData
@@ -180,11 +152,11 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
                 val remainingPercentage = 100 - topPagesData.sumOf { it.percentage.toDouble() }
                 val validPercentage = maxOf(0.0, remainingPercentage)
 
-                topPagesData + listOf(TopPageDataDto("Other", rest, validPercentage.roundToInt()))
+                topPagesData + listOf(TopPageDataDto("Other", rest, validPercentage))
             }
     }
 
-    private fun getDomainStatsData(session: MutinySession, startDate: LocalDateTime): Uni<List<DomainStatDataDto>> {
+    private fun getDomainStatsData(session: Mutiny.Session, startDate: LocalDateTime): Uni<List<DomainStatDataDto>> {
         // Query domain statistics within the specified time range
         val query = """
             SELECT COALESCE(p.domain, 'unknown') as domain, COUNT(pv.page_id) as visits
@@ -206,12 +178,12 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
                     val visits = tuple.get(1, Long::class.javaObjectType)
                     val percentage = if (totalVisits > 0) (visits.toDouble() / totalVisits.toDouble()) * 100 else 0.0
 
-                    DomainStatDataDto(domain, visits, percentage.roundToInt())
+                    DomainStatDataDto(domain, visits, percentage)
                 }
             }
     }
 
-    private fun getTotalStats(session: MutinySession, startDate: LocalDateTime): Uni<Triple<Long, Long, Long>> {
+    private fun getTotalStats(session: Mutiny.Session, startDate: LocalDateTime): Uni<Triple<Long, Long, Long>> {
         // Use reactive SQL queries with time range filtering
         val totalVisitsQuery = session.createNativeQuery("""
             SELECT COUNT(*)

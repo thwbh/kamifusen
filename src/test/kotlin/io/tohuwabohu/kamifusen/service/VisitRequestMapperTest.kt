@@ -9,10 +9,14 @@ import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.tohuwabohu.kamifusen.PageVisitResource
-import io.tohuwabohu.kamifusen.crud.*
+import io.tohuwabohu.kamifusen.api.generated.model.PageHitRequestDto
 import io.tohuwabohu.kamifusen.mock.*
-import io.tohuwabohu.kamifusen.service.dto.PageHitDto
-import io.tohuwabohu.kamifusen.service.dto.PageHitRequestDto
+import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.crud.PageVisitRepository
+import io.tohuwabohu.kamifusen.service.crud.SessionRepository
+import io.tohuwabohu.kamifusen.service.crud.VisitorRepository
+import io.tohuwabohu.kamifusen.service.mapper.VisitRequestMapper
 import jakarta.inject.Inject
 import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.MediaType
@@ -20,7 +24,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import java.util.*
 
 @QuarkusTest
 @TestHTTPEndpoint(PageVisitResource::class)
@@ -181,7 +184,7 @@ class VisitRequestMapperTest {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             header("User-Agent", "Mozilla/5.0 (Test Browser)")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body(PageHitDto("/test", "example.com"))
+            body(PageHitRequestDto("/test", "example.com"))
         } When {
             post("hit")
         } Then {
@@ -195,7 +198,7 @@ class VisitRequestMapperTest {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             header("Referer", "https://google.com/search")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body(PageHitDto("/from-google", "example.com"))
+            body(PageHitRequestDto("/from-google", "example.com"))
         } When {
             post("hit")
         } Then {
@@ -210,7 +213,7 @@ class VisitRequestMapperTest {
             header("X-Forwarded-For", "203.0.113.45, 192.168.1.1")
             header("X-Real-IP", "203.0.113.45")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body(PageHitDto("/proxied", "example.com"))
+            body(PageHitRequestDto("/proxied", "example.com"))
         } When {
             post("hit")
         } Then {
@@ -224,7 +227,7 @@ class VisitRequestMapperTest {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             header("CF-IPCountry", "US")
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body(PageHitDto("/from-usa", "example.com"))
+            body(PageHitRequestDto("/from-usa", "example.com"))
         } When {
             post("hit")
         } Then {
@@ -238,7 +241,7 @@ class VisitRequestMapperTest {
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body(PageHitDto("", "example.com"))
+            body(PageHitRequestDto("", "example.com"))
         } When {
             post("hit")
         } Then {
@@ -251,7 +254,7 @@ class VisitRequestMapperTest {
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             auth().preemptive().basic("api-key-user", "api-key-user")
-            body(PageHitDto("/test", "invalid..domain"))
+            body(PageHitRequestDto("/test", "invalid..domain"))
         } When {
             post("hit")
         } Then {

@@ -1,0 +1,60 @@
+{{>licenseInfo}}
+package {{package}}
+
+{{#imports}}import {{import}}
+{{/imports}}
+import io.smallrye.mutiny.Uni
+import jakarta.ws.rs.*
+import jakarta.ws.rs.core.Response
+{{#useBeanValidation}}
+    import jakarta.validation.Valid
+    import jakarta.validation.constraints.*
+{{/useBeanValidation}}
+import org.eclipse.microprofile.openapi.annotations.Operation
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses
+import org.eclipse.microprofile.openapi.annotations.tags.Tag
+import org.eclipse.microprofile.openapi.annotations.media.Content
+import org.eclipse.microprofile.openapi.annotations.media.Schema
+
+{{#operations}}
+/**
+* {{description}}{{^description}}{{classname}}{{/description}}
+*/
+@Tag(name = "{{baseName}}", description = "{{description}}{{^description}}The {{baseName}} API{{/description}}")
+interface {{classname}} {
+{{#operation}}
+
+    /**
+    * {{summary}}{{^summary}}{{operationId}}{{/summary}}{{#notes}}
+    * {{&notes}}{{/notes}}
+    *
+{{#allParams}}     * @param {{paramName}} {{description}}{{^description}}{{paramName}}{{/description}}{{#required}} (required){{/required}}{{^required}} (optional{{#defaultValue}}, default to {{.}}{{/defaultValue}}){{/required}}
+{{/allParams}}     * @return Uni&lt;Response&gt;
+    */
+    @{{httpMethod}}
+    {{#hasConsumes}}@Consumes({{#consumes}}"{{mediaType}}"{{^-last}}, {{/-last}}{{/consumes}})
+    {{/hasConsumes}}
+    {{#hasProduces}}@Produces({{#produces}}"{{mediaType}}"{{^-last}}, {{/-last}}{{/produces}})
+    {{/hasProduces}}
+    @Path("{{path}}")
+    @Operation(
+    summary = "{{summary}}{{^summary}}{{operationId}}{{/summary}}",
+    description = "{{notes}}{{^notes}}{{summary}}{{^summary}}{{operationId}}{{/summary}}{{/notes}}"
+    )
+    fun {{operationId}}({{#allParams}}{{#isQueryParam}}
+        @Parameter(description = "{{description}}{{^description}}{{paramName}}{{/description}}")
+        @QueryParam("{{paramName}}"){{#useBeanValidation}}{{#hasValidation}} {{>beanValidationQueryParams}}{{/hasValidation}}{{/useBeanValidation}} {{paramName}}: {{dataType}}{{#hasDefaultValue}} = {{{defaultValue}}}{{/hasDefaultValue}}{{^required}}?{{/required}}{{^-last}},{{/-last}}{{/isQueryParam}}{{#isPathParam}}
+        @Parameter(description = "{{description}}{{^description}}{{paramName}}{{/description}}")
+        @PathParam("{{paramName}}"){{#useBeanValidation}}{{#hasValidation}} {{>beanValidationPathParams}}{{/hasValidation}}{{/useBeanValidation}} {{paramName}}: {{dataType}}{{^-last}},{{/-last}}{{/isPathParam}}{{#isHeaderParam}}
+        @Parameter(description = "{{description}}{{^description}}{{paramName}}{{/description}}")
+        @HeaderParam("{{paramName}}"){{#useBeanValidation}}{{#hasValidation}} {{>beanValidationHeaderParams}}{{/hasValidation}}{{/useBeanValidation}} {{paramName}}: {{dataType}}{{#hasDefaultValue}} = {{{defaultValue}}}{{/hasDefaultValue}}{{^required}}?{{/required}}{{^-last}},{{/-last}}{{/isHeaderParam}}{{#isBodyParam}}
+        @Parameter(description = "{{description}}{{^description}}{{paramName}}{{/description}}"){{#useBeanValidation}}
+        @Valid{{/useBeanValidation}} {{paramName}}: {{dataType}}{{^-last}},{{/-last}}{{/isBodyParam}}{{#isFormParam}}
+        @Parameter(description = "{{description}}{{^description}}{{paramName}}{{/description}}")
+        @FormParam("{{paramName}}"){{#useBeanValidation}}{{#hasValidation}} {{>beanValidationFormParams}}{{/hasValidation}}{{/useBeanValidation}} {{paramName}}: {{dataType}}{{#hasDefaultValue}} = {{{defaultValue}}}{{/hasDefaultValue}}{{^required}}?{{/required}}{{^-last}},{{/-last}}{{/isFormParam}}{{/allParams}}
+    ): Uni<Response>
+{{/operation}}
+}
+{{/operations}}

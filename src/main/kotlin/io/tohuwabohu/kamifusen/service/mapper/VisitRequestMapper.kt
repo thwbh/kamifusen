@@ -1,10 +1,10 @@
-package io.tohuwabohu.kamifusen.service
+package io.tohuwabohu.kamifusen.service.mapper
 
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.service.dto.PageHitRequestDto
-import io.tohuwabohu.kamifusen.service.dto.VisitContextDto
-import io.tohuwabohu.kamifusen.service.dto.VisitorInfoDto
+import io.tohuwabohu.kamifusen.api.generated.model.PageHitRequestDto
+import io.tohuwabohu.kamifusen.service.context.VisitContext
+import io.tohuwabohu.kamifusen.service.context.VisitorInfo
 import io.vertx.core.http.HttpServerRequest
 import jakarta.enterprise.context.ApplicationScoped
 
@@ -20,30 +20,32 @@ class VisitRequestMapper {
     /**
      * Maps HTTP request and body to a VisitContextDto for service processing
      */
-    fun mapToVisitContext(request: HttpServerRequest, body: PageHitRequestDto): Uni<VisitContextDto> {
+    fun mapToVisitContext(request: HttpServerRequest, body: PageHitRequestDto): Uni<VisitContext> {
         val visitorInfo = extractVisitorInfo(request)
 
         Log.debug("Mapping request for ${body.domain}${body.path} from ${visitorInfo.remoteAddress}")
 
-        return Uni.createFrom().item(VisitContextDto(
-            remoteAddress = visitorInfo.remoteAddress,
-            userAgent = visitorInfo.userAgent,
-            referrer = visitorInfo.referrer,
-            country = visitorInfo.country,
-            pageHit = body
-        ))
+        return Uni.createFrom().item(
+            VisitContext(
+                remoteAddress = visitorInfo.remoteAddress,
+                userAgent = visitorInfo.userAgent,
+                referrer = visitorInfo.referrer,
+                country = visitorInfo.country,
+                pageHit = body
+            )
+        )
     }
 
     /**
      * Extracts visitor information from HTTP request headers and connection details
      */
-    fun extractVisitorInfo(request: HttpServerRequest): VisitorInfoDto {
+    fun extractVisitorInfo(request: HttpServerRequest): VisitorInfo {
         val remoteAddress = extractRemoteAddress(request)
         val userAgent = extractUserAgent(request)
         val referrer = extractReferrer(request)
         val country = extractCountry(request) // Placeholder for future GeoIP implementation
 
-        return VisitorInfoDto(
+        return VisitorInfo(
             remoteAddress = remoteAddress,
             userAgent = userAgent,
             referrer = referrer,

@@ -1,0 +1,22 @@
+{{>licenseInfo}}
+package {{package}}
+
+import com.fasterxml.jackson.annotation.JsonProperty
+{{#useBeanValidation}}
+    import jakarta.validation.constraints.*
+    import jakarta.validation.Valid
+{{/useBeanValidation}}
+{{#jackson}}
+    import com.fasterxml.jackson.annotation.JsonPropertyOrder
+    import com.fasterxml.jackson.annotation.JsonTypeName
+{{/jackson}}
+{{#models}}
+    {{#model}}
+        {{#isEnum}}
+            {{>enumClass}}
+        {{/isEnum}}
+        {{^isEnum}}
+            {{>dataClass}}
+        {{/isEnum}}
+    {{/model}}
+{{/models}}

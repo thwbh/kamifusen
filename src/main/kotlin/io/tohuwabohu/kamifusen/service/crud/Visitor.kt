@@ -1,6 +1,5 @@
-package io.tohuwabohu.kamifusen.crud
+package io.tohuwabohu.kamifusen.service.crud
 
-import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheEntityBase
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepositoryBase

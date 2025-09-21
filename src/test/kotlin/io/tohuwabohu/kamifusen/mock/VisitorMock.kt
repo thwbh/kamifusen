@@ -2,8 +2,8 @@ package io.tohuwabohu.kamifusen.mock
 
 import io.quarkus.runtime.util.HashUtil.sha256
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.Visitor
-import io.tohuwabohu.kamifusen.crud.VisitorRepository
+import io.tohuwabohu.kamifusen.service.crud.Visitor
+import io.tohuwabohu.kamifusen.service.crud.VisitorRepository
 import java.time.LocalDateTime
 import java.util.*
 

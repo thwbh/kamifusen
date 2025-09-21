@@ -1,10 +1,10 @@
-package io.tohuwabohu.kamifusen.crud.security
+package io.tohuwabohu.kamifusen.service.validator
 
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.vertx.RunOnVertxContext
 import io.quarkus.test.vertx.UniAsserter
-import io.tohuwabohu.kamifusen.crud.ApiUser
-import io.tohuwabohu.kamifusen.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.ApiUser
+import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
 
