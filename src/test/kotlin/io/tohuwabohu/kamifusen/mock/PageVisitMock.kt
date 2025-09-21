@@ -6,6 +6,9 @@ import io.tohuwabohu.kamifusen.crud.PageVisitRepository
 import java.time.LocalDateTime
 import java.util.*
 
+/**
+ * Mock repository for non-disruptive CRUD operations on PageVisit entity
+ */
 class PageVisitRepositoryMock : PageVisitRepository() {
     val visits = mutableListOf<PageVisit>()
     val pages = mutableListOf<io.tohuwabohu.kamifusen.crud.Page>()

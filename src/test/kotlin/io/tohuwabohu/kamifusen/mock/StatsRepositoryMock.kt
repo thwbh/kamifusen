@@ -4,6 +4,9 @@ import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.service.dto.*
 import java.time.LocalDateTime
 
+/**
+ * Mock repository for stats aggregation operations as maintaining that in import.sql is especially cumbersome
+ */
 class StatsRepositoryMock : StatsRepository() {
 
     override fun getAggregatedStats(timeRange: String): Uni<AggregatedStatsDto> {

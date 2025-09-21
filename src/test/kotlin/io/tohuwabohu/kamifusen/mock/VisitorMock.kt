@@ -7,6 +7,9 @@ import io.tohuwabohu.kamifusen.crud.VisitorRepository
 import java.time.LocalDateTime
 import java.util.*
 
+/**
+ * Mock repository for non-disruptive CRUD operations on Visitor entity
+ */
 class VisitorRepositoryMock : VisitorRepository() {
     val visitors = mutableListOf<Visitor>()
 

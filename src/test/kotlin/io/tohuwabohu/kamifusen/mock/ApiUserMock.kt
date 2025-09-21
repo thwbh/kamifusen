@@ -6,6 +6,9 @@ import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import java.time.LocalDateTime
 import java.util.*
 
+/**
+ * Mock repository for non-disruptive CRUD operations on ApiUser entity
+ */
 class ApiUserRepositoryMock : ApiUserRepository() {
     final val apiUsers = mutableListOf(
         ApiUser(id = UUID.randomUUID(), username = "api-key-user", password = "api-key-user", role = "api-user"),

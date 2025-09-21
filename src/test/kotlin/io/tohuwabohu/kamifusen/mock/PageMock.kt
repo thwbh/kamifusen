@@ -5,6 +5,9 @@ import io.tohuwabohu.kamifusen.crud.Page
 import io.tohuwabohu.kamifusen.crud.PageRepository
 import java.util.*
 
+/**
+ * Mock repository for non-disruptive CRUD operations on Page entity
+ */
 class PageRepositoryMock : PageRepository() {
     val pages = mutableListOf<Page>()
 

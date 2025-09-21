@@ -1,27 +1,17 @@
 package io.tohuwabohu.kamifusen.service.dto
 
-import io.quarkus.test.junit.QuarkusMock
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.vertx.RunOnVertxContext
 import io.quarkus.test.vertx.UniAsserter
-import io.tohuwabohu.kamifusen.mock.StatsRepositoryMock
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 
 @QuarkusTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class StatsRepositoryTest {
 
     @Inject
     lateinit var statsRepository: StatsRepository
-
-    @BeforeAll
-    fun init() {
-        QuarkusMock.installMockForType(StatsRepositoryMock(), StatsRepository::class.java)
-    }
 
     @Test
     @RunOnVertxContext
@@ -81,8 +71,9 @@ class StatsRepositoryTest {
                 result.topPages.forEach { topPage ->
                     assertNotNull(topPage.path)
                     assertTrue(topPage.visits >= 0)
-                    assertTrue(topPage.percentage.toDouble() >= 0.0)
-                    assertTrue(topPage.percentage.toDouble() <= 100.0)
+                    val percentageValue = topPage.percentage.toDouble()
+                    assertTrue(percentageValue >= 0.0 && !percentageValue.isNaN())
+                    assertTrue(percentageValue <= 100.0)
                 }
 
                 // Verify domain stats structure
@@ -259,14 +250,16 @@ class StatsRepositoryTest {
                 assertNotNull(result)
 
                 if (result.topPages.isNotEmpty()) {
-                    // Sum of all percentages should be <= 100 (due to rounding and limiting to top 5)
+                    // Sum of all percentages should be <= 101 (due to rounding and limiting to top 5)
+                    // Allow slight tolerance for rounding errors
                     val totalPercentage = result.topPages.sumOf { it.percentage.toDouble() }
-                    assertTrue(totalPercentage <= 100.0)
+                    assertTrue(totalPercentage <= 101.0)
 
                     // Each individual percentage should be between 0 and 100
                     result.topPages.forEach { topPage ->
-                        assertTrue(topPage.percentage.toDouble() >= 0.0)
-                        assertTrue(topPage.percentage.toDouble() <= 100.0)
+                        val percentageValue = topPage.percentage.toDouble()
+                        assertTrue(percentageValue >= 0.0 && !percentageValue.isNaN())
+                        assertTrue(percentageValue <= 100.0)
                     }
                 }
             }

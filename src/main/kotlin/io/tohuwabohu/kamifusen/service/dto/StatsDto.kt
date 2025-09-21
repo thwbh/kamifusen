@@ -177,7 +177,10 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
 
                 val rest = results.drop(5).sumOf { it.get(1, Long::class.javaObjectType) }
 
-                topPagesData + listOf(TopPageDataDto("Other", rest, 100 - topPagesData.sumOf { it.percentage.toDouble() }))
+                val remainingPercentage = 100 - topPagesData.sumOf { it.percentage.toDouble() }
+                val validPercentage = maxOf(0.0, remainingPercentage)
+
+                topPagesData + listOf(TopPageDataDto("Other", rest, validPercentage.roundToInt()))
             }
     }
 
