@@ -26,34 +26,7 @@ class PageVisitResourceTest {
     lateinit var pageRepository: PageRepository
 
     @Inject
-    lateinit var pageVisitRepository: PageVisitRepository
-
-    @Inject
     lateinit var visitorRepository: VisitorRepository
-
-    @Inject
-    lateinit var sessionRepository: SessionRepository
-
-    @Inject
-    lateinit var apiUserRepository: ApiUserRepository
-
-    private fun createTestUser(username: String): Uni<String> {
-        val testUser = ApiUser(
-            username = username,
-            password = "", // Will be set by addUser
-            role = "api-user"
-        )
-        return apiUserRepository.addUser(testUser)
-    }
-
-    private fun createAdminUser(username: String): Uni<String> {
-        val testUser = ApiUser(
-            username = username,
-            password = "", // Will be set by addUser
-            role = "api-admin"
-        )
-        return apiUserRepository.addUser(testUser)
-    }
 
     @Test
     @RunOnVertxContext
