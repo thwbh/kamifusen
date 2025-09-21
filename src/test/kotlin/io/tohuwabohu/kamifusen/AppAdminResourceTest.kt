@@ -9,12 +9,16 @@ import io.restassured.module.kotlin.extensions.Extract
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
+import io.quarkus.test.junit.QuarkusMock
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
+import io.tohuwabohu.kamifusen.mock.StatsRepositoryMock
+import io.tohuwabohu.kamifusen.service.dto.StatsRepository
 import jakarta.inject.Inject
 import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.MediaType
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.LocalDateTime
@@ -29,6 +33,11 @@ class AppAdminResourceTest {
 
     @Inject
     lateinit var pageRepository: PageRepository
+
+    @BeforeAll
+    fun init() {
+        QuarkusMock.installMockForType(StatsRepositoryMock(), StatsRepository::class.java)
+    }
 
     @Test
     @TestSecurity(user = "admin", roles = ["app-admin"])

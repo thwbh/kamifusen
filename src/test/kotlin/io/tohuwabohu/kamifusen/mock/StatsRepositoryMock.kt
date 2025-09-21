@@ -22,7 +22,8 @@ class StatsRepositoryMock : StatsRepository() {
             TopPageDataDto("/home", 500, 45),
             TopPageDataDto("/about", 300, 27),
             TopPageDataDto("/contact", 200, 18),
-            TopPageDataDto("/blog", 100, 9)
+            TopPageDataDto("/blog", 100, 9),
+            TopPageDataDto("/other", 50, 1)
         )
 
         val domainStats = listOf(

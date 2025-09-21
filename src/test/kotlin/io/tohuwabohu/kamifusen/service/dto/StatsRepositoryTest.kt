@@ -1,17 +1,27 @@
 package io.tohuwabohu.kamifusen.service.dto
 
+import io.quarkus.test.junit.QuarkusMock
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.vertx.RunOnVertxContext
 import io.quarkus.test.vertx.UniAsserter
+import io.tohuwabohu.kamifusen.mock.StatsRepositoryMock
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 
 @QuarkusTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class StatsRepositoryTest {
 
     @Inject
     lateinit var statsRepository: StatsRepository
+
+    @BeforeAll
+    fun init() {
+        QuarkusMock.installMockForType(StatsRepositoryMock(), StatsRepository::class.java)
+    }
 
     @Test
     @RunOnVertxContext
@@ -218,14 +228,14 @@ class StatsRepositoryTest {
 
     @Test
     @RunOnVertxContext
-    fun `should limit top pages to 5 results`(uniAsserter: UniAsserter) {
+    fun `should limit top pages to 5 results and one 'rest' result`(uniAsserter: UniAsserter) {
         uniAsserter.assertThat(
             { statsRepository.getAggregatedStats("7d") },
             { result ->
                 assertNotNull(result)
 
-                // Top pages should be limited to 5 results maximum
-                assertTrue(result.topPages.size <= 5)
+                // Top pages should be limited to 6 results maximum
+                assertTrue(result.topPages.size <= 6)
 
                 // If there are multiple pages, they should be ordered by visits (descending)
                 if (result.topPages.size > 1) {

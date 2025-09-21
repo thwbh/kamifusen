@@ -138,6 +138,16 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
             }
     }
 
+    /**
+     * Get top pages and their visits within the specified time range
+     * Take only the first 5 pages into consideration. Use the whole data set to calculate percentages.
+     * When there are fewer than 5 pages, return data as-is. When there are more than 5 pages, add an "Other"
+     * row with the remaining percentage.
+     *
+     * @param session Mutiny session for reactive Hibernate queries
+     * @param startDate Start date for the time range
+     * @return List of top pages and their visits
+     */
     private fun getTopPagesData(session: MutinySession, startDate: LocalDateTime): Uni<List<TopPageDataDto>> {
         // Query top pages within the specified time range
         val query = """
@@ -147,7 +157,6 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
             WHERE pv.visited_at >= :startDate
             GROUP BY p.path
             ORDER BY visits DESC
-            LIMIT 5
         """
 
         return session.createNativeQuery(query, Tuple::class.java)
@@ -156,13 +165,19 @@ class StatsRepository : PanacheRepository<PageVisitDto> {
             .onItem().transform { results ->
                 val totalVisits = results.sumOf { it.get(1, Long::class.javaObjectType) }
 
-                results.map { tuple ->
+                val topPagesData = results.take(5).map { tuple ->
                     val path = tuple.get(0, String::class.java)
                     val visits = tuple.get(1, Long::class.javaObjectType)
                     val percentage = if (totalVisits > 0) (visits.toDouble() / totalVisits.toDouble()) * 100 else 0.0
 
                     TopPageDataDto(path, visits, percentage.roundToInt())
                 }
+
+                if (topPagesData.size < 5) return@transform topPagesData
+
+                val rest = results.drop(5).sumOf { it.get(1, Long::class.javaObjectType) }
+
+                topPagesData + listOf(TopPageDataDto("Other", rest, 100 - topPagesData.sumOf { it.percentage.toDouble() }))
             }
     }
 
