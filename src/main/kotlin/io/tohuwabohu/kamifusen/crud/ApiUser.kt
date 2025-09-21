@@ -13,6 +13,7 @@ import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.unchecked.Unchecked
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.*
+import jakarta.ws.rs.NotFoundException
 import org.hibernate.proxy.HibernateProxy
 import java.time.LocalDateTime
 import java.util.*
@@ -109,7 +110,7 @@ class ApiUserRepository : PanacheRepositoryBase<ApiUser, UUID> {
             user?.password = BcryptUtil.bcryptHash(password)
 
             Panache.getSession().call { s -> s.merge(user) }
-        }.onItem().ifNull().failWith(EntityNotFoundException())
+        }.onItem().ifNull().failWith(NotFoundException())
     }
 
     @WithTransaction
@@ -118,5 +119,5 @@ class ApiUserRepository : PanacheRepositoryBase<ApiUser, UUID> {
             user.expiresAt = LocalDateTime.now()
 
             Panache.getSession().call { s -> s.merge(user) }
-        }.onItem().ifNull().failWith(EntityNotFoundException())
+        }.onItem().ifNull().failWith(NotFoundException())
 }

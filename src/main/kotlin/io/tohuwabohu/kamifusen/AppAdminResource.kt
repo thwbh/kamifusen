@@ -32,9 +32,6 @@ class AppAdminResource(
     private val statsRepository: StatsRepository,
     private val pageAdminService: PageAdminService
 ) {
-    @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
-    lateinit var cookieName: String
-
     @Path("/keygen")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -142,7 +139,7 @@ class AppAdminResource(
         apiUserRepository.expireUser(userId).onItem()
             .transform { Response.ok().build() }
             .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
-            .onFailure().recoverWithItem(Response.serverError().build())
+            .onFailure().recoverWithResponse()
 
     @Path("/pagedel/{pageId}")
     @POST
@@ -152,5 +149,5 @@ class AppAdminResource(
     fun unregisterPage(pageId: UUID): Uni<Response> =
         pageRepository.deletePage(pageId).map { Response.ok().build() }
             .onFailure().invoke { e -> Log.error("Error during page deletion.", e) }
-            .onFailure().recoverWithItem(Response.serverError().build())
+            .onFailure().recoverWithResponse()
 }

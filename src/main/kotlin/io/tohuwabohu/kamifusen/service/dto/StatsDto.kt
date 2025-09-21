@@ -2,6 +2,7 @@ package io.tohuwabohu.kamifusen.service.dto
 
 import io.quarkus.hibernate.reactive.panache.Panache
 import io.quarkus.hibernate.reactive.panache.kotlin.PanacheRepository
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.smallrye.mutiny.Uni
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Tuple
@@ -46,6 +47,7 @@ data class AggregatedStatsDto(
 @ApplicationScoped
 class StatsRepository : PanacheRepository<PageVisitDto> {
 
+    @WithTransaction
     fun getAggregatedStats(timeRange: String = "7d"): Uni<AggregatedStatsDto> {
         val days = when (timeRange) {
             "24h" -> 1

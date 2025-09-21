@@ -30,13 +30,23 @@ class PageVisitResource(
     ): Uni<Response> {
         Log.debug("Received page hit request for ${body.domain}${body.path}")
 
-        return requestMapper.mapToVisitContext(request, body).chain { context ->
-            pageVisitService.processPageHit(context)
-                .map { result ->
-                    Log.debug("Page hit processed successfully: ${result.visitCount} visits")
-                    Response.ok(result.visitCount).build()
-                }
+        return requestMapper.validatePageHitRequest(body).chain { validationErrors ->
+            if (validationErrors != null) {
+                Log.warn("Invalid page hit request: ${validationErrors.joinToString(", ")}")
+                return@chain Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(mapOf("errors" to validationErrors))
+                        .build()
+                )
+            }
 
+            requestMapper.mapToVisitContext(request, body).chain { context ->
+                pageVisitService.processPageHit(context)
+                    .map { result ->
+                        Log.debug("Page hit processed successfully: ${result.visitCount} visits")
+                        Response.ok(result.visitCount).build()
+                    }
+            }
         }.onFailure().recoverWithResponse()
     }
 

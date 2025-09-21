@@ -115,7 +115,7 @@ class VisitRequestMapperTest {
             { visitRequestMapper.validatePageHitRequest(invalidRequest) },
             { result ->
                 assertNotNull(result)
-                assertTrue(result!!.contains("Path too long"))
+                assertTrue(result!!.contains("Path too long (max 2048 characters)"))
             }
         )
     }
@@ -133,7 +133,7 @@ class VisitRequestMapperTest {
             { visitRequestMapper.validatePageHitRequest(invalidRequest) },
             { result ->
                 assertNotNull(result)
-                assertTrue(result!!.contains("Domain too long"))
+                assertTrue(result!!.contains("Domain too long (max 253 characters)"))
             }
         )
     }
@@ -183,7 +183,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitDto("/test", "example.com"))
         } When {
-            post("/hit")
+            post("hit")
         } Then {
             statusCode(200)
         }
@@ -197,7 +197,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitDto("/from-google", "example.com"))
         } When {
-            post("/hit")
+            post("hit")
         } Then {
             statusCode(200)
         }
@@ -212,7 +212,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitDto("/proxied", "example.com"))
         } When {
-            post("/hit")
+            post("hit")
         } Then {
             statusCode(200)
         }
@@ -226,7 +226,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitDto("/from-usa", "example.com"))
         } When {
-            post("/hit")
+            post("hit")
         } Then {
             statusCode(200)
         }
@@ -240,7 +240,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitDto("", "example.com"))
         } When {
-            post("/hit")
+            post("hit")
         } Then {
             statusCode(400) // Should return bad request for invalid input
         }
@@ -253,7 +253,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitDto("/test", "invalid..domain"))
         } When {
-            post("/hit")
+            post("hit")
         } Then {
             statusCode(400) // Should return bad request for invalid domain
         }

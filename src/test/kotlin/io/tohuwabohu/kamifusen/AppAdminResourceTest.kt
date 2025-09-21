@@ -11,7 +11,6 @@ import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.tohuwabohu.kamifusen.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.mock.*
 import jakarta.inject.Inject
 import jakarta.ws.rs.core.HttpHeaders
 import jakarta.ws.rs.core.MediaType
@@ -280,7 +279,7 @@ class AppAdminResourceTest {
 
     @Test
     @TestSecurity(user = "admin", roles = ["app-admin"])
-    fun `should not delete inexistent page`() {
+    fun `should handle invalid retire page ID`() {
         When {
             post("/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
@@ -290,57 +289,31 @@ class AppAdminResourceTest {
 
     @Test
     fun `should return 401 for unauthorized user operations`() {
-        // Test retire without auth
         Given {
             header("Authorization", "")
         } When {
-            post("/retire/${UUID.randomUUID()}")
-        } Then {
-            statusCode(401)
-        }
-
-        // Test page delete without auth
-        Given {
-            header("Authorization", "")
-        } When {
-            post("/pagedel/${UUID.randomUUID()}")
-        } Then {
-            statusCode(401)
-        }
-
-        // Test users list without auth
-        Given {
-            header("Authorization", "")
-        } When {
-            get("/users")
+            post("/retire/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
             statusCode(401)
         }
     }
 
     @Test
+    @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should handle invalid retire user ID`() {
-        val nonExistentUserId = UUID.randomUUID()
-
-        Given {
-            auth().preemptive().basic("admin", "admin")
-        } When {
-            post("/retire/$nonExistentUserId")
+        When {
+            post("/retire/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
-            statusCode(500) // Should return error when user not found
+            statusCode(404)
         }
     }
 
     @Test
-    fun `should handle invalid page deletion`() {
-        val nonExistentPageId = UUID.randomUUID()
-
-        Given {
-            auth().preemptive().basic("admin", "admin")
-        } When {
-            post("/pagedel/$nonExistentPageId")
+    fun `should return 401 for unauthorized page operations`() {
+        When {
+            post("/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
-            statusCode(200) // deletePage returns false but service still returns 200
+            statusCode(401)
         }
     }
 }

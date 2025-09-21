@@ -3,6 +3,7 @@ package io.tohuwabohu.kamifusen.crud.error
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
 import io.smallrye.mutiny.groups.UniOnFailure
+import jakarta.persistence.EntityNotFoundException
 import jakarta.ws.rs.NotFoundException
 import jakarta.ws.rs.core.Response
 
@@ -21,6 +22,11 @@ fun UniOnFailure<Response>.recoverWithResponse(): Uni<Response> {
             is NotFoundException -> {
                 Response.status(404).build()
             }
+
+            is EntityNotFoundException -> {
+                Response.status(404).build()
+            }
+
             else -> {
                 Response.status(500).build()
             }
