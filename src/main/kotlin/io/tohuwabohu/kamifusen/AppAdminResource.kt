@@ -19,6 +19,8 @@ import io.tohuwabohu.kamifusen.error.recoverWithResponse
 
 import io.tohuwabohu.kamifusen.service.validator.UserValidation
 import io.tohuwabohu.kamifusen.service.validator.validateUser
+import io.tohuwabohu.kamifusen.service.validator.PasswordValidation
+import io.tohuwabohu.kamifusen.service.validator.validatePassword
 import jakarta.annotation.security.RolesAllowed
 import jakarta.ws.rs.*
 import jakarta.ws.rs.core.*
@@ -33,7 +35,7 @@ class AppAdminResource(
     private val pageRepository: PageRepository,
     private val statsService: StatsService,
     private val pageAdminService: PageAdminService
-): AppAdminResourceApi {
+) : AppAdminResourceApi {
     @Path("/keygen")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -57,7 +59,9 @@ class AppAdminResource(
                     )
                 ).map { keyRaw -> Response.ok(keyRaw).build() }
             } else {
-                Uni.createFrom().item(Response.status(Response.Status.BAD_REQUEST).entity("User validation failed: $result").build())
+                Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST).entity("User validation failed: $result").build()
+                )
             }
         }.onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
@@ -152,4 +156,49 @@ class AppAdminResource(
         pageRepository.deletePage(pageId).map { Response.ok().build() }
             .onFailure().invoke { e -> Log.error("Error during page deletion.", e) }
             .onFailure().recoverWithResponse()
+
+    @POST
+    @Consumes("application/x-www-form-urlencoded")
+    @Produces("text/plain")
+    @Path("/admin/update")
+    @RolesAllowed("app-admin")
+    override fun updateAdmin(
+        @FormParam("oldUsername") @DefaultValue("") oldUsername: String,
+        @FormParam("newUsername") @DefaultValue("") newUsername: String,
+        @FormParam("oldPassword") @DefaultValue("") oldPassword: String,
+        @FormParam("newPassword") @DefaultValue("") newPassword: String
+    ): Uni<Response> {
+        return validatePassword(newPassword, newPassword).flatMap { passwordValidation ->
+            if (!passwordValidation.valid) {
+                Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(passwordValidation.message ?: "Password validation failed")
+                        .build()
+                )
+            } else {
+                // Only validate newUsername if it's different from oldUsername (for username changes)
+                if (newUsername != oldUsername) {
+                    validateUser(newUsername, apiUserRepository).flatMap { userValidation ->
+                        if (!userValidation.valid) {
+                            Uni.createFrom().item(
+                                Response.status(Response.Status.BAD_REQUEST)
+                                    .entity(userValidation.message ?: "Username validation failed")
+                                    .build()
+                            )
+                        } else {
+                            apiUserRepository.updateAdmin(oldUsername, newUsername, oldPassword, newPassword).flatMap { user ->
+                                Uni.createFrom().item(Response.ok(user).build())
+                            }
+                        }
+                    }
+                } else {
+                    apiUserRepository.updateAdmin(oldUsername, newUsername, oldPassword, newPassword).flatMap { user ->
+                        Uni.createFrom().item(Response.ok(user).build())
+                    }
+                }
+            }
+        }.onFailure().invoke { e -> Log.error("Error updating admin password.", e) }
+            .onFailure().recoverWithResponse()
+    }
+
 }

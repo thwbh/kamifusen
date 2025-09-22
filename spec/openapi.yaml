@@ -166,6 +166,41 @@ paths:
           description: Not Allowed
       security:
       - SecurityScheme: []
+  /admin/update:
+    post:
+      operationId: updateAdmin
+      tags:
+      - App Admin Resource
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              required:
+              - oldUsername
+              - newUsername
+              - oldPassword
+              - newPassword
+              type: object
+              properties:
+                oldUsername:
+                  type: string
+                newUsername:
+                  type: string
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
   /public/visits/count/{pageId}:
     get:
       operationId: count

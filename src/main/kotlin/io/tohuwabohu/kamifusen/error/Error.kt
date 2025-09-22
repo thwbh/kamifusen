@@ -15,7 +15,7 @@ import jakarta.ws.rs.core.Response
  * @return a [Uni] that emits a [Response] representing the recovered error response.
  */
 fun UniOnFailure<Response>.recoverWithResponse(): Uni<Response> {
-    return this.invoke { throwable ->
+    return this.recoverWithItem { throwable ->
         Log.error("Recovering from Exception...", throwable)
 
         when (throwable) {

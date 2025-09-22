@@ -31,12 +31,6 @@ class ApiUserRepositoryMock : ApiUserRepository() {
         return Uni.createFrom().item("mock-api-key-${apiUser.username}")
     }
 
-    override fun setAdminPassword(password: String): Uni<ApiUser?> {
-        apiUsers.find { it.username == "admin" }?.password = password
-
-        return Uni.createFrom().item(apiUsers.find { it.username == "admin" })
-    }
-
     override fun listAll(): Uni<List<ApiUser>> {
         return Uni.createFrom().item(apiUsers.toList())
     }

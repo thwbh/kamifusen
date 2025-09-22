@@ -1,5 +1,6 @@
 package io.tohuwabohu.kamifusen
 
+import io.quarkus.elytron.security.common.BcryptUtil
 import io.quarkus.test.common.http.TestHTTPEndpoint
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.security.TestSecurity
@@ -116,10 +117,9 @@ class AppAdminResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get aggregated stats with default time range`() {
-        val response = Given {
-            auth().preemptive().basic("admin", "admin")
-        } When {
+        val response = When {
             get("/stats")
         } Then {
             statusCode(200)
@@ -138,9 +138,9 @@ class AppAdminResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get aggregated stats with custom time range`() {
         Given {
-            auth().preemptive().basic("admin", "admin")
             queryParam("timeRange", "30d")
         } When {
             get("/stats")
@@ -162,10 +162,9 @@ class AppAdminResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get all page visits`() {
-        val response = Given {
-            auth().preemptive().basic("admin", "admin")
-        } When {
+        val response = When {
             get("/visits")
         } Then {
             statusCode(200)
@@ -188,10 +187,9 @@ class AppAdminResourceTest {
     }
 
     @Test
+    @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get pages with stats`() {
-        val response = Given {
-            auth().preemptive().basic("admin", "admin")
-        } When {
+        val response = When {
             get("/pages")
         } Then {
             statusCode(200)
@@ -217,9 +215,7 @@ class AppAdminResourceTest {
     @Test
     @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get list of users`() {
-        val response = Given {
-            auth().preemptive().basic("admin", "admin")
-        } When {
+        val response = When {
             get("/users")
         } Then {
             statusCode(200)
@@ -230,7 +226,7 @@ class AppAdminResourceTest {
 
         // Verify response contains expected data from mock
         val users = response.getList<Map<String, Any>>("")
-        Assertions.assertEquals(5, users.size) // Based on initial mock data
+        Assertions.assertEquals(7, users.size) // Based on initial mock data
 
         // Check user structure
         val firstUser = users[0]
@@ -323,6 +319,84 @@ class AppAdminResourceTest {
             post("/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
             statusCode(401)
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin-password-change", roles = ["app-admin"])
+    @RunOnVertxContext
+    fun `should update admin password successfully`(uniAsserter: UniAsserter) {
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
+            formParam("oldUsername", "admin-password-change")
+            formParam("newUsername", "admin-password-change-changed")
+            formParam("oldPassword", "admin")
+            formParam("newPassword", "newSecurePassword123")
+        } When {
+            post("/admin/update")
+        } Then {
+            statusCode(200)
+            contentType(MediaType.TEXT_PLAIN)
+        }
+
+        // Verify password was updated in the repository
+        uniAsserter.assertThat(
+            { apiUserRepository.findByUsername("admin-password-change-changed") },
+            { result ->
+                Assertions.assertNotNull(result)
+                Assertions.assertEquals("admin-password-change-changed", result?.username)
+
+                Assertions.assertNotNull(result?.password)
+                Assertions.assertNotNull(result?.updated)
+
+                Assertions.assertTrue(BcryptUtil.matches("newSecurePassword123", result?.password))
+            }
+        )
+    }
+
+    @Test
+    @TestSecurity(user = "admin-password-dont-change", roles = ["app-admin"])
+    fun `should handle missing parameters in admin update`() {
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
+            formParam("oldUsername", "admin-password-dont-change")
+            formParam("oldPassword", "admin")
+            // Missing newUsername and newPassword parameters
+        } When {
+            post("/admin/update")
+        } Then {
+            statusCode(400) // Bad request for missing required parameters
+        }
+    }
+
+    @Test
+    fun `should return 401 for unauthorized admin update`() {
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
+            formParam("oldUsername", "admin-password-dont-change")
+            formParam("newUsername", "admin-password-dont-change")
+            formParam("oldPassword", "admin")
+            formParam("newPassword", "newPassword")
+        } When {
+            post("/admin/update")
+        } Then {
+            statusCode(401)
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin-password-dont-change", roles = ["app-admin"])
+    fun `should handle empty new password in admin update`() {
+        Given {
+            header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
+            formParam("oldUsername", "admin-password-dont-change")
+            formParam("newUsername", "admin-password-dont-change")
+            formParam("oldPassword", "admin")
+            formParam("newPassword", "")
+        } When {
+            post("/admin/update")
+        } Then {
+            statusCode(400) // Empty passwords are not valid
         }
     }
 }

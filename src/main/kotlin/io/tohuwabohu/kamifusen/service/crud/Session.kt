@@ -70,10 +70,12 @@ class SessionRepository : PanacheRepositoryBase<Session, UUID> {
         }
     }
 
+    @WithTransaction
     fun findActiveSessionByVisitor(visitorId: UUID): Uni<Session?> =
         find("visitorId = ?1 AND isActive = true", visitorId).firstResult()
 
     // Sliding window session support
+    @WithTransaction
     fun findOrCreateSessionForVisitor(visitorId: UUID, hasRecentActivity: Boolean): Uni<Session> {
         return if (hasRecentActivity) {
             // Continue existing session - find most recent session for this visitor
@@ -90,12 +92,15 @@ class SessionRepository : PanacheRepositoryBase<Session, UUID> {
         }
     }
 
+    @WithTransaction
     fun countActiveSessions(): Uni<Long> =
         count("isActive = true")
 
+    @WithTransaction
     fun getActiveSessionsInTimeRange(minutes: Int): Uni<List<Session>> =
         list("isActive = true AND startTime >= ?1", LocalDateTime.now().minusMinutes(minutes.toLong()))
 
+    @WithTransaction
     fun getAverageSessionDuration(): Uni<Double> {
         // This would need a native query for proper calculation
         return Uni.createFrom().item(0.0) // Placeholder

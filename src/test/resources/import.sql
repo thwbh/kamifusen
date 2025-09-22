@@ -3,7 +3,11 @@
 
 -- Insert admin user
 INSERT INTO api_user (id, username, role, password)
-VALUES (gen_random_uuid(), 'admin', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW');
+VALUES (gen_random_uuid(), 'admin', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW'),
+       (gen_random_uuid(), 'admin-password-dont-change', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW'),
+       (gen_random_uuid(), 'admin-password-change', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW')
+;
+
 
 -- Insert API keys for testing
 INSERT INTO api_user (id, username, role, password, expires_at) VALUES
@@ -31,7 +35,7 @@ INSERT INTO page (id, path, domain, page_added) VALUES
 INSERT INTO visitor (id, info, first_seen, user_agent, country) VALUES
     ('9f685bd0-90e6-479a-99b6-2fad28d2a641', 'redacted_hash_1', NOW() - INTERVAL '30 days', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 'US'),
     ('9f685bd0-90e6-479a-99b6-2fad28d2a642', 'redacted_hash_2', NOW() - INTERVAL '29 days', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'DE'),
-    ('9f685bd0-90e6-479a-99b6-2fad28d2a643', 'redacted_hash_3', NOW() - INTERVAL '28 days', 'Mozilla/5.0 (X11; Linux x86_64)', 'FR');;
+    ('9f685bd0-90e6-479a-99b6-2fad28d2a643', 'redacted_hash_3', NOW() - INTERVAL '28 days', 'Mozilla/5.0 (X11; Linux x86_64)', 'FR');
 
 -- Insert page visits with realistic timestamps (spread over the last 30 days)
 -- Blog posts get the most traffic

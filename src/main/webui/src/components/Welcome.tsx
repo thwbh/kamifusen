@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import kamifusenIcon from '../assets/icons/kamifusen_3.svg';
 
 interface WelcomeProps {
   onBegin: () => void;
@@ -82,7 +83,7 @@ const Welcome: React.FC<WelcomeProps> = ({ onBegin, onNavigate }) => {
         <div className="mb-8">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="w-12 h-12 bg-tui-accent rounded-sm flex items-center justify-center">
-              <span className="text-tui-dark font-bold text-xl">K</span>
+              <img src={kamifusenIcon} alt="Ashiato" className="w-8 h-8" />
             </div>
             <h1 className="text-tui-accent font-bold text-2xl tracking-widest">KAMIFUSEN</h1>
           </div>

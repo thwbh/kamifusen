@@ -107,9 +107,11 @@ class ApiUserRepository : PanacheRepositoryBase<ApiUser, UUID> {
         }).onItem().ifNull().failWith(UnauthorizedException())
 
     @WithTransaction
-    fun setAdminPassword(password: String): Uni<ApiUser?> {
-        return findByUsername("admin").onItem().ifNotNull().call { user ->
-            user?.password = BcryptUtil.bcryptHash(password)
+    fun updateAdmin(oldUsername: String, newUsername: String, oldPassword: String, newPassword: String): Uni<ApiUser?> {
+        return findByUsernameAndPassword(oldUsername, oldPassword).onItem().ifNotNull().call { user ->
+            user?.username = newUsername
+            user?.password = BcryptUtil.bcryptHash(newPassword)
+            user?.updated = LocalDateTime.now()
 
             Panache.getSession().call { s -> s.merge(user) }
         }.onItem().ifNull().failWith(NotFoundException())

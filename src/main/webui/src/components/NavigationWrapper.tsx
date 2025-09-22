@@ -3,6 +3,7 @@ import Dashboard from './Dashboard';
 import Pages from './Pages';
 import Stats from './Stats';
 import Users from './Users';
+import kamifusenIcon from '../assets/icons/kamifusen_3.svg';
 
 interface NavigationWrapperProps {
   onSignOut: () => void;
@@ -64,7 +65,7 @@ const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-tui-accent rounded-sm flex items-center justify-center">
-              <span className="text-tui-dark font-bold">K</span>
+              <img src={kamifusenIcon} alt="Ashiato Icon" className="w-6 h-6" />
             </div>
             <h1 className="text-tui-accent font-bold text-xl tracking-wider">KAMIFUSEN ADMIN</h1>
           </div>
@@ -74,11 +75,10 @@ const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
               <button
                 key={item.key}
                 onClick={() => setCurrentPage(item.page)}
-                className={`px-3 py-1 text-sm uppercase tracking-wide transition-colors ${
-                  currentPage === item.page
+                className={`px-3 py-1 text-sm uppercase tracking-wide transition-colors ${currentPage === item.page
                     ? 'text-tui-accent border-b border-tui-accent'
                     : 'text-tui-muted hover:text-tui-light'
-                }`}
+                  }`}
               >
                 [{item.key}] {item.label}
               </button>

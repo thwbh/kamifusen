@@ -59,23 +59,30 @@ class PageVisitRepository: PanacheRepository<PageVisit> {
     fun addVisit(pageId: UUID, visitorId: UUID) = persist(PageVisit(pageId, visitorId))
 
     // Time-based analytics methods
+    @WithTransaction
     fun getVisitsByTimeRange(from: LocalDateTime, to: LocalDateTime): Uni<List<PageVisit>> =
         list("visitedAt >= ?1 AND visitedAt <= ?2", from, to)
 
+    @WithTransaction
     fun countVisitsByTimeRange(pageId: UUID, from: LocalDateTime, to: LocalDateTime): Uni<Long> =
         count("pageId = ?1 AND visitedAt >= ?2 AND visitedAt <= ?3", pageId, from, to)
 
+    @WithTransaction
     fun getVisitsInLastHours(hours: Int): Uni<List<PageVisit>> =
         list("visitedAt >= ?1", LocalDateTime.now().minusHours(hours.toLong()))
 
+    @WithTransaction
     fun getVisitsInLastDays(days: Int): Uni<List<PageVisit>> =
         list("visitedAt >= ?1", LocalDateTime.now().minusDays(days.toLong()))
 
+    @WithTransaction
     fun getTotalVisitsCount(): Uni<Long> = count()
 
+    @WithTransaction
     fun getVisitCountsByDay(days: Int): Uni<List<PageVisit>> =
         list("visitedAt >= ?1 ORDER BY visitedAt", LocalDateTime.now().minusDays(days.toLong()))
 
+    @WithTransaction
     // Sliding window session support
     fun findRecentVisitByVisitorOnDomain(visitorId: UUID, domain: String, minutesBack: Int): Uni<PageVisit?> =
         find("""
