@@ -16,7 +16,7 @@ import java.util.*
  */
 @ApplicationScoped
 class PageStatsService() {
-    private val query = """
+    private val allPagesQuery = """
             SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain, p.lastHit AS visits
             FROM Page p
             LEFT JOIN PageVisit pv ON p.id = pv.pageId
@@ -24,12 +24,26 @@ class PageStatsService() {
             ORDER BY p.domain, p.path, p.pageAdded DESC
         """
 
+    private val nonBlacklistedPagesQuery = """
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain, p.lastHit AS visits
+            FROM Page p
+            LEFT JOIN PageVisit pv ON p.id = pv.pageId
+            WHERE p.id NOT IN (SELECT b.pageId FROM Blacklist b)
+            GROUP BY p.id
+            ORDER BY p.domain, p.path, p.pageAdded DESC
+        """
+
     fun getAllPageVisits(): Uni<List<PageWithStatsDto>> =
         Panache.getSession().flatMap { session ->
-            session.createQuery(query, Tuple::class.java).resultList
+            session.createQuery(allPagesQuery, Tuple::class.java).resultList
                 .onItem().transform { it.map ( Tuple::toPageStatsDto ) }
         }
 
+    fun getNonBlacklistedPagesWithStats(): Uni<List<PageWithStatsDto>> =
+        Panache.getSession().flatMap { session ->
+            session.createQuery(nonBlacklistedPagesQuery, Tuple::class.java).resultList
+                .onItem().transform { it.map ( Tuple::toPageStatsDto ) }
+        }
 }
 
 /**

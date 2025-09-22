@@ -127,6 +127,7 @@ const Stats: React.FC = () => {
             <table className="tui-table">
               <thead>
                 <tr>
+                  <th>Domain</th>
                   <th>Path</th>
                   <th>Visits</th>
                   <th>Share</th>
@@ -135,6 +136,7 @@ const Stats: React.FC = () => {
               <tbody>
                 {topPages.map((page, index) => (
                   <tr key={index}>
+                    <td className="font-mono text-tui-muted">{page.domain}</td>
                     <td className="font-mono text-tui-light">{page.path}</td>
                     <td className="text-tui-green font-bold">{page.visits}</td>
                     <td className="text-tui-yellow">{page.percentage}%</td>

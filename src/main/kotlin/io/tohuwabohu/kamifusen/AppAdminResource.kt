@@ -7,7 +7,6 @@ import io.tohuwabohu.kamifusen.api.generated.AppAdminResourceApi
 import io.tohuwabohu.kamifusen.api.generated.model.AggregatedStatsDto
 import io.tohuwabohu.kamifusen.api.generated.model.PageWithStatsDto
 import io.tohuwabohu.kamifusen.error.recoverWithResponse
-import io.tohuwabohu.kamifusen.service.PageAdminService
 import io.tohuwabohu.kamifusen.service.PageStatsService
 import io.tohuwabohu.kamifusen.service.StatsService
 import io.tohuwabohu.kamifusen.service.crud.ApiUser
@@ -37,7 +36,6 @@ class AppAdminResource(
     private val pageStatsService: PageStatsService,
     private val pageRepository: PageRepository,
     private val statsService: StatsService,
-    private val pageAdminService: PageAdminService,
     private val blacklistRepository: BlacklistRepository
 ) : AppAdminResourceApi {
     @Inject
@@ -136,7 +134,7 @@ class AppAdminResource(
     )
     @RolesAllowed("app-admin")
     override fun listPages(): Uni<Response> =
-        pageAdminService.getPagesWithStats().flatMap {
+        pageStatsService.getNonBlacklistedPagesWithStats().flatMap {
             Uni.createFrom().item(Response.ok(it).build())
         }.onFailure().invoke { e -> Log.error("Error receiving pages.", e) }
             .onFailure().recoverWithResponse()

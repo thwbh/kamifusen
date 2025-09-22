@@ -45,14 +45,14 @@ CREATE INDEX idx_session_active_start ON session(is_active, start_time) WHERE is
 -- Create Blacklist table for hiding pages without actual deletion
 CREATE TABLE Blacklist (
        id UUID PRIMARY KEY,
-       pageId UUID NOT NULL,
-       blacklistedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+       page_id UUID NOT NULL,
+       blacklisted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_blacklist_page FOREIGN KEY (pageId) REFERENCES Page(id)
+    CONSTRAINT fk_blacklist_page FOREIGN KEY (page_id) REFERENCES Page(id)
 );
 
 -- Index for fast lookups by pageId
-CREATE INDEX idx_blacklist_page_id ON Blacklist(pageId);
+CREATE INDEX idx_blacklist_page_id ON Blacklist(page_id);
 
 -- Ensure only one blacklist entry per page
-CREATE UNIQUE INDEX idx_blacklist_unique_page ON Blacklist(pageId);
+CREATE UNIQUE INDEX idx_blacklist_unique_page ON Blacklist(page_id);

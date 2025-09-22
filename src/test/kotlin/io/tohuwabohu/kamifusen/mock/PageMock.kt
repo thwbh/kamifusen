@@ -38,9 +38,4 @@ class PageRepositoryMock : PageRepository() {
 
         return Uni.createFrom().item(page)
     }
-
-    override fun deletePage(pageId: UUID): Uni<Boolean> {
-        val removed = pages.removeIf { it.id == pageId }
-        return Uni.createFrom().item(removed)
-    }
 }

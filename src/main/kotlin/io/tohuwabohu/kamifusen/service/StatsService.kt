@@ -68,6 +68,7 @@ class StatsService {
                 COUNT(*) as visit_count
             FROM page_visit pv
             WHERE pv.visited_at >= :startDate
+            AND pv.page_id NOT IN (SELECT b.page_id FROM blacklist b)
             GROUP BY EXTRACT(DOW FROM pv.visited_at)
             ORDER BY day_of_week
         """
@@ -123,11 +124,12 @@ class StatsService {
     private fun getTopPagesData(session: Mutiny.Session, startDate: LocalDateTime): Uni<List<TopPageDataDto>> {
         // Query top pages within the specified time range
         val query = """
-            SELECT p.path, COUNT(pv.page_id) as visits
+            SELECT p.domain, p.path, COUNT(pv.page_id) as visits
             FROM page p
             JOIN page_visit pv ON p.id = pv.page_id
             WHERE pv.visited_at >= :startDate
-            GROUP BY p.path
+            AND p.id NOT IN (SELECT b.page_id FROM blacklist b)
+            GROUP BY p.domain, p.path
             ORDER BY visits DESC
         """
 
@@ -135,24 +137,25 @@ class StatsService {
             .setParameter("startDate", startDate)
             .resultList
             .onItem().transform { results ->
-                val totalVisits = results.sumOf { it.get(1, Long::class.javaObjectType) }
+                val totalVisits = results.sumOf { it.get(2, Long::class.javaObjectType) }
 
                 val topPagesData = results.take(5).map { tuple ->
-                    val path = tuple.get(0, String::class.java)
-                    val visits = tuple.get(1, Long::class.javaObjectType)
+                    val domain = tuple.get(0, String::class.java)
+                    val path = tuple.get(1, String::class.java)
+                    val visits = tuple.get(2, Long::class.javaObjectType)
                     val percentage = if (totalVisits > 0) (visits.toDouble() / totalVisits.toDouble()) * 100 else 0.0
 
-                    TopPageDataDto(path, visits, percentage)
+                    TopPageDataDto(domain, path, visits, percentage)
                 }
 
                 if (topPagesData.size < 5) return@transform topPagesData
 
-                val rest = results.drop(5).sumOf { it.get(1, Long::class.javaObjectType) }
+                val rest = results.drop(5).sumOf { it.get(2, Long::class.javaObjectType) }
 
-                val remainingPercentage = 100 - topPagesData.sumOf { it.percentage.toDouble() }
+                val remainingPercentage = 100 - topPagesData.sumOf { it.percentage }
                 val validPercentage = maxOf(0.0, remainingPercentage)
 
-                topPagesData + listOf(TopPageDataDto("Other", rest, validPercentage))
+                topPagesData + listOf(TopPageDataDto("Other", "*", rest, validPercentage))
             }
     }
 
@@ -163,6 +166,7 @@ class StatsService {
             FROM page p
             JOIN page_visit pv ON p.id = pv.page_id
             WHERE pv.visited_at >= :startDate
+            AND p.id NOT IN (SELECT b.page_id FROM blacklist b)
             GROUP BY p.domain
             ORDER BY visits DESC
         """
@@ -189,6 +193,7 @@ class StatsService {
             SELECT COUNT(*)
             FROM page_visit
             WHERE visited_at >= :startDate
+            AND page_id NOT IN (SELECT b.page_id FROM blacklist b)
         """, Long::class.javaObjectType)
             .setParameter("startDate", startDate)
             .singleResult
@@ -198,6 +203,7 @@ class StatsService {
             SELECT COUNT(DISTINCT page_id)
             FROM page_visit
             WHERE visited_at >= :startDate
+            AND page_id NOT IN (SELECT b.page_id FROM blacklist b)
         """, Long::class.javaObjectType)
             .setParameter("startDate", startDate)
             .singleResult
@@ -208,6 +214,7 @@ class StatsService {
             FROM page p
             JOIN page_visit pv ON p.id = pv.page_id
             WHERE pv.visited_at >= :startDate
+            AND p.id NOT IN (SELECT b.page_id FROM blacklist b)
         """, Long::class.javaObjectType)
             .setParameter("startDate", startDate)
             .singleResult

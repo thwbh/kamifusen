@@ -22,7 +22,7 @@ import java.util.*
 )
 data class Page(
     @Id
-    var id: UUID,
+    var id: UUID = UUID.randomUUID(),
     var path: String,
     var domain: String? = null,
     val pageAdded: LocalDateTime = LocalDateTime.now(),
@@ -77,7 +77,6 @@ class PageRepository : PanacheRepositoryBase<Page, UUID> {
     @WithTransaction
     fun addPage(path: String, domain: String): Uni<Page> {
         val page = Page(
-            id = UUID.randomUUID(),
             path = path,
             domain = domain
         )

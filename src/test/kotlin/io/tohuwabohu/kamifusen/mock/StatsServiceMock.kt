@@ -25,11 +25,11 @@ class StatsServiceMock : StatsService() {
         )
 
         val topPages = listOf(
-            TopPageDataDto(path = "/home", percentage = 45.0, visits = 500),
-            TopPageDataDto(path = "/about", percentage = 27.0, visits = 300),
-            TopPageDataDto(path = "/contact", percentage = 18.0, visits = 200),
-            TopPageDataDto(path = "/blog", percentage = 9.0, visits = 100),
-            TopPageDataDto(path = "/other", percentage = 1.0, visits = 50)
+            TopPageDataDto(domain = "test.org", path = "/home", percentage = 45.0, visits = 500),
+            TopPageDataDto(domain = "test.org", path = "/about", percentage = 27.0, visits = 300),
+            TopPageDataDto(domain = "test.org", path = "/contact", percentage = 18.0, visits = 200),
+            TopPageDataDto(domain = "test.org", path = "/blog", percentage = 9.0, visits = 100),
+            TopPageDataDto(domain = "test.org", path = "/other", percentage = 1.0, visits = 50)
         )
 
         val domainStats = listOf(

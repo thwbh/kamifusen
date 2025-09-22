@@ -390,11 +390,14 @@ components:
           type: integer
     TopPageDataDto:
       required:
+      - domain
       - path
       - percentage
       - visits
       type: object
       properties:
+        domain:
+          type: string
         path:
           type: string
         visits:
