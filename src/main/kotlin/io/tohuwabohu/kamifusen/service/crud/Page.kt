@@ -18,7 +18,47 @@ import java.util.*
         query = "FROM Page p WHERE p.path = :path AND p.domain = :domain"),
     NamedQuery(
         name = "Page.findNonBlacklisted",
-        query = "FROM Page p WHERE p.id NOT IN (SELECT b.pageId FROM Blacklist b)")
+        query = "FROM Page p WHERE p.id NOT IN (SELECT b.pageId FROM Blacklist b)"),
+    NamedQuery(
+        name = "Page.findAllWithStats",
+        query = """
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain, p.lastHit
+            FROM Page p
+            LEFT JOIN PageVisit pv ON p.id = pv.pageId
+            GROUP BY p.id
+            ORDER BY p.domain, p.path, p.pageAdded DESC
+        """),
+    NamedQuery(
+        name = "Page.findNonBlacklistedWithStats",
+        query = """
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain, p.lastHit
+            FROM Page p
+            LEFT JOIN PageVisit pv ON p.id = pv.pageId
+            WHERE p.id NOT IN (SELECT b.pageId FROM Blacklist b)
+            GROUP BY p.id
+            ORDER BY p.domain, p.path, p.pageAdded DESC
+        """),
+    NamedQuery(
+        name = "Page.findBlacklistedWithStats",
+        query = """
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain, p.lastHit
+            FROM Page p
+            LEFT JOIN PageVisit pv ON p.id = pv.pageId
+            INNER JOIN Blacklist b ON p.id = b.pageId
+            GROUP BY p.id
+            ORDER BY p.domain, p.path, p.pageAdded DESC
+        """),
+    NamedQuery(
+        name = "Page.findBlacklistedByDomainWithStats",
+        query = """
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain, p.lastHit
+            FROM Page p
+            LEFT JOIN PageVisit pv ON p.id = pv.pageId
+            INNER JOIN Blacklist b ON p.id = b.pageId
+            WHERE p.domain = :domain
+            GROUP BY p.id
+            ORDER BY p.path, p.pageAdded DESC
+        """)
 )
 data class Page(
     @Id

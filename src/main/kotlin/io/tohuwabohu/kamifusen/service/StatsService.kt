@@ -12,7 +12,6 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Tuple
 import org.hibernate.reactive.mutiny.Mutiny
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDateTime
 
 /**
@@ -33,28 +32,26 @@ class StatsService {
         val startDate = LocalDateTime.now().minusDays(days.toLong())
 
         return Panache.getSession().flatMap { session ->
-            // Get all the data in parallel
-            val visitTrendQuery = getVisitTrendData(session, days)
-            val topPagesQuery = getTopPagesData(session, startDate)
-            val domainStatsQuery = getDomainStatsData(session, startDate)
-            val totalStatsQuery = getTotalStats(session, startDate)
-
-            Uni.combine().all().unis(visitTrendQuery, topPagesQuery, domainStatsQuery, totalStatsQuery)
-                .asTuple()
-                .onItem().transform { tuple ->
-                    val visitData = tuple.item1
-                    val topPages = tuple.item2
-                    val domainStats = tuple.item3
-                    val (totalVisits, totalPages, totalDomains) = tuple.item4
-
-                    AggregatedStatsDto(
-                        visitData = visitData,
-                        topPages = topPages,
-                        domainStats = domainStats,
-                        totalVisits = totalVisits,
-                        totalPages = totalPages,
-                        totalDomains = totalDomains
-                    )
+            // Execute queries sequentially to avoid session corruption with Uni.combine()
+            getVisitTrendData(session, days)
+                .flatMap { visitData ->
+                    getTopPagesData(session, startDate)
+                        .flatMap { topPages ->
+                            getDomainStatsData(session, startDate)
+                                .flatMap { domainStats ->
+                                    getTotalStats(session, startDate)
+                                        .map { (totalVisits, totalPages, totalDomains) ->
+                                            AggregatedStatsDto(
+                                                visitData = visitData,
+                                                topPages = topPages,
+                                                domainStats = domainStats,
+                                                totalVisits = totalVisits,
+                                                totalPages = totalPages,
+                                                totalDomains = totalDomains
+                                            )
+                                        }
+                                }
+                        }
                 }
         }
     }
@@ -62,19 +59,7 @@ class StatsService {
     private fun getVisitTrendData(session: Mutiny.Session, days: Int): Uni<List<VisitTrendDataDto>> {
         val startDate = LocalDateTime.now().minusDays(days.toLong())
 
-        // Query visits grouped by day of week across all pages and domains
-        val query = """
-            SELECT
-                EXTRACT(DOW FROM pv.visited_at) as day_of_week,
-                COUNT(*) as visit_count
-            FROM page_visit pv
-            WHERE pv.visited_at >= :startDate
-            AND pv.page_id NOT IN (SELECT b.page_id FROM blacklist b)
-            GROUP BY EXTRACT(DOW FROM pv.visited_at)
-            ORDER BY day_of_week
-        """
-
-        return session.createNativeQuery(query, Tuple::class.java)
+        return session.createNamedQuery("Stats.getVisitTrendData", Tuple::class.java)
             .setParameter("startDate", startDate)
             .resultList
             .onItem().transform { results ->
@@ -123,18 +108,7 @@ class StatsService {
      * @return List of top pages and their visits
      */
     private fun getTopPagesData(session: Mutiny.Session, startDate: LocalDateTime): Uni<List<TopPageDataDto>> {
-        // Query top pages within the specified time range
-        val query = """
-            SELECT p.domain, p.path, COUNT(pv.page_id) as visits
-            FROM page p
-            JOIN page_visit pv ON p.id = pv.page_id
-            WHERE pv.visited_at >= :startDate
-            AND p.id NOT IN (SELECT b.page_id FROM blacklist b)
-            GROUP BY p.domain, p.path
-            ORDER BY visits DESC
-        """
-
-        return session.createNativeQuery(query, Tuple::class.java)
+        return session.createNamedQuery("Stats.getTopPagesData", Tuple::class.java)
             .setParameter("startDate", startDate)
             .resultList
             .onItem().transform { results ->
@@ -163,18 +137,7 @@ class StatsService {
     }
 
     private fun getDomainStatsData(session: Mutiny.Session, startDate: LocalDateTime): Uni<List<DomainStatDataDto>> {
-        // Query domain statistics within the specified time range
-        val query = """
-            SELECT COALESCE(p.domain, 'unknown') as domain, COUNT(pv.page_id) as visits
-            FROM page p
-            JOIN page_visit pv ON p.id = pv.page_id
-            WHERE pv.visited_at >= :startDate
-            AND p.id NOT IN (SELECT b.page_id FROM blacklist b)
-            GROUP BY p.domain
-            ORDER BY visits DESC
-        """
-
-        return session.createNativeQuery(query, Tuple::class.java)
+        return session.createNamedQuery("Stats.getDomainStatsData", Tuple::class.java)
             .setParameter("startDate", startDate)
             .resultList
             .onItem().transform { results ->
@@ -193,42 +156,25 @@ class StatsService {
     }
 
     private fun getTotalStats(session: Mutiny.Session, startDate: LocalDateTime): Uni<Triple<Long, Long, Long>> {
-        // Use reactive SQL queries with time range filtering
-        val totalVisitsQuery = session.createNativeQuery("""
-            SELECT COUNT(*)
-            FROM page_visit
-            WHERE visited_at >= :startDate
-            AND page_id NOT IN (SELECT b.page_id FROM blacklist b)
-        """, Long::class.javaObjectType)
+        // Execute queries sequentially to avoid session corruption
+        return session.createNamedQuery("PageVisit.countTotalVisits", Long::class.javaObjectType)
             .setParameter("startDate", startDate)
             .singleResult
             .onItem().transform { result -> result.toLong()}
-
-        val totalPagesQuery = session.createNativeQuery("""
-            SELECT COUNT(DISTINCT page_id)
-            FROM page_visit
-            WHERE visited_at >= :startDate
-            AND page_id NOT IN (SELECT b.page_id FROM blacklist b)
-        """, Long::class.javaObjectType)
-            .setParameter("startDate", startDate)
-            .singleResult
-            .onItem().transform { result -> result.toLong() }
-
-        val totalDomainsQuery = session.createNativeQuery("""
-            SELECT COUNT(DISTINCT p.domain)
-            FROM page p
-            JOIN page_visit pv ON p.id = pv.page_id
-            WHERE pv.visited_at >= :startDate
-            AND p.id NOT IN (SELECT b.page_id FROM blacklist b)
-        """, Long::class.javaObjectType)
-            .setParameter("startDate", startDate)
-            .singleResult
-            .onItem().transform { result -> result.toLong() }
-
-        return Uni.combine().all().unis(totalVisitsQuery, totalPagesQuery, totalDomainsQuery)
-            .asTuple()
-            .onItem().transform { tuple ->
-                Triple(tuple.item1, tuple.item2, tuple.item3)
+            .flatMap { totalVisits ->
+                session.createNamedQuery("PageVisit.countTotalPages", Long::class.javaObjectType)
+                    .setParameter("startDate", startDate)
+                    .singleResult
+                    .onItem().transform { result -> result.toLong() }
+                    .flatMap { totalPages ->
+                        session.createNamedQuery("PageVisit.countTotalDomains", Long::class.javaObjectType)
+                            .setParameter("startDate", startDate)
+                            .singleResult
+                            .onItem().transform { result -> result.toLong() }
+                            .map { totalDomains ->
+                                Triple(totalVisits, totalPages, totalDomains)
+                            }
+                    }
             }
     }
 }
