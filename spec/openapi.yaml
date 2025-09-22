@@ -130,6 +130,54 @@ paths:
           description: Not Allowed
       security:
       - SecurityScheme: []
+  /admin/pages/blacklisted:
+    get:
+      operationId: listBlacklistedPages
+      tags:
+      - App Admin Resource
+      parameters:
+      - name: domain
+        in: query
+        schema:
+          type: string
+          nullable: true
+      responses:
+        "200":
+          description: List of blacklisted pages with visit statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PageWithStatsDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/pages/restore/{pageId}:
+    post:
+      operationId: restorePage
+      tags:
+      - App Admin Resource
+      parameters:
+      - name: pageId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain: {}
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
   /admin/users:
     get:
       operationId: listUsers

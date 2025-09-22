@@ -139,6 +139,39 @@ class AppAdminResource(
         }.onFailure().invoke { e -> Log.error("Error receiving pages.", e) }
             .onFailure().recoverWithResponse()
 
+    @Path("/pages/blacklisted")
+    @GET
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponse(
+        responseCode = "200",
+        description = "List of blacklisted pages with visit statistics",
+        content = [Content(
+            mediaType = MediaType.APPLICATION_JSON,
+            schema = Schema(implementation = PageWithStatsDto::class, type = SchemaType.ARRAY)
+        )]
+    )
+    @RolesAllowed("app-admin")
+    override fun listBlacklistedPages(@QueryParam("domain") domain: String?): Uni<Response> =
+        if (domain != null) {
+            pageStatsService.getBlacklistedPagesByDomainWithStats(domain)
+        } else {
+            pageStatsService.getBlacklistedPagesWithStats()
+        }.flatMap {
+            Uni.createFrom().item(Response.ok(it).build())
+        }.onFailure().invoke { e -> Log.error("Error receiving blacklisted pages.", e) }
+            .onFailure().recoverWithResponse()
+
+    @Path("/pages/restore/{pageId}")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed("app-admin")
+    override fun restorePage(@PathParam("pageId") pageId: UUID): Uni<Response> =
+        blacklistRepository.removePageFromBlacklist(pageId).map { Response.ok().build() }
+            .onFailure().invoke { e -> Log.error("Error during page restoration.", e) }
+            .onFailure().recoverWithResponse()
+
     @Path("/users")
     @GET
     @Consumes(MediaType.TEXT_PLAIN)

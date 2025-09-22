@@ -33,6 +33,25 @@ class PageStatsService() {
             ORDER BY p.domain, p.path, p.pageAdded DESC
         """
 
+    private val blacklistedPagesQuery = """
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain, p.lastHit AS visits
+            FROM Page p
+            LEFT JOIN PageVisit pv ON p.id = pv.pageId
+            INNER JOIN Blacklist b ON p.id = b.pageId
+            GROUP BY p.id
+            ORDER BY p.domain, p.path, p.pageAdded DESC
+        """
+
+    private val blacklistedPagesByDomainQuery = """
+            SELECT p.id, p.path, p.pageAdded, COUNT(pv.visitorId), p.domain, p.lastHit AS visits
+            FROM Page p
+            LEFT JOIN PageVisit pv ON p.id = pv.pageId
+            INNER JOIN Blacklist b ON p.id = b.pageId
+            WHERE p.domain = :domain
+            GROUP BY p.id
+            ORDER BY p.path, p.pageAdded DESC
+        """
+
     fun getAllPageVisits(): Uni<List<PageWithStatsDto>> =
         Panache.getSession().flatMap { session ->
             session.createQuery(allPagesQuery, Tuple::class.java).resultList
@@ -42,6 +61,20 @@ class PageStatsService() {
     fun getNonBlacklistedPagesWithStats(): Uni<List<PageWithStatsDto>> =
         Panache.getSession().flatMap { session ->
             session.createQuery(nonBlacklistedPagesQuery, Tuple::class.java).resultList
+                .onItem().transform { it.map ( Tuple::toPageStatsDto ) }
+        }
+
+    fun getBlacklistedPagesWithStats(): Uni<List<PageWithStatsDto>> =
+        Panache.getSession().flatMap { session ->
+            session.createQuery(blacklistedPagesQuery, Tuple::class.java).resultList
+                .onItem().transform { it.map ( Tuple::toPageStatsDto ) }
+        }
+
+    fun getBlacklistedPagesByDomainWithStats(domain: String): Uni<List<PageWithStatsDto>> =
+        Panache.getSession().flatMap { session ->
+            session.createQuery(blacklistedPagesByDomainQuery, Tuple::class.java)
+                .setParameter("domain", domain)
+                .resultList
                 .onItem().transform { it.map ( Tuple::toPageStatsDto ) }
         }
 }
