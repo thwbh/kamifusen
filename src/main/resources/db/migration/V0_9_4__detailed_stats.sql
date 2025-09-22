@@ -41,3 +41,18 @@ CREATE INDEX idx_session_visitor_id ON session(visitor_id);
 CREATE INDEX idx_session_start_time ON session(start_time);
 CREATE INDEX idx_session_is_active ON session(is_active);
 CREATE INDEX idx_session_active_start ON session(is_active, start_time) WHERE is_active = TRUE;
+
+-- Create Blacklist table for hiding pages without actual deletion
+CREATE TABLE Blacklist (
+       id UUID PRIMARY KEY,
+       pageId UUID NOT NULL,
+       blacklistedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_blacklist_page FOREIGN KEY (pageId) REFERENCES Page(id)
+);
+
+-- Index for fast lookups by pageId
+CREATE INDEX idx_blacklist_page_id ON Blacklist(pageId);
+
+-- Ensure only one blacklist entry per page
+CREATE UNIQUE INDEX idx_blacklist_unique_page ON Blacklist(pageId);

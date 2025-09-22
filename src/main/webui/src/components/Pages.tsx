@@ -45,8 +45,11 @@ const Pages: React.FC = () => {
       id: 'actions',
       header: 'Actions',
       cell: info => (
-        <button className="text-tui-red hover:text-tui-accent text-sm">
-          DELETE
+        <button
+          className="text-tui-red hover:text-tui-accent text-sm"
+          onClick={() => handleHidePage(info.row.original.id)}
+        >
+          HIDE
         </button>
       )
     })
@@ -96,6 +99,21 @@ const Pages: React.FC = () => {
       console.error('Error loading pages:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleHidePage = async (pageId: string) => {
+    if (!confirm('Are you sure you want to hide this page? This will unregister it from tracking.')) {
+      return
+    }
+
+    try {
+      await adminApi.unregisterPage(pageId)
+      // Reload pages to reflect the change
+      await loadPages()
+    } catch (err) {
+      setError('Failed to hide page')
+      console.error('Error hiding page:', err)
     }
   }
 

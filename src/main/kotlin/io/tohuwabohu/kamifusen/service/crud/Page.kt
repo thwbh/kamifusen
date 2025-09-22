@@ -15,7 +15,10 @@ import java.util.*
 @NamedQueries(
     NamedQuery(
         name = "Page.findByPathAndDomain",
-        query = "FROM Page p WHERE p.path = :path AND p.domain = :domain")
+        query = "FROM Page p WHERE p.path = :path AND p.domain = :domain"),
+    NamedQuery(
+        name = "Page.findNonBlacklisted",
+        query = "FROM Page p WHERE p.id NOT IN (SELECT b.pageId FROM Blacklist b)")
 )
 data class Page(
     @Id
@@ -69,6 +72,9 @@ class PageRepository : PanacheRepositoryBase<Page, UUID> {
     fun listAllPages() = listAll()
 
     @WithTransaction
+    fun listNonBlacklistedPages() = find("#Page.findNonBlacklisted").list()
+
+    @WithTransaction
     fun addPage(path: String, domain: String): Uni<Page> {
         val page = Page(
             id = UUID.randomUUID(),
@@ -80,6 +86,11 @@ class PageRepository : PanacheRepositoryBase<Page, UUID> {
     }
 
     @WithTransaction
-    fun deletePage(pageId: UUID): Uni<Boolean> = findById(pageId).onItem().ifNull().failWith(NotFoundException()).onItem()
-        .ifNotNull().transformToUni { entry -> deleteById(entry.id)}
+    fun deletePage(pageId: UUID, blacklistRepository: BlacklistRepository): Uni<Boolean> =
+        findById(pageId)
+            .onItem().ifNull().failWith(NotFoundException())
+            .onItem().ifNotNull().transformToUni { page ->
+                blacklistRepository.addPageToBlacklist(page.id)
+                    .map { true }
+            }
 }

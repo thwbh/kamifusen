@@ -12,6 +12,7 @@ import io.tohuwabohu.kamifusen.service.PageStatsService
 import io.tohuwabohu.kamifusen.service.StatsService
 import io.tohuwabohu.kamifusen.service.crud.ApiUser
 import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.BlacklistRepository
 import io.tohuwabohu.kamifusen.service.crud.PageRepository
 import io.tohuwabohu.kamifusen.service.validator.UserValidation
 import io.tohuwabohu.kamifusen.service.validator.validatePassword
@@ -36,7 +37,8 @@ class AppAdminResource(
     private val pageStatsService: PageStatsService,
     private val pageRepository: PageRepository,
     private val statsService: StatsService,
-    private val pageAdminService: PageAdminService
+    private val pageAdminService: PageAdminService,
+    private val blacklistRepository: BlacklistRepository
 ) : AppAdminResourceApi {
     @Inject
     lateinit var securityIdentity: SecurityIdentity
@@ -175,8 +177,8 @@ class AppAdminResource(
     @Produces(MediaType.TEXT_PLAIN)
     @RolesAllowed("app-admin")
     override fun unregisterPage(pageId: UUID): Uni<Response> =
-        pageRepository.deletePage(pageId).map { Response.ok().build() }
-            .onFailure().invoke { e -> Log.error("Error during page deletion.", e) }
+        pageRepository.deletePage(pageId, blacklistRepository).map { Response.ok().build() }
+            .onFailure().invoke { e -> Log.error("Error during page blacklisting.", e) }
             .onFailure().recoverWithResponse()
 
     @POST

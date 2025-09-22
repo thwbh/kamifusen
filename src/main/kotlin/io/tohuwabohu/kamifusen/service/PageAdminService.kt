@@ -17,10 +17,10 @@ class PageAdminService(
 ) {
 
     /**
-     * Gets all pages with their visit counts for admin UI
+     * Gets all pages with their visit counts for admin UI (excluding blacklisted pages)
      */
     fun getPagesWithStats(): Uni<List<PageWithStatsDto>> {
-        return pageRepository.listAllPages()
+        return pageRepository.listNonBlacklistedPages()
             .flatMap { pages ->
                 if (pages.isEmpty()) {
                     Uni.createFrom().item(emptyList())
