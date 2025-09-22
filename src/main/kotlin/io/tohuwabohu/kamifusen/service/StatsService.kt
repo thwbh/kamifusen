@@ -7,10 +7,12 @@ import io.tohuwabohu.kamifusen.api.generated.model.AggregatedStatsDto
 import io.tohuwabohu.kamifusen.api.generated.model.DomainStatDataDto
 import io.tohuwabohu.kamifusen.api.generated.model.TopPageDataDto
 import io.tohuwabohu.kamifusen.api.generated.model.VisitTrendDataDto
+import io.tohuwabohu.kamifusen.extensions.roundTo
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.persistence.Tuple
 import org.hibernate.reactive.mutiny.Mutiny
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 
 /**
@@ -18,7 +20,6 @@ import java.time.LocalDateTime
  */
 @ApplicationScoped
 class StatsService {
-
     @WithTransaction
     fun getAggregatedStats(timeRange: String = "7d"): Uni<AggregatedStatsDto> {
         val days = when (timeRange) {
@@ -143,9 +144,11 @@ class StatsService {
                     val domain = tuple.get(0, String::class.java)
                     val path = tuple.get(1, String::class.java)
                     val visits = tuple.get(2, Long::class.javaObjectType)
-                    val percentage = if (totalVisits > 0) (visits.toDouble() / totalVisits.toDouble()) * 100 else 0.0
+                    val percentage = if (totalVisits > 0) {
+                        (visits.toDouble() / totalVisits.toDouble()) * 100
+                    } else 0.0
 
-                    TopPageDataDto(domain, path, visits, percentage)
+                    TopPageDataDto(domain, path, visits, percentage.roundTo(2))
                 }
 
                 if (topPagesData.size < 5) return@transform topPagesData
@@ -153,7 +156,7 @@ class StatsService {
                 val rest = results.drop(5).sumOf { it.get(2, Long::class.javaObjectType) }
 
                 val remainingPercentage = 100 - topPagesData.sumOf { it.percentage }
-                val validPercentage = maxOf(0.0, remainingPercentage)
+                val validPercentage = maxOf(0.0, remainingPercentage.roundTo(2))
 
                 topPagesData + listOf(TopPageDataDto("Other", "*", rest, validPercentage))
             }
@@ -180,9 +183,11 @@ class StatsService {
                 results.map { tuple ->
                     val domain = tuple.get(0, String::class.java)
                     val visits = tuple.get(1, Long::class.javaObjectType)
-                    val percentage = if (totalVisits > 0) (visits.toDouble() / totalVisits.toDouble()) * 100 else 0.0
+                    val percentage = if (totalVisits > 0) {
+                        (visits.toDouble() / totalVisits.toDouble()) * 100
+                    } else 0.0
 
-                    DomainStatDataDto(domain, visits, percentage)
+                    DomainStatDataDto(domain, visits, percentage.roundTo(2))
                 }
             }
     }
