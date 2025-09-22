@@ -166,6 +166,20 @@ paths:
           description: Not Allowed
       security:
       - SecurityScheme: []
+  /admin/landing:
+    get:
+      operationId: adminLanding
+      tags:
+      - App Admin Resource
+      responses:
+        "302":
+          description: Redirect to appropriate page
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
   /admin/update:
     post:
       operationId: updateAdmin
@@ -300,6 +314,13 @@ components:
           allOf:
           - $ref: "#/components/schemas/LocalDateTime"
           nullable: true
+    AuthStatusDto:
+      required:
+      - requiresPasswordChange
+      type: object
+      properties:
+        requiresPasswordChange:
+          type: boolean
     DomainStatDataDto:
       required:
       - domain
@@ -315,6 +336,19 @@ components:
         percentage:
           type: number
           format: double
+    LoginResponseDto:
+      required:
+      - success
+      - requiresPasswordChange
+      type: object
+      properties:
+        success:
+          type: boolean
+        requiresPasswordChange:
+          type: boolean
+        message:
+          type: string
+          nullable: true
     LocalDateTime:
       format: date-time
       type: string

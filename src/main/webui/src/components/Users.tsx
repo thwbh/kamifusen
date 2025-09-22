@@ -7,7 +7,8 @@ import {
   createColumnHelper,
   SortingState
 } from '@tanstack/react-table'
-import { AppAdminResourceApi, ApiUser } from '../api/gen/index'
+import { AppAdminResourceApi, ApiUserDto } from '../api/gen/index'
+
 interface ApiKey {
   id: string
   name: string
@@ -17,7 +18,7 @@ interface ApiKey {
 }
 
 const Users: React.FC = () => {
-  const [users, setUsers] = useState<ApiUser[]>([])
+  const [users, setUsers] = useState<ApiUserDto[]>([])
   const [apiKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +33,7 @@ const Users: React.FC = () => {
 
   const adminApi = new AppAdminResourceApi()
 
-  const columnHelper = createColumnHelper<ApiUser>()
+  const columnHelper = createColumnHelper<ApiUserDto>()
 
   const columns = useMemo(() => [
     columnHelper.accessor('username', {
@@ -94,7 +95,7 @@ const Users: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await adminApi.adminUsersGet();
+      const response = await adminApi.listUsers();
 
       console.log(response);
 
@@ -118,7 +119,7 @@ const Users: React.FC = () => {
   const handleAddUser = async () => {
     if (newUser.username) {
       try {
-        const response = await adminApi.adminKeygenPost(newUser.username, 'api-user', newUser.expiresAt || '');
+        const response = await adminApi.generateApiKey(newUser.username, 'api-user', newUser.expiresAt || '');
         setGeneratedKey(response.data);
         setNewUser({ username: '', expiresAt: '' });
         setShowAddForm(false);
@@ -134,7 +135,7 @@ const Users: React.FC = () => {
     if (keyName) {
       try {
         // Create API key with default values
-        await adminApi.adminKeygenPost(keyName, 'USER', new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
+        await adminApi.generateApiKey(keyName, 'USER', new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString());
 
         // Simulate generated key display
         const newKey = 'key_' + Math.random().toString(36).substr(2, 16);

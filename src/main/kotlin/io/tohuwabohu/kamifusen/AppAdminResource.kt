@@ -1,29 +1,31 @@
 package io.tohuwabohu.kamifusen
 
 import io.quarkus.logging.Log
+import io.quarkus.security.identity.SecurityIdentity
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.api.generated.AppAdminResourceApi
 import io.tohuwabohu.kamifusen.api.generated.model.AggregatedStatsDto
 import io.tohuwabohu.kamifusen.api.generated.model.PageWithStatsDto
+import io.tohuwabohu.kamifusen.error.recoverWithResponse
+import io.tohuwabohu.kamifusen.service.PageAdminService
+import io.tohuwabohu.kamifusen.service.PageStatsService
+import io.tohuwabohu.kamifusen.service.StatsService
 import io.tohuwabohu.kamifusen.service.crud.ApiUser
 import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
-import io.tohuwabohu.kamifusen.service.PageAdminService
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.validator.UserValidation
+import io.tohuwabohu.kamifusen.service.validator.validatePassword
+import io.tohuwabohu.kamifusen.service.validator.validateUser
+import jakarta.annotation.security.RolesAllowed
+import jakarta.inject.Inject
+import jakarta.ws.rs.*
+import jakarta.ws.rs.core.MediaType
+import jakarta.ws.rs.core.Response
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
-import io.tohuwabohu.kamifusen.service.crud.PageRepository
-import io.tohuwabohu.kamifusen.service.PageStatsService
-import io.tohuwabohu.kamifusen.service.StatsService
-import io.tohuwabohu.kamifusen.error.recoverWithResponse
-
-import io.tohuwabohu.kamifusen.service.validator.UserValidation
-import io.tohuwabohu.kamifusen.service.validator.validateUser
-import io.tohuwabohu.kamifusen.service.validator.PasswordValidation
-import io.tohuwabohu.kamifusen.service.validator.validatePassword
-import jakarta.annotation.security.RolesAllowed
-import jakarta.ws.rs.*
-import jakarta.ws.rs.core.*
+import java.net.URI
 import java.time.LocalDateTime
 import java.util.*
 
@@ -36,6 +38,26 @@ class AppAdminResource(
     private val statsService: StatsService,
     private val pageAdminService: PageAdminService
 ) : AppAdminResourceApi {
+    @Inject
+    lateinit var securityIdentity: SecurityIdentity
+
+    @GET
+    @Path("/landing")
+    @RolesAllowed("app-admin")
+    override fun adminLanding(): Uni<Response> {
+        val username = securityIdentity.principal.name
+        Log.info("Landing page accessed by user: $username")
+        Log.info("Security identity attributes in landing: ${securityIdentity.attributes}")
+
+        // Since attributes are lost, check if user still has default credentials
+        return apiUserRepository.findByUsernameAndPassword(username, "admin")
+            .map { _ ->
+                Log.info("Redirecting to password change page")
+                Response.seeOther(URI.create("/?page=change-password")).build()
+            }.onFailure().recoverWithItem(Response.seeOther(URI.create("/?page=dashboard")).build())
+
+    }
+
     @Path("/keygen")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -160,7 +182,7 @@ class AppAdminResource(
     @POST
     @Consumes("application/x-www-form-urlencoded")
     @Produces("text/plain")
-    @Path("/admin/update")
+    @Path("/update")
     @RolesAllowed("app-admin")
     override fun updateAdmin(
         @FormParam("oldUsername") @DefaultValue("") oldUsername: String,
@@ -200,5 +222,4 @@ class AppAdminResource(
         }.onFailure().invoke { e -> Log.error("Error updating admin password.", e) }
             .onFailure().recoverWithResponse()
     }
-
 }

@@ -23,7 +23,7 @@ const Stats: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await adminApi.adminStatsGet(timeRange)
+      const response = await adminApi.getStats(timeRange)
       setStatsData(response.data)
 
       console.log(response.data);

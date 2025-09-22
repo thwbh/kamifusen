@@ -89,7 +89,7 @@ const Pages: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await adminApi.adminPagesGet()
+      const response = await adminApi.listPages()
       setPages(response.data)
     } catch (err) {
       setError('Failed to load pages')

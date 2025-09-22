@@ -11,6 +11,7 @@ import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
 import jakarta.annotation.Priority
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.ws.rs.Priorities
+import io.quarkus.logging.Log
 
 @ApplicationScoped
 @Priority(Priorities.AUTHENTICATION)

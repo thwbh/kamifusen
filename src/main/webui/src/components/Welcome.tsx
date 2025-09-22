@@ -13,6 +13,17 @@ const Welcome: React.FC<WelcomeProps> = ({ onBegin, onNavigate }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Check for error parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlError = urlParams.get('error');
+    if (urlError === 'invalid-credentials') {
+      setError('Invalid username or password');
+      // Clean the URL
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
+  useEffect(() => {
     // Auto-focus the username input when component mounts
     const timer = setTimeout(() => {
       const usernameInput = document.querySelector('[data-username-input]') as HTMLElement;
@@ -40,34 +51,29 @@ const Welcome: React.FC<WelcomeProps> = ({ onBegin, onNavigate }) => {
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('password', password);
+    // Create a hidden form and submit it traditionally
+    // This allows the browser to handle the redirect properly
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/j_security_check';
+    form.style.display = 'none';
 
-      const response = await fetch('/j_security_check', {
-        method: 'POST',
-        body: formData,
-        redirect: 'manual' // Handle redirects manually
-      }).then((res) => res) as Response & { redirected: boolean };
+    const usernameInput = document.createElement('input');
+    usernameInput.type = 'hidden';
+    usernameInput.name = 'username';
+    usernameInput.value = username;
 
-      console.log(response);
+    const passwordInput = document.createElement('input');
+    passwordInput.type = 'hidden';
+    passwordInput.name = 'password';
+    passwordInput.value = password;
 
-      if (response.status === 200) {
-        // Successful login - Quarkus form auth redirects on success
-        onBegin();
-      } else if (response.status === 401) {
-        // Invalid credentials
-        setError('Invalid username or password');
-      } else {
-        // Other error
-        setError('Login failed. Please try again.');
-      }
-    } catch (err) {
-      setError('Network error. Please check your connection.');
-    } finally {
-      setIsLoading(false);
-    }
+    form.appendChild(usernameInput);
+    form.appendChild(passwordInput);
+    document.body.appendChild(form);
+
+    // Submit the form - this will trigger the normal form auth flow
+    form.submit();
   };
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
@@ -99,7 +105,7 @@ const Welcome: React.FC<WelcomeProps> = ({ onBegin, onNavigate }) => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div className="bg-tui-red bg-opacity-20 border border-tui-red p-3 rounded-sm">
-                  <p className="text-tui-red text-sm font-mono">{error}</p>
+                  <p className="text-tui-light text-sm font-mono">{error}</p>
                 </div>
               )}
 
