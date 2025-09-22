@@ -215,6 +215,72 @@ paths:
           description: Not Allowed
       security:
       - SecurityScheme: []
+  /admin/domain-groups:
+    get:
+      operationId: listDomainGroups
+      tags:
+      - App Admin Resource
+      responses:
+        "200":
+          description: List of domain groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DomainGroupDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+    post:
+      operationId: createDomainGroup
+      tags:
+      - App Admin Resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDomainGroupDto"
+      responses:
+        "201":
+          description: Domain group created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DomainGroupDto"
+        "400":
+          description: Invalid request
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/domain-groups/{groupId}:
+    delete:
+      operationId: deleteDomainGroup
+      tags:
+      - App Admin Resource
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Domain group deleted
+        "404":
+          description: Domain group not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
   /public/visits/count/{pageId}:
     get:
       operationId: count
@@ -321,6 +387,48 @@ components:
       properties:
         requiresPasswordChange:
           type: boolean
+    CreateDomainGroupDto:
+      required:
+      - name
+      - parentDomain
+      - childDomains
+      type: object
+      properties:
+        name:
+          type: string
+        parentDomain:
+          type: string
+        description:
+          type: string
+          nullable: true
+        childDomains:
+          type: array
+          items:
+            type: string
+    DomainGroupDto:
+      required:
+      - id
+      - name
+      - parentDomain
+      - childDomains
+      - created
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        parentDomain:
+          type: string
+        description:
+          type: string
+          nullable: true
+        childDomains:
+          type: array
+          items:
+            type: string
+        created:
+          $ref: "#/components/schemas/LocalDateTime"
     DomainStatDataDto:
       required:
       - domain

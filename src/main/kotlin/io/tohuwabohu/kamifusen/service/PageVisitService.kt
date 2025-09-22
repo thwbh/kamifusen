@@ -4,6 +4,7 @@ import io.quarkus.hibernate.reactive.panache.common.WithTransaction
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.api.generated.model.PageHitRequestDto
+import io.tohuwabohu.kamifusen.service.crud.DomainGroupRepository
 import io.tohuwabohu.kamifusen.service.crud.Page
 import io.tohuwabohu.kamifusen.service.crud.PageRepository
 import io.tohuwabohu.kamifusen.service.crud.PageVisitRepository
@@ -26,7 +27,8 @@ class PageVisitService(
     private val visitorRepository: VisitorRepository,
     private val sessionRepository: SessionRepository,
     private val pageVisitRepository: PageVisitRepository,
-    private val visitRequestMapper: VisitRequestMapper
+    private val visitRequestMapper: VisitRequestMapper,
+    private val domainGroupRepository: DomainGroupRepository
 ) {
 
     /**
@@ -75,9 +77,14 @@ class PageVisitService(
 
     /**
      * Ensures the page exists in the database, creating it if necessary
+     * Resolves the domain through domain groups to ensure aggregation
      */
     private fun ensurePageExists(pageHit: PageHitRequestDto): Uni<Page?> {
-        return pageRepository.addPageIfAbsent(pageHit.path, pageHit.domain)
+        return domainGroupRepository.getEffectiveDomain(pageHit.domain)
+            .flatMap { effectiveDomain ->
+                Log.debug("Resolved domain ${pageHit.domain} to effective domain: $effectiveDomain")
+                pageRepository.addPageIfAbsent(pageHit.path, effectiveDomain)
+            }
     }
 
     /**
@@ -182,6 +189,7 @@ class PageVisitService(
      * Processes a new visit for an existing visitor
      */
     private fun processNewVisitForExistingVisitor(context: VisitContext, page: Page, visitor: Visitor): Uni<VisitResult> {
+        // Use the original domain for session continuity checking, but the effective domain is already in the page
         return checkForRecentActivity(visitor, context.pageHit.domain)
             .flatMap { hasRecentActivity ->
                 recordVisitAndManageSession(visitor, page, hasRecentActivity)
@@ -190,11 +198,15 @@ class PageVisitService(
 
     /**
      * Checks if the visitor has recent activity on the domain (for session continuity)
+     * Uses effective domain to check across domain groups
      */
     private fun checkForRecentActivity(visitor: Visitor, domain: String): Uni<Boolean> {
-        // TODO: minutesBack should be configurable
-        return pageVisitRepository.findRecentVisitByVisitorOnDomain(visitor.id, domain, 30)
-            .map { recentVisit -> recentVisit != null }
+        return domainGroupRepository.getEffectiveDomain(domain)
+            .flatMap { effectiveDomain ->
+                // TODO: minutesBack should be configurable
+                pageVisitRepository.findRecentVisitByVisitorOnDomain(visitor.id, effectiveDomain, 30)
+                    .map { recentVisit -> recentVisit != null }
+            }
     }
 
     /**

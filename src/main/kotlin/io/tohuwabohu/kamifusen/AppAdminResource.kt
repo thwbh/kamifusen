@@ -5,6 +5,8 @@ import io.quarkus.security.identity.SecurityIdentity
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.api.generated.AppAdminResourceApi
 import io.tohuwabohu.kamifusen.api.generated.model.AggregatedStatsDto
+import io.tohuwabohu.kamifusen.api.generated.model.CreateDomainGroupDto
+import io.tohuwabohu.kamifusen.api.generated.model.DomainGroupDto
 import io.tohuwabohu.kamifusen.api.generated.model.PageWithStatsDto
 import io.tohuwabohu.kamifusen.error.recoverWithResponse
 import io.tohuwabohu.kamifusen.service.PageAdminService
@@ -12,6 +14,7 @@ import io.tohuwabohu.kamifusen.service.PageStatsService
 import io.tohuwabohu.kamifusen.service.StatsService
 import io.tohuwabohu.kamifusen.service.crud.ApiUser
 import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.DomainGroupRepository
 import io.tohuwabohu.kamifusen.service.crud.PageRepository
 import io.tohuwabohu.kamifusen.service.validator.UserValidation
 import io.tohuwabohu.kamifusen.service.validator.validatePassword
@@ -36,7 +39,8 @@ class AppAdminResource(
     private val pageStatsService: PageStatsService,
     private val pageRepository: PageRepository,
     private val statsService: StatsService,
-    private val pageAdminService: PageAdminService
+    private val pageAdminService: PageAdminService,
+    private val domainGroupRepository: DomainGroupRepository
 ) : AppAdminResourceApi {
     @Inject
     lateinit var securityIdentity: SecurityIdentity
@@ -220,6 +224,62 @@ class AppAdminResource(
                 }
             }
         }.onFailure().invoke { e -> Log.error("Error updating admin password.", e) }
+            .onFailure().recoverWithResponse()
+    }
+
+    @RolesAllowed("app-admin")
+    override fun listDomainGroups(): Uni<Response> {
+        return domainGroupRepository.listAll()
+            .map { domainGroups ->
+                val dtos = domainGroups.map { group ->
+                    DomainGroupDto(
+                        id = group.id!!,
+                        name = group.name,
+                        parentDomain = group.parentDomain,
+                        description = group.description,
+                        childDomains = group.members.map { it.childDomain },
+                        created = group.created
+                    )
+                }
+                Response.ok(dtos).build()
+            }
+            .onFailure().invoke { e -> Log.error("Error listing domain groups.", e) }
+            .onFailure().recoverWithResponse()
+    }
+
+    @RolesAllowed("app-admin")
+    override fun createDomainGroup(createDomainGroupDto: CreateDomainGroupDto): Uni<Response> {
+        return domainGroupRepository.createDomainGroup(
+            name = createDomainGroupDto.name,
+            parentDomain = createDomainGroupDto.parentDomain,
+            description = createDomainGroupDto.description,
+            childDomains = createDomainGroupDto.childDomains
+        ).map { domainGroup ->
+            val dto = DomainGroupDto(
+                id = domainGroup.id!!,
+                name = domainGroup.name,
+                parentDomain = domainGroup.parentDomain,
+                description = domainGroup.description,
+                childDomains = domainGroup.members.map { it.childDomain },
+                created = domainGroup.created
+            )
+            Response.status(Response.Status.CREATED).entity(dto).build()
+        }
+        .onFailure().invoke { e -> Log.error("Error creating domain group.", e) }
+        .onFailure().recoverWithResponse()
+    }
+
+    @RolesAllowed("app-admin")
+    override fun deleteDomainGroup(groupId: UUID): Uni<Response> {
+        return domainGroupRepository.deleteById(groupId)
+            .map { deleted ->
+                if (deleted) {
+                    Response.ok().build()
+                } else {
+                    Response.status(Response.Status.NOT_FOUND).build()
+                }
+            }
+            .onFailure().invoke { e -> Log.error("Error deleting domain group.", e) }
             .onFailure().recoverWithResponse()
     }
 }
