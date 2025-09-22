@@ -142,3 +142,8 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("gen
     generateModelDocumentation.set(false)
     generateApiDocumentation.set(false)
 }
+
+tasks.register("generateApi") {
+    dependsOn("generateServerApi")
+    dependsOn("generateClientApi")
+}

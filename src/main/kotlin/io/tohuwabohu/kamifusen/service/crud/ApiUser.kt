@@ -124,4 +124,45 @@ class ApiUserRepository : PanacheRepositoryBase<ApiUser, UUID> {
 
             Panache.getSession().call { s -> s.merge(user) }
         }.onItem().ifNull().failWith(NotFoundException())
+
+    @WithTransaction
+    fun updateUser(userId: UUID, username: String, expiresAt: LocalDateTime?): Uni<ApiUser> =
+        findById(userId).onItem().ifNotNull().call { user ->
+            user.username = username
+            user.expiresAt = expiresAt
+            user.updated = LocalDateTime.now()
+
+            Panache.getSession().call { s -> s.merge(user) }
+        }.onItem().ifNull().failWith(NotFoundException())
+
+    @WithTransaction
+    fun deleteUser(userId: UUID): Uni<Boolean> =
+        findById(userId).onItem().ifNotNull().call { user ->
+            Panache.getSession().call { s -> s.remove(user) }
+        }.onItem().ifNull().failWith(NotFoundException())
+            .map { true }
+
+    @WithTransaction
+    fun renewUser(userId: UUID, expiresAt: LocalDateTime?): Uni<String> =
+        findById(userId).flatMap { user ->
+            val randomPwd = UUID.randomUUID().toString()
+            user.password = BcryptUtil.bcryptHash(randomPwd)
+            user.expiresAt = expiresAt
+            user.updated = LocalDateTime.now()
+
+            Panache.getSession().call { s -> s.merge(user) }
+                .map { Base64.getEncoder().encodeToString("${user.username}:${randomPwd}".toByteArray()) }
+        }.onItem().ifNull().failWith(NotFoundException())
+
+    @WithTransaction
+    fun updateUserWithPassword(userId: UUID, username: String, password: String?): Uni<ApiUser> =
+        findById(userId).onItem().ifNotNull().call { user ->
+            user.username = username
+            if (!password.isNullOrBlank()) {
+                user.password = BcryptUtil.bcryptHash(password)
+            }
+            user.updated = LocalDateTime.now()
+
+            Panache.getSession().call { s -> s.merge(user) }
+        }.onItem().ifNull().failWith(NotFoundException())
 }

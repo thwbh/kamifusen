@@ -202,6 +202,90 @@ class AppAdminResource(
             .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
             .onFailure().recoverWithResponse()
 
+    @Path("/renew/{userId}")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed("app-admin")
+    override fun renewApiKey(
+        @PathParam("userId") userId: UUID,
+        @FormParam("expiresAt") expiresAt: String?
+    ): Uni<Response> =
+        apiUserRepository.renewUser(userId,
+            if (expiresAt.isNullOrBlank()) null else LocalDateTime.parse(expiresAt)
+        ).map { keyRaw -> Response.ok(keyRaw).build() }
+        .onFailure().invoke { e -> Log.error("Error during key renewal", e) }
+        .onFailure().recoverWithResponse()
+
+    @PUT
+    @Path("/users/{userId}")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("app-admin")
+    override fun updateUser(
+        @PathParam("userId") userId: UUID,
+        @FormParam("username") username: String,
+        @FormParam("expiresAt") expiresAt: String?
+    ): Uni<Response> {
+        return validateUser(username, apiUserRepository).flatMap { userValidation ->
+            if (!userValidation.valid) {
+                Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(userValidation.message ?: "Username validation failed")
+                        .build()
+                )
+            } else {
+                val parsedExpiresAt = if (expiresAt.isNullOrBlank()) null else LocalDateTime.parse(expiresAt)
+                apiUserRepository.updateUser(userId, username, parsedExpiresAt)
+                    .onItem().transform { Response.ok().build() }
+                    .onFailure().invoke { e -> Log.error("Error updating user $userId", e) }
+                    .onFailure().recoverWithResponse()
+            }
+        }
+    }
+
+    @PUT
+    @Path("/users/{userId}/password")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("app-admin")
+    override fun updateUserPassword(
+        @PathParam("userId") userId: UUID,
+        @FormParam("username") username: String,
+        @FormParam("password") password: String?
+    ): Uni<Response> {
+        return validateUser(username, apiUserRepository).flatMap { userValidation ->
+            if (!userValidation.valid) {
+                Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(userValidation.message ?: "Username validation failed")
+                        .build()
+                )
+            } else {
+                apiUserRepository.updateUserWithPassword(userId, username, password)
+                    .onItem().transform { Response.ok().build() }
+                    .onFailure().invoke { e -> Log.error("Error updating user password $userId", e) }
+                    .onFailure().recoverWithResponse()
+            }
+        }
+    }
+
+    @DELETE
+    @Path("/users/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed("app-admin")
+    override fun deleteUser(@PathParam("userId") userId: UUID): Uni<Response> =
+        apiUserRepository.deleteUser(userId)
+            .onItem().transform { deleted ->
+                if (deleted) {
+                    Response.ok().build()
+                } else {
+                    Response.status(Response.Status.NOT_FOUND).build()
+                }
+            }
+            .onFailure().invoke { e -> Log.error("Error deleting user $userId", e) }
+            .onFailure().recoverWithResponse()
+
     @Path("/pagedel/{pageId}")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
