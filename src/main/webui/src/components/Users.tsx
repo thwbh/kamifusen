@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect, useCallback} from 'react'
-import { ApiUserDto } from '../api/gen/index'
+import { ApiUserDto } from '../api/types/api-user-dto'
 import { useUsers } from '../hooks'
 import { SortingState } from '@tanstack/react-table'
 import SystemUsersTable from './user/SystemUsersTable'

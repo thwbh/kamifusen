@@ -123,7 +123,7 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("gen
 tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("generateClientApi") {
     generatorName.set("typescript-axios")
     inputSpec.set("$projectDir/spec/openapi.yaml")
-    outputDir.set("$projectDir/src/main/webui/src/api/gen")
+    outputDir.set("$projectDir/src/main/webui/src/api")
     apiPackage.set("api")
     modelPackage.set("types")
     configOptions.set(mapOf(

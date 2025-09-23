@@ -7,7 +7,7 @@ import {
   createColumnHelper,
   SortingState
 } from '@tanstack/react-table'
-import { ApiUserDto } from '../../api/gen'
+import { ApiUserDto } from '../../api/types/api-user-dto'
 
 interface ApiKeysTableProps {
   users: ApiUserDto[]

@@ -1,49 +1,49 @@
-import React, {useEffect, useState} from 'react';
-import Background from './components/Background';
-import Welcome from './components/Welcome';
-import AdminPasswordChange from './components/AdminPasswordChange';
-import NavigationWrapper from './components/navigation/NavigationWrapper';
+import React, {useEffect, useState} from 'react'
+import Background from './components/Background'
+import Welcome from './components/Welcome'
+import AdminPasswordChange from './components/AdminPasswordChange'
+import NavigationWrapper from './components/navigation/NavigationWrapper'
 
-type AppState = 'welcome' | 'authenticated' | 'change-password';
+type AppState = 'welcome' | 'authenticated' | 'change-password'
 
 function App() {
   const [currentState, setCurrentState] = useState<AppState>(() => {
     // Check URL path and parameters on initial load
-    const pathname = window.location.pathname;
-    const urlParams = new URLSearchParams(window.location.search);
-    const page = urlParams.get('page');
+    const pathname = window.location.pathname
+    const urlParams = new URLSearchParams(window.location.search)
+    const page = urlParams.get('page')
 
     // Handle backend redirects to /admin/landing
     if (pathname === '/admin/landing') {
       // This means we were redirected from successful login
       // We need to call the landing endpoint to determine next action
-      return 'welcome'; // Temporarily show welcome while we redirect
+      return 'welcome' // Temporarily show welcome while we redirect
     }
 
     // Handle URL parameters
-    if (page === 'change-password') return 'change-password';
-    if (page === 'dashboard') return 'authenticated';
+    if (page === 'change-password') return 'change-password'
+    if (page === 'dashboard') return 'authenticated'
 
     // Handle error parameter from failed form auth
-    const error = urlParams.get('error');
+    const error = urlParams.get('error')
     if (error === 'invalid-credentials') {
-      return 'welcome'; // Stay on welcome page but with error
+      return 'welcome' // Stay on welcome page but with error
     }
 
-    return 'welcome';
-  });
+    return 'welcome'
+  })
 
   const handleBegin = () => {
-    setCurrentState('authenticated');
-  };
+    setCurrentState('authenticated')
+  }
 
   const handleSignOut = () => {
-    setCurrentState('welcome');
-  };
+    setCurrentState('welcome')
+  }
 
   const handleNavigate = (page: string) => {
-    setCurrentState(page as AppState);
-  };
+    setCurrentState(page as AppState)
+  }
 
   useEffect(() => {
     // Handle /admin/landing redirect - just wait for backend to redirect us
@@ -52,7 +52,7 @@ function App() {
       // We don't need to make additional API calls here
       console.log('Waiting for backend to redirect from landing page...');
     }
-  }, []);
+  }, [])
 
   const renderContent = () => {
     switch (currentState) {
@@ -65,7 +65,7 @@ function App() {
       default:
         return <Welcome onBegin={handleBegin} onNavigate={handleNavigate} />;
     }
-  };
+  }
 
   const shouldShowRedLines = currentState === 'welcome';
 
@@ -75,7 +75,7 @@ function App() {
         {renderContent()}
       </Background>
     </div>
-  );
+  )
 }
 
 export default App;

@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface BackgroundProps {
-  children: React.ReactNode;
-  showRedLines?: boolean;
+  children: React.ReactNode
+  showRedLines?: boolean
 }
 
 const Background: React.FC<BackgroundProps> = ({ children, showRedLines = true }) => {
@@ -99,4 +99,4 @@ const Background: React.FC<BackgroundProps> = ({ children, showRedLines = true }
   );
 };
 
-export default Background;
+export default Background

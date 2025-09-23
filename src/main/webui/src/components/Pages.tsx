@@ -7,7 +7,7 @@ import {
   createColumnHelper,
   SortingState
 } from '@tanstack/react-table'
-import { PageWithStatsDto } from '../api/gen/index'
+import { PageWithStatsDto } from '../api/types/page-with-stats-dto'
 import { usePages } from '../hooks'
 
 const Pages: React.FC = () => {

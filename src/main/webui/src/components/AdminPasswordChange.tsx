@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AppAdminResourceApi, Configuration } from '../api/gen';
+import { AppAdminResourceApi } from '../api/api/app-admin-resource-api';
+import { Configuration } from '../api/configuration';
 import kamifusenIcon from '../assets/icons/kamifusen_3.svg';
 
 interface PasswordChangeProps {
