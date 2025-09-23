@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { AppAdminResourceApi } from '../api/api/app-admin-resource-api';
-import { AggregatedStatsDto } from '../api/types/aggregated-stats-dto';
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { AppAdminResourceApi, AggregatedStatsDto} from '../api'
 
 interface UseStatsState {
   statsData: AggregatedStatsDto | null

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { AppAdminResourceApi } from '../api/api/app-admin-resource-api'
-import { PageWithStatsDto } from '../api/types/page-with-stats-dto'
+import { AppAdminResourceApi, PageWithStatsDto} from '../api'
 
 interface UsePagesState {
   pages: PageWithStatsDto[]

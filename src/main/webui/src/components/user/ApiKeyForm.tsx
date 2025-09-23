@@ -1,5 +1,5 @@
 import React, { useRef } from 'react'
-import { ApiUserDto } from '../../api/types/api-user-dto'
+import { ApiUserDto } from '../../api'
 
 interface ApiKeyFormProps {
   keyName: string

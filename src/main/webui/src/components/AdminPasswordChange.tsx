@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { AppAdminResourceApi } from '../api/api/app-admin-resource-api';
-import { Configuration } from '../api/configuration';
-import kamifusenIcon from '../assets/icons/kamifusen_3.svg';
+import React, { useState } from 'react'
+import { AppAdminResourceApi, Configuration } from '../api'
+import kamifusenIcon from '../assets/icons/kamifusen_3.svg'
 
 interface PasswordChangeProps {
-  onSuccess: () => void;
+  onSuccess: () => void
 }
 
 const AdminPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {

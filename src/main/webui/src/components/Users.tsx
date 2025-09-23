@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect, useCallback} from 'react'
-import { ApiUserDto } from '../api/types/api-user-dto'
+import { ApiUserDto } from '../api'
 import { useUsers } from '../hooks'
 import { SortingState } from '@tanstack/react-table'
 import SystemUsersTable from './user/SystemUsersTable'
@@ -8,7 +8,6 @@ import UserForm from './user/UserForm'
 import ApiKeyForm from './user/ApiKeyForm'
 import ErrorDisplay from './error/ErrorDisplay'
 import AsyncErrorBoundary from './boundary/AsyncErrorBoundary'
-import LoadingState from './loading/LoadingState'
 
 const Users: React.FC = () => {
   // Hook state

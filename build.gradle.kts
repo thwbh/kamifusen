@@ -126,21 +126,32 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("gen
     outputDir.set("$projectDir/src/main/webui/src/api")
     apiPackage.set("api")
     modelPackage.set("types")
-    configOptions.set(mapOf(
-        "supportsES6" to "true",
-        "withSeparateModelsAndApi" to "true",
-        "modelPropertyNaming" to "camelCase",
-        "apiModulePrefix" to "Api",
-        "npmName" to "",
-        "npmVersion" to "",
-        "snapshot" to "false",
-        "withoutPrefixEnums" to "true"
-    ))
+    configOptions.set(
+        mapOf(
+            "supportsES6" to "true",
+            "withSeparateModelsAndApi" to "true",
+            "modelPropertyNaming" to "camelCase",
+            "apiModulePrefix" to "Api",
+            "npmName" to "",
+            "npmVersion" to "",
+            "snapshot" to "false",
+            "withoutPrefixEnums" to "true",
+            "typescriptThreePlus" to "true",
+            "stringEnums" to "true"
+        )
+    )
     skipValidateSpec.set(true)
     generateModelTests.set(false)
     generateApiTests.set(false)
     generateModelDocumentation.set(false)
     generateApiDocumentation.set(false)
+
+    doLast {
+        delete(fileTree("$projectDir/src/main/webui/src/api") {
+            exclude("*.ts")
+            exclude("**/*.ts")
+        })
+    }
 }
 
 tasks.register("generateApi") {
