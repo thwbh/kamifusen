@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AppAdminResourceApi, AggregatedStatsDto} from '../../../api'
+import { useAsyncOperation } from '../../../shared'
 
 interface UseStatsState {
   statsData: AggregatedStatsDto | null
@@ -11,35 +12,30 @@ interface UseStatsState {
 interface UseStatsActions {
   setTimeRange: (range: string) => void
   refreshStats: () => Promise<void>
+  clearError: () => void
 }
 
 export const useStats = (): UseStatsState & UseStatsActions => {
   const [statsData, setStatsData] = useState<AggregatedStatsDto | null>(null)
   const [timeRange, setTimeRange] = useState('7d')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { loading, error, execute, clearError } = useAsyncOperation()
 
   const adminApi = useMemo(() => new AppAdminResourceApi(), [])
 
   const refreshStats = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
+    const result = await execute(async () => {
       const response = await adminApi.getStats(timeRange)
       if (response.status === 200) {
-        setStatsData(response.data)
+        return response.data
       } else {
         throw new Error(`Failed to fetch stats: ${response.status}`)
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load statistics'
-      setError(errorMessage)
-      console.error('Error loading statistics:', err)
-    } finally {
-      setLoading(false)
+    })
+
+    if (result) {
+      setStatsData(result)
     }
-  }, [adminApi, timeRange])
+  }, [adminApi, timeRange, execute])
 
   const handleSetTimeRange = useCallback((range: string) => {
     setTimeRange(range)
@@ -55,6 +51,7 @@ export const useStats = (): UseStatsState & UseStatsActions => {
     loading,
     error,
     setTimeRange: handleSetTimeRange,
-    refreshStats
+    refreshStats,
+    clearError
   }
 }

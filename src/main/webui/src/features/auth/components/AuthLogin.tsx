@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg';
+import {Footer} from "../../../shared";
 
 interface WelcomeProps {
   onBegin: () => void;
   onNavigate: (page: string) => void;
 }
 
-const Welcome: React.FC<WelcomeProps> = ({ onBegin, onNavigate }) => {
+const AuthLogin: React.FC<WelcomeProps> = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string>('');
@@ -156,15 +157,10 @@ const Welcome: React.FC<WelcomeProps> = ({ onBegin, onNavigate }) => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8">
-          <div className="text-tui-muted text-xs">
-            <p>&copy; 2024 tohuwabohu.io</p>
-            <p className="mt-1">Terminal Interface v{process.env.NODE_ENV === 'development' ? 'DEV' : '1.0'}</p>
-          </div>
-        </div>
+        <Footer />
       </div>
     </div>
   );
 };
 
-export default Welcome;
+export default AuthLogin;

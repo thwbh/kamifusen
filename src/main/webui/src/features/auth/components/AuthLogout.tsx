@@ -4,7 +4,7 @@ interface SignOutProps {
   onRestart: () => void;
 }
 
-const SignOut: React.FC<SignOutProps> = ({ onRestart }) => {
+const AuthLogout: React.FC<SignOutProps> = ({ onRestart }) => {
   const handleKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       onRestart();
@@ -50,4 +50,4 @@ const SignOut: React.FC<SignOutProps> = ({ onRestart }) => {
   );
 };
 
-export default SignOut;
+export default AuthLogout;

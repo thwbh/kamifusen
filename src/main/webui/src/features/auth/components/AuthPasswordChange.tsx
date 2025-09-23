@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { AppAdminResourceApi, Configuration } from '../../../api'
 import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg'
+import {Footer} from "../../../shared";
 
 interface PasswordChangeProps {
   onSuccess: () => void
 }
 
-const AdminPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
+const AuthPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
   const [newUsername, setNewUsername] = useState('admin');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -148,15 +149,10 @@ const AdminPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8">
-          <div className="text-tui-muted text-xs">
-            <p>&copy; 2024 tohuwabohu.io</p>
-            <p className="mt-1">Security Setup Required</p>
-          </div>
-        </div>
+        <Footer />
       </div>
     </div>
   );
 };
 
-export default AdminPasswordChange;
+export default AuthPasswordChange;

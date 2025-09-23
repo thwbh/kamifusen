@@ -2,10 +2,10 @@ import React, {useState, useRef, useEffect, useCallback} from 'react'
 import { ApiUserDto } from '../../../api'
 import { useUsers } from '../hooks'
 import { SortingState } from '@tanstack/react-table'
-import SystemUsersTable from './SystemUsersTable'
-import ApiKeysTable from './ApiKeysTable'
+import UserTable from './UserTable'
+import UserApiKeyTable from './UserApiKeyTable'
 import UserForm from './UserForm'
-import ApiKeyForm from './ApiKeyForm'
+import UserApiKeyForm from './UserApiKeyForm'
 import ErrorDisplay from '../../../shared/components/ErrorDisplay'
 import AsyncErrorBoundary from '../../../shared/components/AsyncErrorBoundary'
 
@@ -292,7 +292,7 @@ const Users: React.FC = () => {
             onCopyToClipboard={copyToClipboard}
           />
         )}
-        <SystemUsersTable
+        <UserTable
           users={systemUsers}
           sorting={sorting}
           onSortingChange={setSorting}
@@ -325,7 +325,7 @@ const Users: React.FC = () => {
         </div>
 
         {showCreateKey && (
-          <ApiKeyForm
+          <UserApiKeyForm
             keyName={keyName}
             keyExpiresAt={keyExpiresAt}
             onKeyNameChange={setKeyName}
@@ -340,7 +340,7 @@ const Users: React.FC = () => {
           />
         )}
 
-        <ApiKeysTable
+        <UserApiKeyTable
           users={apiUsers}
           sorting={sorting}
           onSortingChange={setSorting}

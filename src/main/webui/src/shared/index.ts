@@ -7,6 +7,7 @@ export { default as LoadingState } from './components/LoadingState'
 export { default as Navigation } from './components/Navigation'
 export { default as NavigationWrapper } from './components/NavigationWrapper'
 export { default as Background } from './components/Background'
+export { default as Footer} from './components/Footer'
 
 // Hooks
 export { useAsyncOperation } from './hooks/useAsyncOperation'

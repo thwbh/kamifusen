@@ -15,7 +15,7 @@ interface ApiKeyFormProps {
   onCopyToClipboard: (text: string) => void
 }
 
-const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
+const UserApiKeyForm: React.FC<ApiKeyFormProps> = ({
   keyName,
   keyExpiresAt,
   onKeyNameChange,
@@ -104,4 +104,4 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
   )
 }
 
-export default ApiKeyForm
+export default UserApiKeyForm

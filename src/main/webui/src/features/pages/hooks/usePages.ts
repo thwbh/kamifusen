@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AppAdminResourceApi, PageWithStatsDto} from '../../../api'
+import { useAsyncOperation } from '../../../shared'
 
 interface UsePagesState {
   pages: PageWithStatsDto[]
@@ -19,15 +20,15 @@ interface UsePagesActions {
   refreshHiddenCount: () => Promise<void>
   hidePage: (pageId: string) => Promise<void>
   restorePage: (pageId: string) => Promise<void>
+  clearError: () => void
 }
 
 export const usePages = (): UsePagesState & UsePagesActions => {
   const [pages, setPages] = useState<PageWithStatsDto[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [selectedDomain, setSelectedDomain] = useState<string>('')
   const [showHidden, setShowHidden] = useState(false)
   const [hiddenCount, setHiddenCount] = useState(0)
+  const { loading, error, execute, clearError } = useAsyncOperation()
 
   const adminApi = useMemo(() => new AppAdminResourceApi(), [])
 
@@ -43,10 +44,7 @@ export const usePages = (): UsePagesState & UsePagesActions => {
   }, [pages, selectedDomain, showHidden])
 
   const refreshPages = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
+    const result = await execute(async () => {
       let response
       if (showHidden) {
         response = await adminApi.listBlacklistedPages(selectedDomain || undefined)
@@ -55,18 +53,16 @@ export const usePages = (): UsePagesState & UsePagesActions => {
       }
 
       if (response.status === 200) {
-        setPages(response.data)
+        return response.data
       } else {
         throw new Error(`Failed to fetch pages: ${response.status}`)
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load pages'
-      setError(errorMessage)
-      console.error('Error loading pages:', err)
-    } finally {
-      setLoading(false)
+    })
+
+    if (result) {
+      setPages(result)
     }
-  }, [adminApi, showHidden, selectedDomain])
+  }, [adminApi, showHidden, selectedDomain, execute])
 
   const refreshHiddenCount = useCallback(async () => {
     try {
@@ -84,9 +80,7 @@ export const usePages = (): UsePagesState & UsePagesActions => {
   }, [adminApi, selectedDomain])
 
   const hidePage = useCallback(async (pageId: string): Promise<void> => {
-    try {
-      setError(null)
-
+    await execute(async () => {
       const response = await adminApi.unregisterPage(pageId)
 
       if (response.status === 200) {
@@ -98,17 +92,11 @@ export const usePages = (): UsePagesState & UsePagesActions => {
         // const errorText = await response.text()
         throw new Error(/* errorText || */ `Failed to hide page: ${response.status}`)
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to hide page'
-      setError(errorMessage)
-      throw err
-    }
-  }, [adminApi, refreshPages, refreshHiddenCount, showHidden])
+    });
+  }, [adminApi, refreshPages, refreshHiddenCount, showHidden, execute])
 
   const restorePage = useCallback(async (pageId: string): Promise<void> => {
-    try {
-      setError(null)
-
+    await execute(async () => {
       const response = await adminApi.restorePage(pageId)
 
       if (response.status === 200) {
@@ -118,12 +106,8 @@ export const usePages = (): UsePagesState & UsePagesActions => {
         // const errorText = await response.text()
         throw new Error(/* errorText  || */ `Failed to restore page: ${response.status}`)
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to restore page'
-      setError(errorMessage)
-      throw err
-    }
-  }, [adminApi, refreshPages, refreshHiddenCount])
+    });
+  }, [adminApi, refreshPages, refreshHiddenCount, execute])
 
   const handleSetSelectedDomain = useCallback((domain: string) => {
     setSelectedDomain(domain)
@@ -162,6 +146,7 @@ export const usePages = (): UsePagesState & UsePagesActions => {
     refreshPages,
     refreshHiddenCount,
     hidePage,
-    restorePage
+    restorePage,
+    clearError
   }
 }

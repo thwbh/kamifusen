@@ -1,3 +1,3 @@
-export { default as AdminPasswordChange } from './components/AdminPasswordChange'
-export { default as SignOut } from './components/SignOut'
-export { default as Welcome } from './components/Welcome'
+export { default as AdminPasswordChange } from './components/AuthPasswordChange'
+export { default as AuthLogout } from './components/AuthLogout'
+export { default as Welcome } from './components/AuthLogin'

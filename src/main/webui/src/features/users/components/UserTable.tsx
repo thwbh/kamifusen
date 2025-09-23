@@ -18,7 +18,7 @@ interface SystemUsersTableProps {
   onDeleteUser: (user: ApiUserDto) => void
 }
 
-const SystemUsersTable: React.FC<SystemUsersTableProps> = ({
+const UserTable: React.FC<SystemUsersTableProps> = ({
   users,
   sorting,
   onSortingChange,
@@ -138,4 +138,4 @@ const SystemUsersTable: React.FC<SystemUsersTableProps> = ({
   )
 }
 
-export default SystemUsersTable
+export default UserTable

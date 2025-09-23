@@ -20,7 +20,7 @@ interface ApiKeysTableProps {
   onDeleteUser: (user: ApiUserDto) => void
 }
 
-const ApiKeysTable: React.FC<ApiKeysTableProps> = ({
+const UserApiKeyTable: React.FC<ApiKeysTableProps> = ({
   users,
   sorting,
   onSortingChange,
@@ -196,4 +196,4 @@ const ApiKeysTable: React.FC<ApiKeysTableProps> = ({
   )
 }
 
-export default ApiKeysTable
+export default UserApiKeyTable
