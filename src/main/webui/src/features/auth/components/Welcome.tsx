@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import kamifusenIcon from '../assets/icons/kamifusen_3.svg';
+import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg';
 
 interface WelcomeProps {
   onBegin: () => void;

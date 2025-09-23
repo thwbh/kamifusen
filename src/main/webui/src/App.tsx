@@ -1,9 +1,6 @@
 import React, {useEffect, useState} from 'react'
-import Background from './components/Background'
-import Welcome from './components/Welcome'
-import AdminPasswordChange from './components/AdminPasswordChange'
-import NavigationWrapper from './components/navigation/NavigationWrapper'
-import ErrorBoundary from './components/boundary/ErrorBoundary'
+import { Background, ErrorBoundary, NavigationWrapper } from './shared'
+import { Welcome, AdminPasswordChange } from './features/auth'
 
 type AppState = 'welcome' | 'authenticated' | 'change-password'
 

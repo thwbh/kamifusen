@@ -8,28 +8,40 @@ import {
   SortingState,
   OnChangeFn
 } from '@tanstack/react-table'
-import { ApiUserDto } from '../../api'
+import { ApiUserDto } from '../../../api'
 
-interface SystemUsersTableProps {
+interface ApiKeysTableProps {
   users: ApiUserDto[]
   sorting: SortingState
   onSortingChange: OnChangeFn<SortingState>
-  onEditUser: (user: ApiUserDto) => void
+  onEditApiKey: (user: ApiUserDto) => void
+  onRenewUser: (user: ApiUserDto) => void
+  onRetireUser: (user: ApiUserDto) => void
   onDeleteUser: (user: ApiUserDto) => void
 }
 
-const SystemUsersTable: React.FC<SystemUsersTableProps> = ({
+const ApiKeysTable: React.FC<ApiKeysTableProps> = ({
   users,
   sorting,
   onSortingChange,
-  onEditUser,
+  onEditApiKey,
+  onRenewUser,
+  onRetireUser,
   onDeleteUser
 }) => {
   const columnHelper = createColumnHelper<ApiUserDto>()
 
-  const handleEditUser = useCallback((user: ApiUserDto) => {
-    onEditUser(user)
-  }, [onEditUser])
+  const handleEditApiKey = useCallback((user: ApiUserDto) => {
+    onEditApiKey(user)
+  }, [onEditApiKey])
+
+  const handleRenewUser = useCallback((user: ApiUserDto) => {
+    onRenewUser(user)
+  }, [onRenewUser])
+
+  const handleRetireUser = useCallback((user: ApiUserDto) => {
+    onRetireUser(user)
+  }, [onRetireUser])
 
   const handleDeleteUser = useCallback((user: ApiUserDto) => {
     onDeleteUser(user)
@@ -37,49 +49,95 @@ const SystemUsersTable: React.FC<SystemUsersTableProps> = ({
 
   const columns = useMemo(() => [
     columnHelper.accessor('username', {
-      header: 'Username',
+      header: 'Name',
       cell: info => <span className="font-mono text-tui-light">{info.getValue()}</span>
     }),
-    columnHelper.accessor('role', {
-      header: 'Role',
-      cell: info => <span className="text-tui-yellow">{info.getValue()}</span>
-    }),
     columnHelper.accessor('added', {
-      header: 'Added',
+      header: 'Created',
       cell: info => (
         <span className="text-tui-muted">
           {info.getValue() ? new Date(info.getValue() as string).toLocaleDateString() : 'Unknown'}
         </span>
       )
     }),
+    columnHelper.accessor('expiresAt', {
+      header: 'Expires',
+      cell: info => {
+        const expiresAt = info.getValue();
+        if (!expiresAt) {
+          return <span className="text-tui-muted">Never</span>;
+        }
+
+        const expirationDate = new Date(expiresAt);
+        const isExpired = expirationDate <= new Date();
+
+        return (
+          <span className={isExpired ? "text-tui-red" : "text-tui-muted"}>
+            {expirationDate.toLocaleDateString()}
+            {isExpired && <span className="ml-1 text-xs">(EXPIRED)</span>}
+          </span>
+        );
+      }
+    }),
+    columnHelper.display({
+      id: 'status',
+      header: 'Status',
+      cell: info => {
+        const user = info.row.original;
+        const isExpired = user.expiresAt && new Date(user.expiresAt) <= new Date();
+
+        return (
+          <span className={isExpired ? "text-tui-red text-sm" : "text-tui-green text-sm"}>
+            {isExpired ? 'EXPIRED' : 'ACTIVE'}
+          </span>
+        );
+      }
+    }),
     columnHelper.display({
       id: 'actions',
       header: 'Actions',
       cell: info => {
         const user = info.row.original;
-        const isAdmin = user.role === 'app-admin';
+        const isExpired = user.expiresAt && new Date(user.expiresAt) <= new Date();
 
         return (
           <div>
-            <button
-              onClick={() => handleEditUser(user)}
-              className="text-tui-accent hover:text-tui-accent-hover text-sm mr-2"
-            >
-              EDIT
-            </button>
-            {!isAdmin && (
-              <button
-                onClick={() => handleDeleteUser(user)}
-                className="text-tui-red hover:text-tui-accent text-sm"
-              >
-                DELETE
-              </button>
+            {isExpired ? (
+              <>
+                <button
+                  onClick={() => handleRenewUser(user)}
+                  className="text-tui-green hover:text-tui-accent text-sm mr-2"
+                >
+                  RENEW
+                </button>
+                <button
+                  onClick={() => handleDeleteUser(user)}
+                  className="text-tui-red hover:text-tui-accent text-sm"
+                >
+                  DELETE
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => handleEditApiKey(user)}
+                  className="text-tui-accent hover:text-tui-accent-hover text-sm mr-2"
+                >
+                  EDIT
+                </button>
+                <button
+                  onClick={() => handleRetireUser(user)}
+                  className="text-tui-red hover:text-tui-accent text-sm"
+                >
+                  REVOKE
+                </button>
+              </>
             )}
           </div>
         );
       }
     })
-  ], [columnHelper, handleEditUser, handleDeleteUser])
+  ], [columnHelper, handleEditApiKey, handleRenewUser, handleRetireUser, handleDeleteUser])
 
   const table = useReactTable({
     data: users,
@@ -138,4 +196,4 @@ const SystemUsersTable: React.FC<SystemUsersTableProps> = ({
   )
 }
 
-export default SystemUsersTable
+export default ApiKeysTable

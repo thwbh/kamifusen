@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import Dashboard from '../Dashboard';
-import Pages from '../Pages';
-import Stats from '../Stats';
-import Users from '../Users';
+import { Dashboard } from '../../features/dashboard';
+import { Pages } from '../../features/pages';
+import { Stats } from '../../features/stats';
+import { Users } from '../../features/users';
 import kamifusenIcon from '../../assets/icons/kamifusen_3.svg';
 
 interface NavigationWrapperProps {

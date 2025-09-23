@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { AppAdminResourceApi, ApiUserDto } from '../api'
+import { AppAdminResourceApi, ApiUserDto } from '../../../api'
 
 interface UseUsersState {
   users: ApiUserDto[]

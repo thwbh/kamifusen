@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { AppAdminResourceApi, Configuration } from '../api'
-import kamifusenIcon from '../assets/icons/kamifusen_3.svg'
+import { AppAdminResourceApi, Configuration } from '../../../api'
+import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg'
 
 interface PasswordChangeProps {
   onSuccess: () => void

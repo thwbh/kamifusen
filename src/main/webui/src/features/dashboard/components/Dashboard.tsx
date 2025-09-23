@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import DataTable from './dashboard/DataTable';
-import MetricsPanel from './dashboard/MetricsPanel';
-import ActionPanel from './dashboard/ActionPanel';
-import StatusBar from './dashboard/StatusBar';
-import TimeSlots from './dashboard/TimeSlots';
-import MainContent from './dashboard/MainContent';
+import DataTable from './DataTable';
+import MetricsPanel from './MetricsPanel';
+import ActionPanel from './ActionPanel';
+import StatusBar from './StatusBar';
+import TimeSlots from './TimeSlots';
+import MainContent from './MainContent';
 
 interface DataItem {
   name: string;

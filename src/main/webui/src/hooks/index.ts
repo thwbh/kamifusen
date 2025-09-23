@@ -1,6 +1,5 @@
-export { useUsers } from './useUsers'
-export { useStats } from './useStats'
-export { usePages } from './usePages'
-export { useErrorHandler } from './useErrorHandler'
-export { useLoadingState } from './useLoadingState'
-export { useAsyncOperation } from './useAsyncOperation'
+// Re-export hooks from their new feature locations
+export { useAsyncOperation, useErrorHandler, useLoadingState } from '../shared'
+export { useUsers } from '../features/users'
+export { useStats } from '../features/stats'
+export { usePages } from '../features/pages'
