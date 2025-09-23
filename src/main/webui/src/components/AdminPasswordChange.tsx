@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { AppAdminResourceApi, Configuration } from '../api/gen/index';
+import { AppAdminResourceApi, Configuration } from '../api/gen';
 import kamifusenIcon from '../assets/icons/kamifusen_3.svg';
 
 interface PasswordChangeProps {
   onSuccess: () => void;
 }
 
-const PasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
-  const [oldUsername, setOldUsername] = useState('admin');
+const AdminPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
   const [newUsername, setNewUsername] = useState('admin');
-  const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string>('');
@@ -20,22 +18,18 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
     setError('');
     setIsLoading(true);
 
-    // Basic validation
-    if (!oldPassword) {
-      setError('Current password is required');
-      setIsLoading(false);
-      return;
-    }
     if (!newPassword) {
       setError('New password is required');
       setIsLoading(false);
       return;
     }
+
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
       setIsLoading(false);
       return;
     }
+
     if (newPassword.length < 8) {
       setError('Password must be at least 8 characters long');
       setIsLoading(false);
@@ -48,7 +42,7 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
       });
       const api = new AppAdminResourceApi(config);
 
-      await api.updateAdmin(oldUsername, newUsername, oldPassword, newPassword);
+      await api.updateAdmin(newUsername, newPassword, confirmPassword);
       onSuccess();
     } catch (err: any) {
       if (err.response?.status === 400) {
@@ -72,7 +66,7 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
             </div>
             <h1 className="text-tui-accent font-bold text-2xl tracking-widest">KAMIFUSEN</h1>
           </div>
-          <p className="text-tui-muted text-sm uppercase tracking-wide">First-Time Setup Required</p>
+          <p className="text-tui-muted text-sm uppercase tracking-wide">Password change required</p>
         </div>
 
         {/* Password Change Form */}
@@ -107,22 +101,6 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
                   placeholder="Enter new username"
                   disabled={isLoading}
                   autoComplete="username"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="oldPassword" className="block text-tui-light text-sm mb-2 uppercase tracking-wide">
-                  Current Password
-                </label>
-                <input
-                  id="oldPassword"
-                  type="password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-tui-dark border border-tui-border text-tui-light rounded-sm focus:outline-none focus:border-tui-accent transition-colors font-mono"
-                  placeholder="Enter current password"
-                  disabled={isLoading}
-                  autoComplete="current-password"
                 />
               </div>
 
@@ -181,4 +159,4 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
   );
 };
 
-export default PasswordChange;
+export default AdminPasswordChange;

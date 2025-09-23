@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { AppAdminResourceApi } from '../api/gen/index'
+import React from 'react'
+import { useStats } from '../hooks'
 
 interface ChartData {
   label: string
@@ -8,32 +8,7 @@ interface ChartData {
 }
 
 const Stats: React.FC = () => {
-  const [timeRange, setTimeRange] = useState('7d')
-  const [statsData, setStatsData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const adminApi = new AppAdminResourceApi()
-
-  useEffect(() => {
-    loadStats()
-  }, [timeRange])
-
-  const loadStats = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await adminApi.getStats(timeRange)
-      setStatsData(response.data)
-
-      console.log(response.data);
-    } catch (err) {
-      setError('Failed to load statistics')
-      console.error('Error loading statistics:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { statsData, timeRange, loading, error, setTimeRange } = useStats()
 
   if (loading) {
     return (

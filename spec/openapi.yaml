@@ -35,7 +35,9 @@ paths:
         "200":
           description: OK
           content:
-            text/plain: {}
+            text/plain:
+              schema:
+                type: string
         "401":
           description: Not Authorized
         "403":
@@ -99,7 +101,9 @@ paths:
         "200":
           description: OK
           content:
-            application/json: {}
+            text/plain:
+              schema:
+                type: string
         "401":
           description: Not Authorized
         "403":
@@ -259,7 +263,9 @@ paths:
         "200":
           description: OK
           content:
-            application/json: {}
+            text/plain:
+              schema:
+                type: string
         "401":
           description: Not Authorized
         "403":
@@ -280,7 +286,9 @@ paths:
         "200":
           description: OK
           content:
-            application/json: {}
+            text/plain:
+              schema:
+                type: string
         "401":
           description: Not Authorized
         "403":
@@ -315,7 +323,9 @@ paths:
         "200":
           description: OK
           content:
-            application/json: {}
+            text/plain:
+              schema:
+                type: string
         "401":
           description: Not Authorized
         "403":
@@ -362,19 +372,16 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               required:
-              - oldUsername
               - newUsername
-              - oldPassword
               - newPassword
+              - newPasswordConfirmation
               type: object
               properties:
-                oldUsername:
-                  type: string
                 newUsername:
                   type: string
-                oldPassword:
-                  type: string
                 newPassword:
+                  type: string
+                newPasswordConfirmation:
                   type: string
       responses:
         "200":

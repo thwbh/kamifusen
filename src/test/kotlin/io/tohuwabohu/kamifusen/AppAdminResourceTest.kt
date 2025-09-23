@@ -332,10 +332,9 @@ class AppAdminResourceTest {
     fun `should update admin password successfully`(uniAsserter: UniAsserter) {
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
-            formParam("oldUsername", "admin-password-change")
             formParam("newUsername", "admin-password-change-changed")
-            formParam("oldPassword", "admin")
             formParam("newPassword", "newSecurePassword123")
+            formParam("newPasswordConfirmation", "newSecurePassword123")
         } When {
             post("/admin/update")
         } Then {
@@ -363,9 +362,8 @@ class AppAdminResourceTest {
     fun `should return 400 for empty parameters in admin update`() {
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
-            formParam("oldUsername", "admin-password-dont-change")
-            formParam("oldPassword", "admin")
             formParam("newPassword", "")
+            formParam("newPasswordConfirmation", "")
             formParam("newUsername", "")
         } When {
             post("/admin/update")
@@ -378,10 +376,9 @@ class AppAdminResourceTest {
     fun `should return 401 for unauthorized admin update`() {
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
-            formParam("oldUsername", "admin-password-dont-change")
             formParam("newUsername", "admin-password-dont-change")
-            formParam("oldPassword", "admin")
             formParam("newPassword", "newPassword")
+            formParam("newPasswordConfirmation", "newPassword")
         } When {
             post("/admin/update")
         } Then {
@@ -394,10 +391,9 @@ class AppAdminResourceTest {
     fun `should return 400 for empty new password in admin update`() {
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
-            formParam("oldUsername", "admin-password-dont-change")
             formParam("newUsername", "admin-password-dont-change")
-            formParam("oldPassword", "admin")
             formParam("newPassword", "")
+            formParam("newPasswordConfirmation", "")
         } When {
             post("/admin/update")
         } Then {

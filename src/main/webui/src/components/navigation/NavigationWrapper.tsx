@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import Dashboard from './Dashboard';
-import Pages from './Pages';
-import Stats from './Stats';
-import Users from './Users';
-import kamifusenIcon from '../assets/icons/kamifusen_3.svg';
+import Dashboard from '../Dashboard';
+import Pages from '../Pages';
+import Stats from '../Stats';
+import Users from '../Users';
+import kamifusenIcon from '../../assets/icons/kamifusen_3.svg';
 
 interface NavigationWrapperProps {
   onSignOut: () => void;

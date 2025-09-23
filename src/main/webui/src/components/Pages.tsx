@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -7,18 +7,25 @@ import {
   createColumnHelper,
   SortingState
 } from '@tanstack/react-table'
-import { AppAdminResourceApi, PageWithStatsDto } from '../api/gen/index'
+import { PageWithStatsDto } from '../api/gen/index'
+import { usePages } from '../hooks'
 
 const Pages: React.FC = () => {
-  const [pages, setPages] = useState<PageWithStatsDto[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedDomain, setSelectedDomain] = useState<string>('')
   const [sorting, setSorting] = useState<SortingState>([])
-  const [showHidden, setShowHidden] = useState(false)
-  const [hiddenCount, setHiddenCount] = useState(0)
 
-  const adminApi = new AppAdminResourceApi()
+  const {
+    loading,
+    error,
+    selectedDomain,
+    showHidden,
+    hiddenCount,
+    domains,
+    filteredPages,
+    setSelectedDomain,
+    setShowHidden,
+    hidePage,
+    restorePage
+  } = usePages()
 
   const columnHelper = createColumnHelper<PageWithStatsDto>()
 
@@ -57,20 +64,6 @@ const Pages: React.FC = () => {
     })
   ], [columnHelper, showHidden])
 
-  // Get unique domains and filter pages by selected domain
-  const domains = useMemo(() => {
-    const uniqueDomains = [...new Set(pages.map(page => page.domain).filter(Boolean))]
-    return uniqueDomains.sort()
-  }, [pages])
-
-  const filteredPages = useMemo(() => {
-    // When showing hidden pages, the API already filters by domain
-    if (showHidden) return pages
-
-    if (!selectedDomain) return pages
-    return pages.filter(page => page.domain === selectedDomain)
-  }, [pages, selectedDomain, showHidden])
-
   const table = useReactTable({
     data: filteredPages,
     columns,
@@ -82,65 +75,14 @@ const Pages: React.FC = () => {
     getSortedRowModel: getSortedRowModel(),
   })
 
-  // Set first domain as default when domains are loaded
-  useEffect(() => {
-    if (domains.length > 0 && !selectedDomain) {
-      setSelectedDomain(domains[0])
-    }
-  }, [domains, selectedDomain])
-
-  useEffect(() => {
-    loadPages()
-  }, [showHidden, selectedDomain])
-
-  useEffect(() => {
-    loadHiddenCount()
-  }, [selectedDomain])
-
-  const loadPages = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      if (showHidden) {
-        const response = await adminApi.listBlacklistedPages(selectedDomain || undefined)
-        setPages(response.data)
-      } else {
-        const response = await adminApi.listPages()
-        setPages(response.data)
-      }
-    } catch (err) {
-      setError('Failed to load pages')
-      console.error('Error loading pages:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadHiddenCount = async () => {
-    try {
-      const response = await adminApi.listBlacklistedPages(selectedDomain || undefined)
-      setHiddenCount(response.data.length)
-    } catch (err) {
-      console.error('Error loading hidden count:', err)
-      setHiddenCount(0)
-    }
-  }
-
   const handleHidePage = async (pageId: string) => {
     if (!confirm('Are you sure you want to hide this page? This will unregister it from tracking.')) {
       return
     }
 
     try {
-      await adminApi.unregisterPage(pageId)
-      // Reload pages to reflect the change
-      await loadPages()
-      // Update hidden count if not currently showing hidden pages
-      if (!showHidden) {
-        await loadHiddenCount()
-      }
+      await hidePage(pageId)
     } catch (err) {
-      setError('Failed to hide page')
       console.error('Error hiding page:', err)
     }
   }
@@ -151,13 +93,8 @@ const Pages: React.FC = () => {
     }
 
     try {
-      await adminApi.restorePage(pageId)
-      // Reload pages to reflect the change
-      await loadPages()
-      // Update hidden count
-      await loadHiddenCount()
+      await restorePage(pageId)
     } catch (err) {
-      setError('Failed to restore page')
       console.error('Error restoring page:', err)
     }
   }

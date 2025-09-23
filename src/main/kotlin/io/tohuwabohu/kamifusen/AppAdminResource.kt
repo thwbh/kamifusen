@@ -148,11 +148,12 @@ class AppAdminResource(
         userId: UUID,
         expiresAt: String?
     ): Uni<Response> =
-        apiUserRepository.renewUser(userId,
+        apiUserRepository.renewUser(
+            userId,
             if (expiresAt.isNullOrBlank()) null else LocalDateTime.parse(expiresAt)
         ).map { keyRaw -> Response.ok(keyRaw).build() }
-        .onFailure().invoke { e -> Log.error("Error during key renewal", e) }
-        .onFailure().recoverWithResponse()
+            .onFailure().invoke { e -> Log.error("Error during key renewal", e) }
+            .onFailure().recoverWithResponse()
 
     @WithSession
     @RolesAllowed("app-admin")
@@ -225,13 +226,12 @@ class AppAdminResource(
     @WithSession
     @RolesAllowed("app-admin")
     override fun updateAdmin(
-        oldUsername: String,
         newUsername: String,
-        oldPassword: String,
-        newPassword: String
+        newPassword: String,
+        newPasswordConfirmation: String
     ): Uni<Response> {
         // Validate required parameters
-        return validatePassword(newPassword, newPassword).flatMap { passwordValidation ->
+        return validatePassword(newPassword, newPasswordConfirmation).flatMap { passwordValidation ->
             if (!passwordValidation.valid) {
                 Uni.createFrom().item(
                     Response.status(Response.Status.BAD_REQUEST)
@@ -240,7 +240,7 @@ class AppAdminResource(
                 )
             } else {
                 // Only validate newUsername if it's different from oldUsername (for username changes)
-                if (newUsername != oldUsername) {
+                if (newUsername != securityIdentity.principal.name) {
                     validateUser(newUsername, apiUserRepository).flatMap { userValidation ->
                         if (!userValidation.valid) {
                             Uni.createFrom().item(
@@ -249,15 +249,17 @@ class AppAdminResource(
                                     .build()
                             )
                         } else {
-                            apiUserRepository.updateAdmin(oldUsername, newUsername, oldPassword, newPassword).flatMap { user ->
-                                Uni.createFrom().item(Response.ok(user).build())
-                            }
+                            apiUserRepository.updateAdmin(securityIdentity.principal.name, newUsername, newPassword)
+                                .flatMap { user ->
+                                    Uni.createFrom().item(Response.ok(user).build())
+                                }
                         }
                     }
                 } else {
-                    apiUserRepository.updateAdmin(oldUsername, newUsername, oldPassword, newPassword).flatMap { user ->
-                        Uni.createFrom().item(Response.ok(user).build())
-                    }
+                    apiUserRepository.updateAdmin(securityIdentity.principal.name, newUsername, newPassword)
+                        .flatMap { user ->
+                            Uni.createFrom().item(Response.ok(user).build())
+                        }
                 }
             }
         }.onFailure().invoke { e -> Log.error("Error updating admin password.", e) }

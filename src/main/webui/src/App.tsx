@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import Background from './components/Background';
 import Welcome from './components/Welcome';
-import PasswordChange from './components/PasswordChange';
-import NavigationWrapper from './components/NavigationWrapper';
+import AdminPasswordChange from './components/AdminPasswordChange';
+import NavigationWrapper from './components/navigation/NavigationWrapper';
 
 type AppState = 'welcome' | 'authenticated' | 'change-password';
 
@@ -59,7 +59,7 @@ function App() {
       case 'welcome':
         return <Welcome onBegin={handleBegin} onNavigate={handleNavigate} />;
       case 'change-password':
-        return <PasswordChange onSuccess={handleBegin} />;
+        return <AdminPasswordChange onSuccess={handleBegin} />;
       case 'authenticated':
         return <NavigationWrapper onSignOut={handleSignOut} />;
       default:
