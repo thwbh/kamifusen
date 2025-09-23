@@ -17,11 +17,13 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses
 import org.eclipse.microprofile.openapi.annotations.tags.Tag
 import org.eclipse.microprofile.openapi.annotations.media.Content
 import org.eclipse.microprofile.openapi.annotations.media.Schema
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
 
 {{#operations}}
 /**
 * {{description}}{{^description}}{{classname}}{{/description}}
 */
+@Path("/")
 @Tag(name = "{{baseName}}", description = "{{description}}{{^description}}The {{baseName}} API{{/description}}")
 interface {{classname}} {
 {{#operation}}
@@ -34,15 +36,24 @@ interface {{classname}} {
 {{/allParams}}     * @return Uni&lt;Response&gt;
     */
     @{{httpMethod}}
-    {{#hasConsumes}}@Consumes({{#consumes}}"{{mediaType}}"{{^-last}}, {{/-last}}{{/consumes}})
+    {{#hasConsumes}}
+    @Consumes({{#consumes}}"{{mediaType}}"{{^-last}}, {{/-last}}{{/consumes}})
     {{/hasConsumes}}
-    {{#hasProduces}}@Produces({{#produces}}"{{mediaType}}"{{^-last}}, {{/-last}}{{/produces}})
+    {{#hasProduces}}
+    @Produces({{#produces}}"{{mediaType}}"{{^-last}}, {{/-last}}{{/produces}})
     {{/hasProduces}}
     @Path("{{path}}")
     @Operation(
-    summary = "{{summary}}{{^summary}}{{operationId}}{{/summary}}",
-    description = "{{notes}}{{^notes}}{{summary}}{{^summary}}{{operationId}}{{/summary}}{{/notes}}"
+        summary = "{{summary}}{{^summary}}{{operationId}}{{/summary}}",
+        description = "{{notes}}{{^notes}}{{summary}}{{^summary}}{{operationId}}{{/summary}}{{/notes}}"
     )
+    @APIResponses(value = [{{#responses}}
+        APIResponse(
+            responseCode = "{{code}}",
+            description = "{{message}}"{{#baseType}},
+            content = [Content(schema = Schema({{#isArray}}type = SchemaType.ARRAY, {{/isArray}}implementation = {{baseType}}::class))]{{/baseType}}
+        ){{^-last}},{{/-last}}{{/responses}}
+    ])
     fun {{operationId}}({{#allParams}}{{#isQueryParam}}
         @Parameter(description = "{{description}}{{^description}}{{paramName}}{{/description}}")
         @QueryParam("{{paramName}}"){{#useBeanValidation}}{{#hasValidation}} {{>beanValidationQueryParams}}{{/hasValidation}}{{/useBeanValidation}} {{paramName}}: {{dataType}}{{#hasDefaultValue}} = {{{defaultValue}}}{{/hasDefaultValue}}{{^required}}?{{/required}}{{^-last}},{{/-last}}{{/isQueryParam}}{{#isPathParam}}

@@ -186,7 +186,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitRequestDto("/test", "example.com"))
         } When {
-            post("hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         }
@@ -200,7 +200,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitRequestDto("/from-google", "example.com"))
         } When {
-            post("hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         }
@@ -215,7 +215,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitRequestDto("/proxied", "example.com"))
         } When {
-            post("hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         }
@@ -229,7 +229,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitRequestDto("/from-usa", "example.com"))
         } When {
-            post("hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         }
@@ -243,7 +243,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitRequestDto("", "example.com"))
         } When {
-            post("hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(400) // Should return bad request for invalid input
         }
@@ -256,7 +256,7 @@ class VisitRequestMapperTest {
             auth().preemptive().basic("api-key-user", "api-key-user")
             body(PageHitRequestDto("/test", "invalid..domain"))
         } When {
-            post("hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(400) // Should return bad request for invalid domain
         }

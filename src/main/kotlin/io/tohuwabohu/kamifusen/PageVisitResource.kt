@@ -1,5 +1,6 @@
 package io.tohuwabohu.kamifusen
 
+import io.quarkus.hibernate.reactive.panache.common.WithSession
 import io.quarkus.logging.Log
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.api.generated.PageVisitResourceApi
@@ -10,12 +11,9 @@ import io.tohuwabohu.kamifusen.service.mapper.VisitRequestMapper
 import io.vertx.core.http.HttpServerRequest
 import jakarta.annotation.security.RolesAllowed
 import jakarta.inject.Inject
-import jakarta.ws.rs.*
-import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
 import java.util.*
 
-@Path("/public/visits")
 class PageVisitResource(
     private val pageVisitService: PageVisitService,
     private val requestMapper: VisitRequestMapper
@@ -23,10 +21,7 @@ class PageVisitResource(
     @Inject
     lateinit var request: HttpServerRequest
 
-    @Path("/hit")
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @WithSession
     @RolesAllowed("api-user")
     override fun hit(
         pageHitRequestDto: PageHitRequestDto
@@ -53,11 +48,11 @@ class PageVisitResource(
         }.onFailure().recoverWithResponse()
     }
 
-    @Path("/count/{pageId}")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @WithSession
     @RolesAllowed("api-admin")
-    override fun count(@PathParam("pageId") pageId: UUID): Uni<Response> {
+    override fun count(
+        pageId: UUID
+    ): Uni<Response> {
         Log.debug("Received visit count request for page $pageId")
 
         return pageVisitService.getVisitCount(pageId)

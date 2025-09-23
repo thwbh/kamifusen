@@ -1,11 +1,10 @@
 package io.tohuwabohu.kamifusen
 
+import io.quarkus.hibernate.reactive.panache.common.WithSession
 import io.quarkus.logging.Log
 import io.quarkus.security.identity.SecurityIdentity
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.api.generated.AppAdminResourceApi
-import io.tohuwabohu.kamifusen.api.generated.model.AggregatedStatsDto
-import io.tohuwabohu.kamifusen.api.generated.model.PageWithStatsDto
 import io.tohuwabohu.kamifusen.error.recoverWithResponse
 import io.tohuwabohu.kamifusen.service.PageStatsService
 import io.tohuwabohu.kamifusen.service.StatsService
@@ -16,33 +15,30 @@ import io.tohuwabohu.kamifusen.service.crud.PageRepository
 import io.tohuwabohu.kamifusen.service.validator.UserValidation
 import io.tohuwabohu.kamifusen.service.validator.validatePassword
 import io.tohuwabohu.kamifusen.service.validator.validateUser
+import jakarta.annotation.PostConstruct
 import jakarta.annotation.security.RolesAllowed
 import jakarta.inject.Inject
-import jakarta.ws.rs.*
-import jakarta.ws.rs.core.MediaType
 import jakarta.ws.rs.core.Response
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType
-import org.eclipse.microprofile.openapi.annotations.media.Content
-import org.eclipse.microprofile.openapi.annotations.media.Schema
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse
 import java.net.URI
 import java.time.LocalDateTime
 import java.util.*
 
-
-@Path("/admin")
 class AppAdminResource(
-    private val apiUserRepository: ApiUserRepository,
-    private val pageStatsService: PageStatsService,
-    private val pageRepository: PageRepository,
-    private val statsService: StatsService,
-    private val blacklistRepository: BlacklistRepository
+    private var apiUserRepository: ApiUserRepository,
+    private var pageStatsService: PageStatsService,
+    private var pageRepository: PageRepository,
+    private var statsService: StatsService,
+    private var blacklistRepository: BlacklistRepository
 ) : AppAdminResourceApi {
-    @Inject
-    lateinit var securityIdentity: SecurityIdentity
 
-    @GET
-    @Path("/landing")
+    @Inject
+    private lateinit var securityIdentity: SecurityIdentity
+
+    @PostConstruct
+    fun init() {
+        Log.info("AppAdminResource initialized via CDI")
+    }
+
     @RolesAllowed("app-admin")
     override fun adminLanding(): Uni<Response> {
         val username = securityIdentity.principal.name
@@ -58,15 +54,12 @@ class AppAdminResource(
 
     }
 
-    @Path("/keygen")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
+    @WithSession
     @RolesAllowed("app-admin")
     override fun generateApiKey(
-        @FormParam("username") username: String,
-        @FormParam("role") role: String,
-        @FormParam("expiresAt") expiresAt: String
+        username: String,
+        role: String,
+        expiresAt: String
     ): Uni<Response> =
         validateUser(username, apiUserRepository).flatMap { result ->
             if (result == UserValidation.VALID) {
@@ -88,29 +81,15 @@ class AppAdminResource(
         }.onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 
-    @Path("/stats")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.APPLICATION_JSON)
-    @APIResponse(
-        responseCode = "200",
-        description = "Aggregated stats",
-        content = [Content(
-            mediaType = MediaType.APPLICATION_JSON,
-            schema = Schema(implementation = AggregatedStatsDto::class)
-        )]
-    )
+    @WithSession
     @RolesAllowed("app-admin")
-    override fun getStats(@QueryParam("timeRange") timeRange: String?): Uni<Response> =
+    override fun getStats(timeRange: String?): Uni<Response> =
         statsService.getAggregatedStats(timeRange ?: "7d")
             .map { stats -> Response.ok(stats).build() }
             .onFailure().invoke { e -> Log.error("Error receiving aggregated stats.", e) }
             .onFailure().recoverWithResponse()
 
-    @Path("/visits")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.APPLICATION_JSON)
+    @WithSession
     @RolesAllowed("app-admin")
     override fun getVisits(): Uni<Response> =
         pageStatsService.getAllPageVisits()
@@ -120,18 +99,7 @@ class AppAdminResource(
             .onFailure().invoke { e -> Log.error("Error receiving visits.", e) }
             .onFailure().recoverWithResponse()
 
-    @Path("/pages")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.APPLICATION_JSON)
-    @APIResponse(
-        responseCode = "200",
-        description = "List of registered pages with visit statistics",
-        content = [Content(
-            mediaType = MediaType.APPLICATION_JSON,
-            schema = Schema(implementation = PageWithStatsDto::class, type = SchemaType.ARRAY)
-        )]
-    )
+    @WithSession
     @RolesAllowed("app-admin")
     override fun listPages(): Uni<Response> =
         pageStatsService.getNonBlacklistedPagesWithStats().flatMap {
@@ -139,20 +107,9 @@ class AppAdminResource(
         }.onFailure().invoke { e -> Log.error("Error receiving pages.", e) }
             .onFailure().recoverWithResponse()
 
-    @Path("/pages/blacklisted")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.APPLICATION_JSON)
-    @APIResponse(
-        responseCode = "200",
-        description = "List of blacklisted pages with visit statistics",
-        content = [Content(
-            mediaType = MediaType.APPLICATION_JSON,
-            schema = Schema(implementation = PageWithStatsDto::class, type = SchemaType.ARRAY)
-        )]
-    )
+    @WithSession
     @RolesAllowed("app-admin")
-    override fun listBlacklistedPages(@QueryParam("domain") domain: String?): Uni<Response> =
+    override fun listBlacklistedPages(domain: String?): Uni<Response> =
         if (domain != null) {
             pageStatsService.getBlacklistedPagesByDomainWithStats(domain)
         } else {
@@ -162,28 +119,14 @@ class AppAdminResource(
         }.onFailure().invoke { e -> Log.error("Error receiving blacklisted pages.", e) }
             .onFailure().recoverWithResponse()
 
-    @Path("/pages/restore/{pageId}")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
+    @WithSession
     @RolesAllowed("app-admin")
-    override fun restorePage(@PathParam("pageId") pageId: UUID): Uni<Response> =
+    override fun restorePage(pageId: UUID): Uni<Response> =
         blacklistRepository.removePageFromBlacklist(pageId).map { Response.ok().build() }
             .onFailure().invoke { e -> Log.error("Error during page restoration.", e) }
             .onFailure().recoverWithResponse()
 
-    @Path("/users")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.APPLICATION_JSON)
-    @APIResponse(
-        responseCode = "200",
-        description = "List of API users",
-        content = [Content(
-            mediaType = MediaType.APPLICATION_JSON,
-            schema = Schema(implementation = ApiUser::class, type = SchemaType.ARRAY)
-        )]
-    )
+    @WithSession
     @RolesAllowed("app-admin")
     override fun listUsers(): Uni<Response> =
         apiUserRepository.listAll().flatMap { users ->
@@ -191,10 +134,7 @@ class AppAdminResource(
         }.onFailure().invoke { e -> Log.error("Error receiving users.", e) }
             .onFailure().recoverWithResponse()
 
-
-    @Path("/retire/{userId}")
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
+    @WithSession
     @RolesAllowed("app-admin")
     override fun retireApiKey(userId: UUID): Uni<Response> =
         apiUserRepository.expireUser(userId).onItem()
@@ -202,14 +142,11 @@ class AppAdminResource(
             .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
             .onFailure().recoverWithResponse()
 
-    @Path("/renew/{userId}")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
+    @WithSession
     @RolesAllowed("app-admin")
     override fun renewApiKey(
-        @PathParam("userId") userId: UUID,
-        @FormParam("expiresAt") expiresAt: String?
+        userId: UUID,
+        expiresAt: String?
     ): Uni<Response> =
         apiUserRepository.renewUser(userId,
             if (expiresAt.isNullOrBlank()) null else LocalDateTime.parse(expiresAt)
@@ -217,15 +154,12 @@ class AppAdminResource(
         .onFailure().invoke { e -> Log.error("Error during key renewal", e) }
         .onFailure().recoverWithResponse()
 
-    @PUT
-    @Path("/users/{userId}")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
+    @WithSession
     @RolesAllowed("app-admin")
     override fun updateUser(
-        @PathParam("userId") userId: UUID,
-        @FormParam("username") username: String,
-        @FormParam("expiresAt") expiresAt: String?
+        userId: UUID,
+        username: String,
+        expiresAt: String?
     ): Uni<Response> {
         return validateUser(username, apiUserRepository).flatMap { userValidation ->
             if (!userValidation.valid) {
@@ -244,15 +178,12 @@ class AppAdminResource(
         }
     }
 
-    @PUT
-    @Path("/users/{userId}/password")
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_JSON)
+    @WithSession
     @RolesAllowed("app-admin")
     override fun updateUserPassword(
-        @PathParam("userId") userId: UUID,
-        @FormParam("username") username: String,
-        @FormParam("password") password: String?
+        userId: UUID,
+        username: String,
+        password: String?
     ): Uni<Response> {
         return validateUser(username, apiUserRepository).flatMap { userValidation ->
             if (!userValidation.valid) {
@@ -270,11 +201,9 @@ class AppAdminResource(
         }
     }
 
-    @DELETE
-    @Path("/users/{userId}")
-    @Produces(MediaType.APPLICATION_JSON)
+    @WithSession
     @RolesAllowed("app-admin")
-    override fun deleteUser(@PathParam("userId") userId: UUID): Uni<Response> =
+    override fun deleteUser(userId: UUID): Uni<Response> =
         apiUserRepository.deleteUser(userId)
             .onItem().transform { deleted ->
                 if (deleted) {
@@ -286,27 +215,22 @@ class AppAdminResource(
             .onFailure().invoke { e -> Log.error("Error deleting user $userId", e) }
             .onFailure().recoverWithResponse()
 
-    @Path("/pagedel/{pageId}")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
+    @WithSession
     @RolesAllowed("app-admin")
     override fun unregisterPage(pageId: UUID): Uni<Response> =
         pageRepository.deletePage(pageId, blacklistRepository).map { Response.ok().build() }
             .onFailure().invoke { e -> Log.error("Error during page blacklisting.", e) }
             .onFailure().recoverWithResponse()
 
-    @POST
-    @Consumes("application/x-www-form-urlencoded")
-    @Produces("text/plain")
-    @Path("/update")
+    @WithSession
     @RolesAllowed("app-admin")
     override fun updateAdmin(
-        @FormParam("oldUsername") @DefaultValue("") oldUsername: String,
-        @FormParam("newUsername") @DefaultValue("") newUsername: String,
-        @FormParam("oldPassword") @DefaultValue("") oldPassword: String,
-        @FormParam("newPassword") @DefaultValue("") newPassword: String
+        oldUsername: String,
+        newUsername: String,
+        oldPassword: String,
+        newPassword: String
     ): Uni<Response> {
+        // Validate required parameters
         return validatePassword(newPassword, newPassword).flatMap { passwordValidation ->
             if (!passwordValidation.valid) {
                 Uni.createFrom().item(

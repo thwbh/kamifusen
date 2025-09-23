@@ -12,6 +12,7 @@ import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.quarkus.test.junit.QuarkusMock
 import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.BlacklistRepository
 import io.tohuwabohu.kamifusen.service.crud.PageRepository
 import io.tohuwabohu.kamifusen.mock.StatsServiceMock
 import io.tohuwabohu.kamifusen.service.StatsService
@@ -35,6 +36,9 @@ class AppAdminResourceTest {
     @Inject
     lateinit var pageRepository: PageRepository
 
+    @Inject
+    lateinit var blacklistRepository: BlacklistRepository
+
     @BeforeAll
     fun init() {
         QuarkusMock.installMockForType(StatsServiceMock(), StatsService::class.java)
@@ -50,7 +54,7 @@ class AppAdminResourceTest {
             formParam("role", "api-user")
             formParam("expiresAt", "")
         } When {
-            post("/keygen")
+            post("/admin/keygen")
         } Then {
             statusCode(200)
             contentType(MediaType.TEXT_PLAIN)
@@ -87,7 +91,7 @@ class AppAdminResourceTest {
             formParam("role", "api-user")
             formParam("expiresAt", expirationDate)
         } When {
-            post("/keygen")
+            post("/admin/keygen")
         } Then {
             statusCode(200)
         }
@@ -110,7 +114,7 @@ class AppAdminResourceTest {
             formParam("role", "api-user")
             formParam("expiresAt", "")
         } When {
-            post("/keygen")
+            post("/admin/keygen")
         } Then {
             statusCode(401)
         }
@@ -120,7 +124,7 @@ class AppAdminResourceTest {
     @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get aggregated stats with default time range`() {
         val response = When {
-            get("/stats")
+            get("/admin/stats")
         } Then {
             statusCode(200)
             contentType(MediaType.APPLICATION_JSON)
@@ -143,7 +147,7 @@ class AppAdminResourceTest {
         Given {
             queryParam("timeRange", "30d")
         } When {
-            get("/stats")
+            get("/admin/stats")
         } Then {
             statusCode(200)
             contentType(MediaType.APPLICATION_JSON)
@@ -155,7 +159,7 @@ class AppAdminResourceTest {
         Given {
             header("Authorization", "")
         } When {
-            get("/stats")
+            get("/admin/stats")
         } Then {
             statusCode(401)
         }
@@ -165,7 +169,7 @@ class AppAdminResourceTest {
     @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get all page visits`() {
         val response = When {
-            get("/visits")
+            get("/admin/visits")
         } Then {
             statusCode(200)
             contentType(MediaType.APPLICATION_JSON)
@@ -190,7 +194,7 @@ class AppAdminResourceTest {
     @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get pages with stats`() {
         val response = When {
-            get("/pages")
+            get("/admin/pages")
         } Then {
             statusCode(200)
             contentType(MediaType.APPLICATION_JSON)
@@ -216,7 +220,7 @@ class AppAdminResourceTest {
     @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should get list of users`() {
         val response = When {
-            get("/users")
+            get("/admin/users")
         } Then {
             statusCode(200)
             contentType(MediaType.APPLICATION_JSON)
@@ -240,7 +244,7 @@ class AppAdminResourceTest {
     @RunOnVertxContext
     fun `should retire API key`(uniAsserter: UniAsserter) {
         When {
-            post("/retire/9f685bd0-90e6-479a-99b6-3fad28d2a005")
+            post("/admin/retire/9f685bd0-90e6-479a-99b6-3fad28d2a005")
         } Then {
             statusCode(200)
         }
@@ -269,15 +273,15 @@ class AppAdminResourceTest {
     @RunOnVertxContext
     fun `should delete page`(uniAsserter: UniAsserter) {
         When {
-            post("/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a650")
+            post("/admin/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a650")
         } Then {
             statusCode(200)
         }
 
         uniAsserter.assertThat (
-            { pageRepository.findPageByPathAndDomain("/deletion", "delete.test") },
+            { blacklistRepository.isPageBlacklisted(UUID.fromString("9f685bd0-90e6-479a-99b6-2fad28d2a650")) },
             { result ->
-                Assertions.assertNull(result)
+                Assertions.assertTrue(result)
             }
         )
     }
@@ -286,7 +290,7 @@ class AppAdminResourceTest {
     @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should handle invalid retire page ID`() {
         When {
-            post("/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a000")
+            post("/admin/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
             statusCode(404)
         }
@@ -297,7 +301,7 @@ class AppAdminResourceTest {
         Given {
             header("Authorization", "")
         } When {
-            post("/retire/9f685bd0-90e6-479a-99b6-2fad28d2a000")
+            post("/admin/retire/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
             statusCode(401)
         }
@@ -307,7 +311,7 @@ class AppAdminResourceTest {
     @TestSecurity(user = "admin", roles = ["app-admin"])
     fun `should handle invalid retire user ID`() {
         When {
-            post("/retire/9f685bd0-90e6-479a-99b6-2fad28d2a000")
+            post("/admin/retire/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
             statusCode(404)
         }
@@ -316,7 +320,7 @@ class AppAdminResourceTest {
     @Test
     fun `should return 401 for unauthorized page operations`() {
         When {
-            post("/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a000")
+            post("/admin/pagedel/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
             statusCode(401)
         }
@@ -356,12 +360,13 @@ class AppAdminResourceTest {
 
     @Test
     @TestSecurity(user = "admin-password-dont-change", roles = ["app-admin"])
-    fun `should handle missing parameters in admin update`() {
+    fun `should return 400 for empty parameters in admin update`() {
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
             formParam("oldUsername", "admin-password-dont-change")
             formParam("oldPassword", "admin")
-            // Missing newUsername and newPassword parameters
+            formParam("newPassword", "")
+            formParam("newUsername", "")
         } When {
             post("/admin/update")
         } Then {
@@ -386,7 +391,7 @@ class AppAdminResourceTest {
 
     @Test
     @TestSecurity(user = "admin-password-dont-change", roles = ["app-admin"])
-    fun `should handle empty new password in admin update`() {
+    fun `should return 400 for empty new password in admin update`() {
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
             formParam("oldUsername", "admin-password-dont-change")

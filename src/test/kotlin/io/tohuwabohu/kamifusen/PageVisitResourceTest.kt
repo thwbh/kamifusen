@@ -36,7 +36,7 @@ class PageVisitResourceTest {
             auth().preemptive().basic("api-user-1", "admin")
             body(PageHitRequestDto("/page/test-page", "test.org"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         }
@@ -61,7 +61,7 @@ class PageVisitResourceTest {
             auth().preemptive().basic("api-user-2", "admin")
             body(PageHitRequestDto("/page/test-page-2", "test.org"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         } Extract {
@@ -87,7 +87,7 @@ class PageVisitResourceTest {
             auth().preemptive().basic("api-user-1", "admin")
             body(PageHitRequestDto("/path-2", "domain-2.test"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         } Extract {
@@ -101,7 +101,7 @@ class PageVisitResourceTest {
             auth().preemptive().basic("api-user-1", "admin")
             body(PageHitRequestDto("/path-2", "domain-2.test"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         } Extract {
@@ -121,7 +121,7 @@ class PageVisitResourceTest {
             auth().preemptive().basic("api-user-1", "admin")
             body(PageHitRequestDto("/path-3", "domain-2.test"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         } Extract {
@@ -135,7 +135,7 @@ class PageVisitResourceTest {
             auth().preemptive().basic("api-user-1", "admin")
             body(PageHitRequestDto("/path-3", "domain-2.test"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         } Extract {
@@ -150,7 +150,7 @@ class PageVisitResourceTest {
     @TestSecurity(user = "admin", roles = ["api-admin"])
     fun `should return hit count for existing page`() {
         val hitCount = When {
-            get("/count/9f685bd0-90e6-479a-99b6-2fad28d2a642")
+            get("/public/visits/count/9f685bd0-90e6-479a-99b6-2fad28d2a642")
         } Then {
             statusCode(200)
         } Extract {
@@ -164,7 +164,7 @@ class PageVisitResourceTest {
     @TestSecurity(user = "admin", roles = ["api-admin"])
     fun `should return 404 for non-existent page count`() {
         When {
-            get("/count/9f685bd0-90e6-479a-99b6-2fad28d2a000")
+            get("/public/visits/count/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
             statusCode(404)
         }
@@ -177,7 +177,7 @@ class PageVisitResourceTest {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
             body(PageHitRequestDto("/some/page", "test.org"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(401)
         }
@@ -189,7 +189,7 @@ class PageVisitResourceTest {
         Given {
             header("Authorization", "")
         } When {
-            get("/count/9f685bd0-90e6-479a-99b6-2fad28d2a000")
+            get("/public/visits/count/9f685bd0-90e6-479a-99b6-2fad28d2a000")
         } Then {
             statusCode(401)
         }
@@ -204,7 +204,7 @@ class PageVisitResourceTest {
             auth().preemptive().basic("api-user-1", "admin")
             body(PageHitRequestDto("/path-1", "domain-4.test"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(200)
         }
@@ -228,7 +228,7 @@ class PageVisitResourceTest {
             auth().preemptive().basic("api-user-3", "admin")
             body(PageHitRequestDto("/path-1", "domain-1.test"))
         } When {
-            post("/hit")
+            post("/public/visits/hit")
         } Then {
             statusCode(401)
         }
