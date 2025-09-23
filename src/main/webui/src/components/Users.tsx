@@ -7,6 +7,8 @@ import ApiKeysTable from './user/ApiKeysTable'
 import UserForm from './user/UserForm'
 import ApiKeyForm from './user/ApiKeyForm'
 import ErrorDisplay from './error/ErrorDisplay'
+import AsyncErrorBoundary from './boundary/AsyncErrorBoundary'
+import LoadingState from './loading/LoadingState'
 
 const Users: React.FC = () => {
   // Hook state
@@ -15,6 +17,7 @@ const Users: React.FC = () => {
     apiUsers,
     loading,
     error,
+    refreshUsers,
     generateApiKey,
     renewApiKey,
     retireApiKey,
@@ -238,18 +241,23 @@ const Users: React.FC = () => {
   }
 
   return (
-    <div className="p-6 h-full overflow-auto">
-      <header className="mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-tui-accent mb-2">USER MANAGEMENT</h1>
-          <p className="text-tui-muted text-sm">Manage users and API keys</p>
-        </div>
-      </header>
+    <AsyncErrorBoundary
+      loading={loading}
+      error={error}
+      onRetry={refreshUsers}
+      loadingMessage="Loading users..."
+    >
+      <div className="p-6 h-full overflow-auto">
+        <header className="mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-tui-accent mb-2">USER MANAGEMENT</h1>
+            <p className="text-tui-muted text-sm">Manage users and API keys</p>
+          </div>
+        </header>
 
-      <ErrorDisplay ref={errorRef} error={error} onClearError={clearError} />
+        <ErrorDisplay ref={errorRef} error={error} onClearError={clearError} />
 
-
-      {/* System Users Section */}
+        {/* System Users Section */}
       <div className="tui-panel mb-6">
         <div className="tui-panel-header flex justify-between items-center">
           <span>System Users ({systemUsers.length})</span>
@@ -344,6 +352,7 @@ const Users: React.FC = () => {
         />
       </div>
     </div>
+    </AsyncErrorBoundary>
   )
 }
 

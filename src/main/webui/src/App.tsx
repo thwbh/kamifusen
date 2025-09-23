@@ -3,6 +3,7 @@ import Background from './components/Background'
 import Welcome from './components/Welcome'
 import AdminPasswordChange from './components/AdminPasswordChange'
 import NavigationWrapper from './components/navigation/NavigationWrapper'
+import ErrorBoundary from './components/boundary/ErrorBoundary'
 
 type AppState = 'welcome' | 'authenticated' | 'change-password'
 
@@ -70,11 +71,13 @@ function App() {
   const shouldShowRedLines = currentState === 'welcome';
 
   return (
-    <div className="App h-screen flex flex-col">
-      <Background showRedLines={shouldShowRedLines}>
-        {renderContent()}
-      </Background>
-    </div>
+    <ErrorBoundary>
+      <div className="App h-screen flex flex-col">
+        <Background showRedLines={shouldShowRedLines}>
+          {renderContent()}
+        </Background>
+      </div>
+    </ErrorBoundary>
   )
 }
 
