@@ -32,7 +32,7 @@ export const usePages = (): UsePagesState & UsePagesActions => {
   const adminApi = useMemo(() => new AppAdminResourceApi(), [])
 
   const domains = useMemo(() => {
-    const uniqueDomains = [...new Set(pages.map(page => page.domain).filter(Boolean))]
+    const uniqueDomains = [...new Set(pages.map(page => page.domain).filter((domain): domain is string => Boolean(domain)))]
     return uniqueDomains.sort()
   }, [pages])
 

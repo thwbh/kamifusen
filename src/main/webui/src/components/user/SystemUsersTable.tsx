@@ -5,14 +5,15 @@ import {
   getSortedRowModel,
   flexRender,
   createColumnHelper,
-  SortingState
+  SortingState,
+  OnChangeFn
 } from '@tanstack/react-table'
 import { ApiUserDto } from '../../api'
 
 interface SystemUsersTableProps {
   users: ApiUserDto[]
   sorting: SortingState
-  onSortingChange: (sorting: SortingState) => void
+  onSortingChange: OnChangeFn<SortingState>
   onEditUser: (user: ApiUserDto) => void
   onDeleteUser: (user: ApiUserDto) => void
 }
@@ -47,7 +48,7 @@ const SystemUsersTable: React.FC<SystemUsersTableProps> = ({
       header: 'Added',
       cell: info => (
         <span className="text-tui-muted">
-          {info.getValue() ? new Date(info.getValue()).toLocaleDateString() : 'Unknown'}
+          {info.getValue() ? new Date(info.getValue() as string).toLocaleDateString() : 'Unknown'}
         </span>
       )
     }),

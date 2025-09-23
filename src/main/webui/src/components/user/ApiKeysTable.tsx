@@ -5,14 +5,15 @@ import {
   getSortedRowModel,
   flexRender,
   createColumnHelper,
-  SortingState
+  SortingState,
+  OnChangeFn
 } from '@tanstack/react-table'
 import { ApiUserDto } from '../../api'
 
 interface ApiKeysTableProps {
   users: ApiUserDto[]
   sorting: SortingState
-  onSortingChange: (sorting: SortingState) => void
+  onSortingChange: OnChangeFn<SortingState>
   onEditApiKey: (user: ApiUserDto) => void
   onRenewUser: (user: ApiUserDto) => void
   onRetireUser: (user: ApiUserDto) => void
@@ -55,7 +56,7 @@ const ApiKeysTable: React.FC<ApiKeysTableProps> = ({
       header: 'Created',
       cell: info => (
         <span className="text-tui-muted">
-          {info.getValue() ? new Date(info.getValue()).toLocaleDateString() : 'Unknown'}
+          {info.getValue() ? new Date(info.getValue() as string).toLocaleDateString() : 'Unknown'}
         </span>
       )
     }),
