@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react'
 import ErrorBoundary from './ErrorBoundary'
+import LoadingState from './LoadingState'
 
 interface AsyncErrorBoundaryProps {
   children: ReactNode
@@ -19,14 +20,7 @@ const AsyncErrorBoundary: React.FC<AsyncErrorBoundaryProps> = ({
   fallback
 }) => {
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <div className="animate-spin w-6 h-6 mb-4">
-          <div className="border-2 border-tui-border border-t-tui-accent rounded-full w-full h-full"></div>
-        </div>
-        <p className="text-tui-muted text-sm font-mono">{loadingMessage}</p>
-      </div>
-    )
+    return <LoadingState message={loadingMessage} />
   }
 
   if (error) {

@@ -6,8 +6,7 @@ import UserTable from './UserTable'
 import UserApiKeyTable from './UserApiKeyTable'
 import UserForm from './UserForm'
 import UserApiKeyForm from './UserApiKeyForm'
-import ErrorDisplay from '../../../shared/components/ErrorDisplay'
-import AsyncErrorBoundary from '../../../shared/components/AsyncErrorBoundary'
+import { ErrorDisplay, AsyncErrorBoundary } from '../../../shared'
 
 const Users: React.FC = () => {
   // Hook state

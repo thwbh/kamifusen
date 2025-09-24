@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { AppAdminResourceApi, Configuration } from '../../../api'
 import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg'
-import {Footer} from "../../../shared";
+import { Footer, LoadingSpinner } from '../../../shared';
 
 interface PasswordChangeProps {
   onSuccess: () => void
@@ -142,7 +142,12 @@ const AuthPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
                 disabled={isLoading}
                 className="w-full tui-button tui-focus text-lg py-3 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'UPDATING...' : 'UPDATE PASSWORD'}
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    UPDATING...
+                  </span>
+                ) : 'UPDATE PASSWORD'}
               </button>
             </form>
           </div>

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useStats } from '../hooks'
+import { LoadingState } from '../../../shared'
 
 interface ChartData {
   label: string
@@ -11,11 +12,7 @@ const Stats: React.FC = () => {
   const { statsData, timeRange, loading, error, setTimeRange } = useStats()
 
   if (loading) {
-    return (
-      <div className="p-6 h-full flex items-center justify-center">
-        <div className="text-tui-muted">Loading statistics...</div>
-      </div>
-    )
+    return <LoadingState message="Loading statistics..." fullHeight />
   }
 
   if (error) {

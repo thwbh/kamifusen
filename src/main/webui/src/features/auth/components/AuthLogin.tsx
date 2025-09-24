@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg';
-import {Footer} from "../../../shared";
+import { Footer, LoadingSpinner } from '../../../shared';
 
 interface WelcomeProps {
   onBegin: () => void;
@@ -150,7 +150,12 @@ const AuthLogin: React.FC<WelcomeProps> = () => {
                 disabled={isLoading}
                 className="w-full tui-button tui-focus text-lg py-3 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'AUTHENTICATING...' : 'ACCESS SYSTEM'}
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    AUTHENTICATING...
+                  </span>
+                ) : 'ACCESS SYSTEM'}
               </button>
             </form>
           </div>
