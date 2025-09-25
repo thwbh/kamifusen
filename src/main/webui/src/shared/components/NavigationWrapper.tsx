@@ -13,8 +13,8 @@ interface NavigationWrapperProps {
 const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
   const renderContent = (page: string) => {
     switch (page) {
-      case 'dashboard':
-        return <Dashboard onSignOut={onSignOut} />;
+      //      case 'dashboard':
+      //        return <Dashboard onSignOut={onSignOut} />;
       case 'pages':
         return <Pages />;
       case 'stats':
@@ -28,16 +28,15 @@ const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
 
   const navigationConfig: NavigationConfig = {
     items: [
-      { key: '1', label: 'Dashboard', page: 'dashboard' },
+      //      { key: '1', label: 'Dashboard', page: 'dashboard' },
+      { key: '1', label: 'Stats', page: 'stats' },
       { key: '2', label: 'Pages', page: 'pages' },
-      { key: '3', label: 'Stats', page: 'stats' },
-      { key: '4', label: 'Users', page: 'users' }
+      { key: '3', label: 'Users', page: 'users' }
     ],
     initialPage: 'stats',
     headerComponent: Header,
     onSignOut: onSignOut,
     renderContent: renderContent,
-    useModifierKey: true,           // Use Option/Alt + number
     showHotkeys: true,              // Show [⌥1] in navigation
     disableShortcutsOnInput: true   // Disable shortcuts when typing in forms
   };

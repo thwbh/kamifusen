@@ -1,5 +1,4 @@
 export { default as Users } from './components/Users'
-export { default as UserApiKeyForm } from './components/UserApiKeyForm'
 export { default as UserApiKeyTable } from './components/UserApiKeyTable'
 export { default as UserTable } from './components/UserTable'
 export { default as UserForm } from './components/UserForm'
