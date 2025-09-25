@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { AppAdminResourceApi, Configuration } from '../../../api'
-import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg'
-import { Footer, LoadingSpinner } from '../../../shared';
+// import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg'
+import kamifusenIcon from '../../../assets/icons/logo_128.png'
+import { LoadingSpinner } from 'crt-dojo';
+import Footer from '../../../shared/components/Footer';
 
 interface PasswordChangeProps {
   onSuccess: () => void

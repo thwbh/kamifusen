@@ -6,7 +6,7 @@ import UserTable from './UserTable'
 import UserApiKeyTable from './UserApiKeyTable'
 import UserForm from './UserForm'
 import UserApiKeyForm from './UserApiKeyForm'
-import { ErrorDisplay, AsyncErrorBoundary } from '../../../shared'
+import { ErrorDisplay, AsyncErrorBoundary } from 'crt-dojo'
 
 const Users: React.FC = () => {
   // Hook state

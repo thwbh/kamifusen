@@ -1,5 +1,7 @@
 import React, { useRef } from 'react'
 import { ApiUserDto } from '../../../api'
+import { ExtendedConfigurableForm } from '../../../shared'
+import { ExtendedFormConfig } from '../../../shared/components/ExtendedConfigurableForm'
 
 interface ApiKeyFormProps {
   keyName: string
@@ -13,6 +15,11 @@ interface ApiKeyFormProps {
   generatedKey: string
   onGeneratedKeyDismiss: () => void
   onCopyToClipboard: (text: string) => void
+}
+
+interface ApiKeyFormData {
+  keyName: string
+  keyExpiresAt: string
 }
 
 const UserApiKeyForm: React.FC<ApiKeyFormProps> = ({
@@ -30,77 +37,81 @@ const UserApiKeyForm: React.FC<ApiKeyFormProps> = ({
 }) => {
   const createKeyGeneratedRef = useRef<HTMLDivElement>(null)
 
-  return (
-    <div className="p-4 border-b border-tui-border bg-tui-darker">
-      {(isEditingKey || isRenewalMode) && (
-        <div className="mb-4">
-          <h3 className="text-tui-accent text-sm font-mono">
-            {isEditingKey ? `EDITING: ${editingApiKey?.username}`
-             : isRenewalMode ? `RENEWING: ${editingApiKey?.username}`
-             : ''}
-          </h3>
-        </div>
-      )}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-tui-muted text-sm mb-2">
-            {isEditingKey ? 'Key Name' : 'Key Name'}
-          </label>
-          <input
-            type="text"
-            value={keyName}
-            onChange={(e) => onKeyNameChange(e.target.value)}
-            className="w-full bg-tui-dark border border-tui-border p-2 text-tui-light font-mono focus:border-tui-accent focus:outline-none"
-            placeholder={isEditingKey ? "Edit key name" : "Enter key name"}
-          />
-        </div>
-        <div>
-          <label className="block text-tui-muted text-sm mb-2">Expiration Date</label>
-          <input
-            type="date"
-            value={keyExpiresAt ? keyExpiresAt.split('T')[0] : ''}
-            onChange={(e) => onKeyExpiresAtChange(e.target.value ? `${e.target.value}T23:59:59` : '')}
-            className="w-full bg-tui-dark border border-tui-border p-2 text-tui-light font-mono focus:border-tui-accent focus:outline-none"
-          />
-          <p className="text-tui-muted text-xs mt-1">Leave empty for no expiration</p>
+  // Determine the form mode
+  const getFormMode = () => {
+    if (isRenewalMode) return 'renewal' as const
+    if (isEditingKey) return 'edit' as const
+    return 'create' as const
+  }
+
+  // Create form data object
+  const formData: ApiKeyFormData = {
+    keyName,
+    keyExpiresAt
+  }
+
+  // Create the form configuration
+  const formConfig: ExtendedFormConfig = {
+    mode: getFormMode(),
+    renewalTitle: isRenewalMode ? `RENEWING: ${editingApiKey?.username}` : undefined,
+    editTitle: isEditingKey ? `EDITING: ${editingApiKey?.username}` : undefined,
+    createTitle: 'CREATE KEY',
+    hideFormOnSuccess: !!generatedKey,
+    showSuccess: !!generatedKey,
+    successContent: generatedKey ? (
+      <div ref={createKeyGeneratedRef} className="p-4 bg-tui-dark border border-tui-accent rounded">
+        <p className="text-tui-accent text-sm mb-2">
+          {isRenewalMode ? 'Renewed API Key (copy now, won\'t be shown again):'
+            : 'Generated API Key (copy now, won\'t be shown again):'}
+        </p>
+        <div className="flex items-center space-x-2">
+          <code className="flex-1 p-2 bg-tui-darker text-tui-light font-mono text-sm">
+            {generatedKey}
+          </code>
+          <button
+            onClick={() => onCopyToClipboard(generatedKey)}
+            className="px-3 py-2 bg-tui-accent text-tui-dark text-sm font-mono hover:bg-tui-accent-hover"
+          >
+            COPY
+          </button>
         </div>
         <button
-          onClick={onSubmit}
-          disabled={!keyName}
-          className="tui-button disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={onGeneratedKeyDismiss}
+          className="mt-2 text-tui-muted hover:text-tui-accent text-sm"
         >
-          {isEditingKey ? 'UPDATE KEY'
-           : isRenewalMode ? 'RENEW KEY'
-           : 'GENERATE KEY'}
+          DISMISS
         </button>
-
-        {generatedKey && (
-          <div ref={createKeyGeneratedRef} className="p-4 bg-tui-dark border border-tui-accent rounded mt-4">
-            <p className="text-tui-accent text-sm mb-2">
-              {isRenewalMode ? 'Renewed API Key (copy now, won\'t be shown again):'
-               : 'Generated API Key (copy now, won\'t be shown again):'}
-            </p>
-            <div className="flex items-center space-x-2">
-              <code className="flex-1 p-2 bg-tui-darker text-tui-light font-mono text-sm">
-                {generatedKey}
-              </code>
-              <button
-                onClick={() => onCopyToClipboard(generatedKey)}
-                className="px-3 py-2 bg-tui-accent text-tui-dark text-sm font-mono hover:bg-tui-accent-hover"
-              >
-                COPY
-              </button>
-            </div>
-            <button
-              onClick={onGeneratedKeyDismiss}
-              className="mt-2 text-tui-muted hover:text-tui-accent text-sm"
-            >
-              DISMISS
-            </button>
-          </div>
-        )}
       </div>
-    </div>
+    ) : undefined,
+    fields: [
+      {
+        key: 'keyName',
+        type: 'text',
+        label: 'Key Name',
+        placeholder: isEditingKey ? "Edit key name" : "Enter key name",
+        required: true,
+        getValue: (data: ApiKeyFormData) => data.keyName || '',
+        setValue: (data: ApiKeyFormData, value: string) => { data.keyName = value },
+        onChange: (value: string) => onKeyNameChange(value)
+      },
+      {
+        key: 'keyExpiresAt',
+        type: 'datetime-local',
+        label: 'Expiration Date',
+        helpText: 'Leave empty for no expiration',
+        getValue: (data: ApiKeyFormData) => data.keyExpiresAt ? data.keyExpiresAt.split('T')[0] : '',
+        setValue: (data: ApiKeyFormData, value: string) => { data.keyExpiresAt = value },
+        onChange: (value: string) => onKeyExpiresAtChange(value)
+      }
+    ],
+    onSubmit: () => onSubmit()
+  }
+
+  return (
+    <ExtendedConfigurableForm
+      config={formConfig}
+      initialData={formData}
+    />
   )
 }
 

@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react'
-import { Background, ErrorBoundary, NavigationWrapper } from './shared'
-import { Welcome, AdminPasswordChange } from './features/auth'
+import { Background, ErrorBoundary } from 'crt-dojo'
+import { NavigationWrapper } from './shared'
+import { AuthLogin, AdminPasswordChange } from './features/auth'
 
 type AppState = 'welcome' | 'authenticated' | 'change-password'
 
@@ -55,13 +56,13 @@ function App() {
   const renderContent = () => {
     switch (currentState) {
       case 'welcome':
-        return <Welcome onBegin={handleBegin} onNavigate={handleNavigate} />;
+        return <AuthLogin onBegin={handleBegin} onNavigate={handleNavigate} />;
       case 'change-password':
         return <AdminPasswordChange onSuccess={handleBegin} />;
       case 'authenticated':
         return <NavigationWrapper onSignOut={handleSignOut} />;
       default:
-        return <Welcome onBegin={handleBegin} onNavigate={handleNavigate} />;
+        return <AuthLogin onBegin={handleBegin} onNavigate={handleNavigate} />;
     }
   }
 
@@ -69,11 +70,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="App h-screen flex flex-col">
-        <Background showRedLines={shouldShowRedLines}>
-          {renderContent()}
-        </Background>
-      </div>
+      <Background showRedLines={shouldShowRedLines}>
+        {renderContent()}
+      </Background>
     </ErrorBoundary>
   )
 }

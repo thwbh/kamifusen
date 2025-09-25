@@ -1,6 +1,6 @@
 import React from 'react'
 import { useStats } from '../hooks'
-import { LoadingState } from '../../../shared'
+import { LoadingState } from 'crt-dojo'
 
 interface ChartData {
   label: string

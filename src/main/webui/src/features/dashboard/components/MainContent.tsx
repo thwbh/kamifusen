@@ -1,5 +1,5 @@
 import React from 'react';
-import { LoadingSpinner } from '../../../shared';
+import { LoadingSpinner } from 'crt-dojo';
 
 const MainContent: React.FC = () => {
   return (

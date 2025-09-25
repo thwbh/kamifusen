@@ -1,13 +1,6 @@
-import React, { useMemo, useCallback } from 'react'
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  flexRender,
-  createColumnHelper,
-  SortingState,
-  OnChangeFn
-} from '@tanstack/react-table'
+import React, { useMemo } from 'react'
+import { SortingState, OnChangeFn } from '@tanstack/react-table'
+import { DataTable, DataTableConfig, DataTableColumn, DataTableAction } from 'crt-dojo'
 import { ApiUserDto } from '../../../api'
 
 interface ApiKeysTableProps {
@@ -29,46 +22,33 @@ const UserApiKeyTable: React.FC<ApiKeysTableProps> = ({
   onRetireUser,
   onDeleteUser
 }) => {
-  const columnHelper = createColumnHelper<ApiUserDto>()
-
-  const handleEditApiKey = useCallback((user: ApiUserDto) => {
-    onEditApiKey(user)
-  }, [onEditApiKey])
-
-  const handleRenewUser = useCallback((user: ApiUserDto) => {
-    onRenewUser(user)
-  }, [onRenewUser])
-
-  const handleRetireUser = useCallback((user: ApiUserDto) => {
-    onRetireUser(user)
-  }, [onRetireUser])
-
-  const handleDeleteUser = useCallback((user: ApiUserDto) => {
-    onDeleteUser(user)
-  }, [onDeleteUser])
-
-  const columns = useMemo(() => [
-    columnHelper.accessor('username', {
+  const columns = useMemo((): DataTableColumn<ApiUserDto>[] => [
+    {
+      key: 'username',
       header: 'Name',
-      cell: info => <span className="font-mono text-tui-light">{info.getValue()}</span>
-    }),
-    columnHelper.accessor('added', {
+      accessor: 'username',
+      cell: (value: string) => <span className="font-mono text-tui-light">{value}</span>
+    },
+    {
+      key: 'added',
       header: 'Created',
-      cell: info => (
+      accessor: 'added',
+      cell: (value: string) => (
         <span className="text-tui-muted">
-          {info.getValue() ? new Date(info.getValue() as string).toLocaleDateString() : 'Unknown'}
+          {value ? new Date(value as string).toLocaleDateString() : 'Unknown'}
         </span>
       )
-    }),
-    columnHelper.accessor('expiresAt', {
+    },
+    {
+      key: 'expiresAt',
       header: 'Expires',
-      cell: info => {
-        const expiresAt = info.getValue();
-        if (!expiresAt) {
+      accessor: 'expiresAt',
+      cell: (value: never) => {
+        if (!value) {
           return <span className="text-tui-muted">Never</span>;
         }
 
-        const expirationDate = new Date(expiresAt);
+        const expirationDate = new Date(value);
         const isExpired = expirationDate <= new Date();
 
         return (
@@ -78,122 +58,55 @@ const UserApiKeyTable: React.FC<ApiKeysTableProps> = ({
           </span>
         );
       }
-    }),
-    columnHelper.display({
-      id: 'status',
+    },
+    {
+      key: 'status',
       header: 'Status',
-      cell: info => {
-        const user = info.row.original;
-        const isExpired = user.expiresAt && new Date(user.expiresAt) <= new Date();
+      accessor: (user: ApiUserDto) => user.expiresAt && new Date(user.expiresAt) <= new Date(),
+      cell: (isExpired: boolean) => (
+        <span className={isExpired ? "text-tui-red text-sm" : "text-tui-green text-sm"}>
+          {isExpired ? 'EXPIRED' : 'ACTIVE'}
+        </span>
+      )
+    }
+  ], [])
 
-        return (
-          <span className={isExpired ? "text-tui-red text-sm" : "text-tui-green text-sm"}>
-            {isExpired ? 'EXPIRED' : 'ACTIVE'}
-          </span>
-        );
+  const actions = useMemo((): DataTableAction<ApiUserDto>[] => [
+      {
+        label: 'RENEW',
+        variant: 'primary',
+        onClick: onRenewUser,
+        hidden: (user: ApiUserDto) => !(user.expiresAt && new Date(user.expiresAt) <= new Date())
+      },
+      {
+        label: 'DELETE',
+        variant: 'danger',
+        onClick: onDeleteUser,
+        hidden: (user: ApiUserDto) => !(user.expiresAt && new Date(user.expiresAt) <= new Date())
+      },
+      {
+        label: 'EDIT',
+        variant: 'primary',
+        onClick: onEditApiKey,
+        hidden: (user: ApiUserDto) => user.expiresAt && new Date(user.expiresAt) <= new Date()
+      },
+      {
+        label: 'REVOKE',
+        variant: 'danger',
+        onClick: onRetireUser,
+        hidden: (user: ApiUserDto) => user.expiresAt && new Date(user.expiresAt) <= new Date()
       }
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: 'Actions',
-      cell: info => {
-        const user = info.row.original;
-        const isExpired = user.expiresAt && new Date(user.expiresAt) <= new Date();
+  ], [onEditApiKey, onRenewUser, onRetireUser, onDeleteUser])
 
-        return (
-          <div>
-            {isExpired ? (
-              <>
-                <button
-                  onClick={() => handleRenewUser(user)}
-                  className="text-tui-green hover:text-tui-accent text-sm mr-2"
-                >
-                  RENEW
-                </button>
-                <button
-                  onClick={() => handleDeleteUser(user)}
-                  className="text-tui-red hover:text-tui-accent text-sm"
-                >
-                  DELETE
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => handleEditApiKey(user)}
-                  className="text-tui-accent hover:text-tui-accent-hover text-sm mr-2"
-                >
-                  EDIT
-                </button>
-                <button
-                  onClick={() => handleRetireUser(user)}
-                  className="text-tui-red hover:text-tui-accent text-sm"
-                >
-                  REVOKE
-                </button>
-              </>
-            )}
-          </div>
-        );
-      }
-    })
-  ], [columnHelper, handleEditApiKey, handleRenewUser, handleRetireUser, handleDeleteUser])
-
-  const table = useReactTable({
+  const config: DataTableConfig<ApiUserDto> = {
     data: users,
     columns,
-    state: {
-      sorting,
-    },
+    sorting,
     onSortingChange,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  })
+    actions
+  }
 
-  return (
-    <div className="p-0">
-      <table className="tui-table">
-        <thead>
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th
-                  key={header.id}
-                  className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
-                  onClick={header.column.getToggleSortingHandler()}
-                >
-                  <div className="flex items-center space-x-1">
-                    <span>
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </span>
-                    {header.column.getCanSort() && (
-                      <span className="text-tui-muted">
-                        {{
-                          asc: '↑',
-                          desc: '↓',
-                        }[header.column.getIsSorted() as string] ?? '↕'}
-                      </span>
-                    )}
-                  </div>
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map(row => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map(cell => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
+  return <DataTable config={config} />
 }
 
 export default UserApiKeyTable

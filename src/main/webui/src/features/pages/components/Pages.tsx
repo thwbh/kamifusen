@@ -1,12 +1,6 @@
 import React, { useMemo, useState } from 'react'
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  flexRender,
-  createColumnHelper,
-  SortingState
-} from '@tanstack/react-table'
+import { SortingState } from '@tanstack/react-table'
+import { DataTable, DataTableConfig, DataTableColumn, DataTableAction } from 'crt-dojo'
 import { PageWithStatsDto } from '../../../api'
 import { usePages } from '../hooks'
 
@@ -27,53 +21,44 @@ const Pages: React.FC = () => {
     restorePage
   } = usePages()
 
-  const columnHelper = createColumnHelper<PageWithStatsDto>()
-
-  const columns = useMemo(() => [
-    columnHelper.accessor('path', {
+  const columns = useMemo((): DataTableColumn<PageWithStatsDto>[] => [
+    {
+      key: 'path',
       header: 'Path',
-      cell: info => <span className="font-mono text-tui-light">{info.getValue()}</span>
-    }),
-    columnHelper.accessor('domain', {
+      accessor: 'path',
+      cell: (value: string) => <span className="font-mono text-tui-light">{value}</span>
+    },
+    {
+      key: 'domain',
       header: 'Domain',
-      cell: info => <span className="text-tui-muted">{info.getValue()}</span>
-    }),
-    columnHelper.accessor('visitCount', {
+      accessor: 'domain',
+      cell: (value: string) => <span className="text-tui-muted">{value}</span>
+    },
+    {
+      key: 'visitCount',
       header: 'Visits',
-      cell: info => <span className="text-tui-accent">{info.getValue() || 0}</span>
-    }),
-    columnHelper.accessor('lastHit', {
+      accessor: 'visitCount',
+      cell: (value: number) => <span className="text-tui-accent">{value || 0}</span>
+    },
+    {
+      key: 'lastHit',
       header: 'Last Visit',
-      cell: info => (
+      accessor: 'lastHit',
+      cell: (value: string) => (
         <span className="text-tui-muted">
-          {info.getValue() ? new Date(info.getValue()!).toLocaleString() : 'Never'}
+          {value ? new Date(value).toLocaleString() : 'Never'}
         </span>
       )
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: 'Actions',
-      cell: info => (
-        <button
-          className="text-tui-red hover:text-tui-accent text-sm"
-          onClick={() => showHidden ? handleRestorePage(info.row.original.id) : handleHidePage(info.row.original.id)}
-        >
-          {showHidden ? 'RESTORE' : 'HIDE'}
-        </button>
-      )
-    })
-  ], [columnHelper, showHidden])
+    }
+  ], [])
 
-  const table = useReactTable({
-    data: filteredPages,
-    columns,
-    state: {
-      sorting,
-    },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  })
+  const actions = useMemo((): DataTableAction<PageWithStatsDto>[] => [
+    {
+      label: showHidden ? 'RESTORE' : 'HIDE',
+      variant: 'danger',
+      onClick: (page: PageWithStatsDto) => showHidden ? handleRestorePage(page.id) : handleHidePage(page.id)
+    }
+  ], [showHidden])
 
   const handleHidePage = async (pageId: string) => {
     if (!confirm('Are you sure you want to hide this page? This will unregister it from tracking.')) {
@@ -123,11 +108,10 @@ const Pages: React.FC = () => {
 
           <button
             onClick={() => setShowHidden(!showHidden)}
-            className={`text-sm px-3 py-1 border rounded ${
-              showHidden
+            className={`text-sm px-3 py-1 border rounded ${showHidden
                 ? 'bg-tui-accent text-tui-darker border-tui-accent'
                 : 'text-tui-muted border-tui-border hover:border-tui-accent hover:text-tui-accent'
-            }`}
+              }`}
           >
             Show hidden {!showHidden && hiddenCount > 0 && `(${hiddenCount})`}
           </button>
@@ -139,48 +123,13 @@ const Pages: React.FC = () => {
         <div className="tui-panel-header">
           {showHidden ? 'Hidden Pages' : (selectedDomain ? `Pages for ${selectedDomain}` : 'All Pages')} ({filteredPages.length})
         </div>
-        <div className="p-0">
-          <table className="tui-table">
-            <thead>
-              {table.getHeaderGroups().map(headerGroup => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map(header => (
-                    <th
-                      key={header.id}
-                      className={header.column.getCanSort() ? 'cursor-pointer select-none' : ''}
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                        </span>
-                        {header.column.getCanSort() && (
-                          <span className="text-tui-muted">
-                            {{
-                              asc: '↑',
-                              desc: '↓',
-                            }[header.column.getIsSorted() as string] ?? '↕'}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map(row => (
-                <tr key={row.id}>
-                  {row.getVisibleCells().map(cell => (
-                    <td key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable config={{
+          data: filteredPages,
+          columns,
+          sorting,
+          onSortingChange: setSorting,
+          actions
+        }} />
       </div>
     </div>
   )

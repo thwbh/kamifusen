@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AppAdminResourceApi, AggregatedStatsDto} from '../../../api'
-import { useAsyncOperation } from '../../../shared'
+import { useAsyncOperation } from 'crt-dojo'
 
 interface UseStatsState {
   statsData: AggregatedStatsDto | null

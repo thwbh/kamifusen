@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { AppAdminResourceApi, ApiUserDto } from '../../../api'
-import { useAsyncOperation } from '../../../shared'
+import { useAsyncOperation } from 'crt-dojo'
 
 interface UseUsersState {
   users: ApiUserDto[]
