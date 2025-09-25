@@ -1,5 +1,5 @@
 import React from 'react'
-import { ConfigurableForm, FormConfig as BaseFormConfig } from 'crt-dojo'
+import { Form, FormConfig as BaseFormConfig } from 'crt-dojo'
 
 // Extend the base FormMode type to include renewal
 export type ExtendedFormMode = 'create' | 'edit' | 'view' | 'renewal'
@@ -13,13 +13,13 @@ export interface ExtendedFormConfig extends Omit<BaseFormConfig, 'mode'> {
   showSuccess?: boolean
 }
 
-interface ExtendedConfigurableFormProps {
+interface ExtendedFormProps {
   config: ExtendedFormConfig
   initialData?: any
   className?: string
 }
 
-const ExtendedConfigurableForm: React.FC<ExtendedConfigurableFormProps> = ({
+const ExtendedForm: React.FC<ExtendedFormProps> = ({
   config,
   initialData,
   className
@@ -43,7 +43,7 @@ const ExtendedConfigurableForm: React.FC<ExtendedConfigurableFormProps> = ({
     )
   }
 
-  // Convert extended config back to base config for ConfigurableForm
+  // Convert extended config back to base config for Form
   const baseConfig: BaseFormConfig = {
     ...config,
     mode: config.mode === 'renewal' ? 'edit' : config.mode,
@@ -64,7 +64,7 @@ const ExtendedConfigurableForm: React.FC<ExtendedConfigurableFormProps> = ({
   }
 
   return (
-    <ConfigurableForm
+    <Form
       config={baseConfig}
       initialData={initialData}
       className={className}
@@ -72,4 +72,4 @@ const ExtendedConfigurableForm: React.FC<ExtendedConfigurableFormProps> = ({
   )
 }
 
-export default ExtendedConfigurableForm
+export default ExtendedForm

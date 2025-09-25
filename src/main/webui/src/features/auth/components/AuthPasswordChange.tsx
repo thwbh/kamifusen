@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { AppAdminResourceApi, Configuration } from '../../../api'
 // import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg'
 import kamifusenIcon from '../../../assets/icons/logo_128.png'
-import { LoadingSpinner } from 'crt-dojo';
+import { LoadingSpinner, Panel, PanelHeader, PanelContent, Button, Form, FormConfig } from 'crt-dojo';
 import Footer from '../../../shared/components/Footer';
 
 interface PasswordChangeProps {
@@ -10,34 +10,12 @@ interface PasswordChangeProps {
 }
 
 const AuthPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
-  const [newUsername, setNewUsername] = useState('admin');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (data: any) => {
     setError('');
     setIsLoading(true);
-
-    if (!newPassword) {
-      setError('New password is required');
-      setIsLoading(false);
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
-      setIsLoading(false);
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long');
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const config = new Configuration({
@@ -45,7 +23,7 @@ const AuthPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
       });
       const api = new AppAdminResourceApi(config);
 
-      await api.updateAdmin(newUsername, newPassword, confirmPassword);
+      await api.updateAdmin(data.newUsername, data.newPassword, data.confirmPassword);
       onSuccess();
     } catch (err: any) {
       if (err.response?.status === 400) {
@@ -56,6 +34,61 @@ const AuthPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const passwordChangeFormConfig: FormConfig = {
+    mode: 'create',
+    submitLabel: 'UPDATE PASSWORD',
+    submitLoadingLabel: 'UPDATING...',
+    validationTrigger: 'onSubmit',
+    fields: [
+      {
+        key: 'newUsername',
+        type: 'text',
+        label: 'NEW USERNAME',
+        placeholder: 'Enter new username',
+        required: true,
+        validation: [
+          { type: 'required', message: 'New username is required' }
+        ],
+        getValue: (data: any) => data?.newUsername ?? 'admin',
+        setValue: (data: any, value: string) => { data.newUsername = value }
+      },
+      {
+        key: 'newPassword',
+        type: 'password',
+        label: 'NEW PASSWORD',
+        placeholder: 'Enter new password (min 8 characters)',
+        required: true,
+        validation: [
+          { type: 'required', message: 'New password is required' },
+          { type: 'minLength', value: 8, message: 'Password must be at least 8 characters long' }
+        ],
+        getValue: (data: any) => data?.newPassword,
+        setValue: (data: any, value: string) => { data.newPassword = value }
+      },
+      {
+        key: 'confirmPassword',
+        type: 'password',
+        label: 'CONFIRM NEW PASSWORD',
+        placeholder: 'Confirm new password',
+        required: true,
+        validation: [
+          { type: 'required', message: 'Password confirmation is required' },
+          {
+            type: 'custom',
+            message: 'Passwords do not match',
+            validator: (value: string, formData: any) => {
+              console.log('Password validation:', { value, newPassword: formData.newPassword, match: value === formData.newPassword });
+              return value === formData.newPassword
+            }
+          }
+        ],
+        getValue: (data: any) => data?.confirmPassword,
+        setValue: (data: any, value: string) => { data.confirmPassword = value }
+      }
+    ],
+    onSubmit: handleSubmit
   };
 
   return (
@@ -73,87 +106,29 @@ const AuthPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
         </div>
 
         {/* Password Change Form */}
-        <div className="tui-panel">
-          <div className="tui-panel-header">
+        <Panel>
+          <PanelHeader>
             Change Default Password
-          </div>
-          <div className="p-6">
+          </PanelHeader>
+          <PanelContent>
             <div className="mb-6">
               <p className="text-tui-muted text-sm">
                 For security reasons, you must change the default admin password before continuing.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-tui-red bg-opacity-20 border border-tui-red p-3 rounded-sm">
-                  <p className="text-tui-light text-sm font-mono">{error}</p>
-                </div>
-              )}
-
-              <div>
-                <label htmlFor="newUsername" className="block text-tui-light text-sm mb-2 uppercase tracking-wide">
-                  New Username
-                </label>
-                <input
-                  id="newUsername"
-                  type="text"
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  className="w-full px-3 py-2 bg-tui-dark border border-tui-border text-tui-light rounded-sm focus:outline-none focus:border-tui-accent transition-colors font-mono"
-                  placeholder="Enter new username"
-                  disabled={isLoading}
-                  autoComplete="username"
-                />
+            {error && (
+              <div className="bg-tui-red bg-opacity-20 border border-tui-red p-3 rounded-sm mb-6">
+                <p className="text-tui-light text-sm font-mono">{error}</p>
               </div>
-
-              <div>
-                <label htmlFor="newPassword" className="block text-tui-light text-sm mb-2 uppercase tracking-wide">
-                  New Password
-                </label>
-                <input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-tui-dark border border-tui-border text-tui-light rounded-sm focus:outline-none focus:border-tui-accent transition-colors font-mono"
-                  placeholder="Enter new password (min 8 characters)"
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-tui-light text-sm mb-2 uppercase tracking-wide">
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-tui-dark border border-tui-border text-tui-light rounded-sm focus:outline-none focus:border-tui-accent transition-colors font-mono"
-                  placeholder="Confirm new password"
-                  disabled={isLoading}
-                  autoComplete="new-password"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full tui-button tui-focus text-lg py-3 uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <LoadingSpinner size="sm" />
-                    UPDATING...
-                  </span>
-                ) : 'UPDATE PASSWORD'}
-              </button>
-            </form>
-          </div>
-        </div>
+            )}
+            <Form
+              config={passwordChangeFormConfig}
+              initialData={{ newUsername: 'admin' }}
+            />
+            {isLoading && <div className="mt-4 text-center text-tui-accent">Submitting form...</div>}
+          </PanelContent>
+        </Panel>
 
         {/* Footer */}
         <Footer />

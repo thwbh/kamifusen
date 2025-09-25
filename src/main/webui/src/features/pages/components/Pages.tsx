@@ -1,11 +1,18 @@
 import React, { useMemo, useState } from 'react'
 import { SortingState } from '@tanstack/react-table'
-import { DataTable, DataTableConfig, DataTableColumn, DataTableAction } from 'crt-dojo'
+import { DataTable, DataTableConfig, DataTableColumn, DataTableAction, Panel, PanelHeader, Button, ConfirmDialog } from 'crt-dojo'
 import { PageWithStatsDto } from '../../../api'
 import { usePages } from '../hooks'
 
 const Pages: React.FC = () => {
   const [sorting, setSorting] = useState<SortingState>([])
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+    variant?: 'danger' | 'warning' | 'info'
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
   const {
     loading,
@@ -61,27 +68,37 @@ const Pages: React.FC = () => {
   ], [showHidden])
 
   const handleHidePage = async (pageId: string) => {
-    if (!confirm('Are you sure you want to hide this page? This will unregister it from tracking.')) {
-      return
-    }
-
-    try {
-      await hidePage(pageId)
-    } catch (err) {
-      console.error('Error hiding page:', err)
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Hide Page',
+      message: 'Are you sure you want to hide this page? This will unregister it from tracking.',
+      variant: 'warning',
+      onConfirm: async () => {
+        try {
+          await hidePage(pageId)
+        } catch (err) {
+          console.error('Error hiding page:', err)
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+      }
+    })
   }
 
   const handleRestorePage = async (pageId: string) => {
-    if (!confirm('Are you sure you want to restore this page? This will make it visible again.')) {
-      return
-    }
-
-    try {
-      await restorePage(pageId)
-    } catch (err) {
-      console.error('Error restoring page:', err)
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Restore Page',
+      message: 'Are you sure you want to restore this page? This will make it visible again.',
+      variant: 'info',
+      onConfirm: async () => {
+        try {
+          await restorePage(pageId)
+        } catch (err) {
+          console.error('Error restoring page:', err)
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+      }
+    })
   }
 
   return (
@@ -106,23 +123,21 @@ const Pages: React.FC = () => {
             </select>
           </div>
 
-          <button
+          <Button
             onClick={() => setShowHidden(!showHidden)}
-            className={`text-sm px-3 py-1 border rounded ${showHidden
-                ? 'bg-tui-accent text-tui-darker border-tui-accent'
-                : 'text-tui-muted border-tui-border hover:border-tui-accent hover:text-tui-accent'
-              }`}
+            variant={showHidden ? "primary" : "secondary"}
+            size="sm"
           >
             Show hidden {!showHidden && hiddenCount > 0 && `(${hiddenCount})`}
-          </button>
+          </Button>
         </div>
       </header>
 
       {/* Pages Table */}
-      <div className="tui-panel">
-        <div className="tui-panel-header">
+      <Panel>
+        <PanelHeader>
           {showHidden ? 'Hidden Pages' : (selectedDomain ? `Pages for ${selectedDomain}` : 'All Pages')} ({filteredPages.length})
-        </div>
+        </PanelHeader>
         <DataTable config={{
           data: filteredPages,
           columns,
@@ -130,7 +145,17 @@ const Pages: React.FC = () => {
           onSortingChange: setSorting,
           actions
         }} />
-      </div>
+      </Panel>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        variant={confirmDialog.variant}
+      />
     </div>
   )
 }

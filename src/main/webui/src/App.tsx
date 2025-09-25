@@ -68,11 +68,13 @@ function App() {
 
   const shouldShowRedLines = currentState === 'welcome';
 
+    // <Background showRedLines={shouldShowRedLines}>
+    //     {renderContent()}
+    // </Background>
+
   return (
     <ErrorBoundary>
-      <Background showRedLines={shouldShowRedLines}>
         {renderContent()}
-      </Background>
     </ErrorBoundary>
   )
 }

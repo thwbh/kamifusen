@@ -1,6 +1,6 @@
 import React from 'react'
 import { useStats } from '../hooks'
-import { LoadingState } from 'crt-dojo'
+import { LoadingState, Panel, PanelHeader, PanelContent, BarChart, SimpleChart } from 'crt-dojo'
 
 interface ChartData {
   label: string
@@ -47,6 +47,23 @@ const Stats: React.FC = () => {
     return color;
   }
 
+  const getEmptyTrends = (
+    <div className="space-y-4">
+      {visitData.map((day: ChartData, index: number) => (
+        <div key={index} className="flex items-center space-x-4">
+          <div className="w-12 text-tui-muted text-sm font-mono">{day.label}</div>
+          <div className="flex-1 flex items-center">
+            <div
+              className="bg-tui-accent h-6 mr-2 transition-all duration-300"
+              style={{ width: `${(day.value / maxVisits) * 100}%` }}
+            ></div>
+            <span className={`text-sm font-mono ${getCategoryColor(day.category)}`}>{day.value}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <div className="p-6 h-full overflow-auto">
       <header className="mb-8 flex justify-between items-center">
@@ -68,91 +85,83 @@ const Stats: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Visit Trends Chart */}
-        <div className="tui-panel">
-          <div className="tui-panel-header">
+        <Panel>
+          <PanelHeader>
             Visit Trends - {timeRange}
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {visitData.map((day, index) => (
-                <div key={index} className="flex items-center space-x-4">
-                  <div className="w-12 text-tui-muted text-sm font-mono">{day.label}</div>
-                  <div className="flex-1 flex items-center">
-                    <div
-                      className="bg-tui-accent h-6 mr-2 transition-all duration-300"
-                      style={{ width: `${(day.value / maxVisits) * 100}%` }}
-                    ></div>
-                    <span className={`text-sm font-mono ${getCategoryColor(day.category)}`}>{day.value}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+          </PanelHeader>
+          <PanelContent>
+            <BarChart
+              data={visitData}
+              getCategoryColor={getCategoryColor}
+              emptyComponent={getEmptyTrends}
+            />
+          </PanelContent>
+        </Panel>
 
         {/* Top Pages */}
-        <div className="tui-panel">
-          <div className="tui-panel-header">
+        <Panel>
+          <PanelHeader>
             Top Pages
-          </div>
-          <div className="p-0">
-            <table className="tui-table">
-              <thead>
-                <tr>
-                  <th>Domain</th>
-                  <th>Path</th>
-                  <th>Visits</th>
-                  <th>Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topPages.map((page, index) => (
-                  <tr key={index}>
-                    <td className="font-mono text-tui-muted">{page.domain}</td>
-                    <td className="font-mono text-tui-light">{page.path}</td>
-                    <td className="text-tui-green font-bold">{page.visits}</td>
-                    <td className="text-tui-yellow">{page.percentage}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Domain Distribution */}
-        <div className="tui-panel">
-          <div className="tui-panel-header">
-            Domain Distribution
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {domainStats.map((domain, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-tui-light font-mono">{domain.domain}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-tui-green font-bold">{domain.visits}</span>
-                      <span className="text-tui-yellow text-sm">({domain.percentage}%)</span>
-                    </div>
-                  </div>
-                  <div className="w-full bg-tui-darker h-2 rounded">
-                    <div
-                      className="bg-tui-accent h-2 rounded transition-all duration-300"
-                      style={{ width: `${domain.percentage}%` }}
-                    ></div>
+          </PanelHeader>
+          <PanelContent padding="none">
+            {topPages.length === 0 ? (
+              <div className="p-6">
+                <div className="space-x-4 text-center py-8">
+                  <div className="text-tui text-sm font-mono mb-2">No visits</div>
+                  <div className="text-tui-muted text-xs">
+                    No visits in selected time frame.
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
+              </div>
+            ) : (
+              <table className="tui-table">
+                <thead>
+                  <tr>
+                    <th>Domain</th>
+                    <th>Path</th>
+                    <th>Visits</th>
+                    <th>Share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topPages.map((page, index) => (
+                    <tr key={index}>
+                      <td className="font-mono text-tui-muted">{page.domain}</td>
+                      <td className="font-mono text-tui-light">{page.path}</td>
+                      <td className="text-tui-green font-bold">{page.visits}</td>
+                      <td className="text-tui-yellow">{page.percentage}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </PanelContent>
+        </Panel>
+
+        {/* Domain Distribution */}
+        <Panel>
+          <PanelHeader>
+            Domain Distribution
+          </PanelHeader>
+          <PanelContent>
+            <SimpleChart
+              data={domainStats.map(domain => ({
+                label: domain.domain,
+                value: domain.visits,
+                color: 'text-tui-green'
+              }))}
+              showPercentage={true}
+              showValues={true}
+            />
+          </PanelContent>
+        </Panel>
 
         {/* Summary Stats */}
-        <div className="tui-panel">
-          <div className="tui-panel-header">
+        <Panel>
+          <PanelHeader>
             Summary Metrics
-          </div>
-          <div className="p-6 space-y-6">
+          </PanelHeader>
+          <PanelContent className="space-y-6">
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-tui-green">{statsData?.totalVisits || 0}</div>
@@ -174,8 +183,8 @@ const Stats: React.FC = () => {
                 {new Date().toLocaleString()}
               </div>
             </div>
-          </div>
-        </div>
+          </PanelContent>
+        </Panel>
       </div>
     </div>
   )

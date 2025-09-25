@@ -1,7 +1,7 @@
 import React, { useRef } from 'react'
 import { ApiUserDto } from '../../../api'
-import { ExtendedConfigurableForm } from '../../../shared'
-import { ExtendedFormConfig } from '../../../shared/components/ExtendedConfigurableForm'
+import { ExtendedForm } from '../../../shared'
+import {ExtendedFormConfig, FormConfig} from '../../../shared/components/ExtendedForm'
 
 interface ApiKeyFormProps {
   keyName: string
@@ -108,7 +108,7 @@ const UserApiKeyForm: React.FC<ApiKeyFormProps> = ({
   }
 
   return (
-    <ExtendedConfigurableForm
+    <ExtendedForm
       config={formConfig}
       initialData={formData}
     />

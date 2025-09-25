@@ -1,7 +1,7 @@
 import React, { useRef } from 'react'
 import { ApiUserDto } from '../../../api'
-import { ExtendedConfigurableForm } from "../../../shared";
-import {ExtendedFormConfig} from "../../../shared/components/ExtendedConfigurableForm";
+import { ExtendedForm } from "../../../shared";
+import { ExtendedFormConfig } from "../../../shared/components/ExtendedForm";
 
 interface UserFormProps {
   newUser: {
@@ -99,7 +99,7 @@ const UserForm: React.FC<UserFormProps> = ({
   }
 
   return (
-    <ExtendedConfigurableForm
+    <ExtendedForm
       config={formConfig}
       initialData={newUser}
     />

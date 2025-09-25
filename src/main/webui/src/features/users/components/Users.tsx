@@ -6,7 +6,7 @@ import UserTable from './UserTable'
 import UserApiKeyTable from './UserApiKeyTable'
 import UserForm from './UserForm'
 import UserApiKeyForm from './UserApiKeyForm'
-import { ErrorDisplay, AsyncErrorBoundary } from 'crt-dojo'
+import { ErrorDisplay, AsyncErrorBoundary, Panel, PanelHeader, PanelContent, Button, ConfirmDialog } from 'crt-dojo'
 
 const Users: React.FC = () => {
   // Hook state
@@ -40,6 +40,13 @@ const Users: React.FC = () => {
   const [isEditingKey, setIsEditingKey] = useState(false)
   const [editingApiKey, setEditingApiKey] = useState<ApiUserDto | null>(null)
   const [sorting, setSorting] = useState<SortingState>([])
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+    variant?: 'danger' | 'warning' | 'info'
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
   const errorRef = useRef<HTMLDivElement>(null)
 
@@ -136,21 +143,25 @@ const Users: React.FC = () => {
   }
 
   const handleRetireUser = async (user: ApiUserDto) => {
+    console.log('handleRetireUser called with user:', user.username);
     if (!user.id) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to retire user "${user.username}"?\n\nThis will set their expiration to the current timestamp and they will no longer be able to use their API key.`
-    );
-
-    if (confirmed) {
-      try {
-        await retireApiKey(user.id);
-      } catch (err) {
-        console.error('Error retiring user:', err);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Retire User',
+      message: `Are you sure you want to retire user "${user.username}"?\n\nThis will set their expiration to the current timestamp and they will no longer be able to use their API key.`,
+      variant: 'warning',
+      onConfirm: async () => {
+        try {
+          await retireApiKey(user.id);
+        } catch (err) {
+          console.error('Error retiring user:', err);
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
       }
-    }
+    });
   }
 
   const handleRenewUser = useCallback((user: ApiUserDto) => {
@@ -205,17 +216,20 @@ const Users: React.FC = () => {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete user "${user.username}"?\n\nThis action cannot be undone.`
-    );
-
-    if (confirmed) {
-      try {
-        await deleteUser(user.id);
-      } catch (err) {
-        console.error('Error deleting user:', err);
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete User',
+      message: `Are you sure you want to delete user "${user.username}"?\n\nThis action cannot be undone.`,
+      variant: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteUser(user.id);
+        } catch (err) {
+          console.error('Error deleting user:', err);
+        }
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
       }
-    }
+    });
   }, [deleteUser])
 
   const copyToClipboard = (text: string) => {
@@ -256,10 +270,10 @@ const Users: React.FC = () => {
         <ErrorDisplay ref={errorRef} error={error} onClearError={clearError} />
 
         {/* System Users Section */}
-      <div className="tui-panel mb-6">
-        <div className="tui-panel-header flex justify-between items-center">
+      <Panel className="mb-6">
+        <PanelHeader className="flex justify-between items-center">
           <span>System Users ({systemUsers.length})</span>
-          <button
+          <Button
             onClick={() => {
               setShowAddForm(!showAddForm);
               if (showAddForm) {
@@ -272,12 +286,14 @@ const Users: React.FC = () => {
                 setGeneratedKey('');
               }
             }}
-            className="text-tui-accent hover:text-tui-accent-hover text-sm"
+            variant={showAddForm ? "secondary" : "primary"}
+            size="sm"
           >
             {showAddForm ? 'CANCEL' : 'ADD USER'}
-          </button>
-        </div>
+          </Button>
+        </PanelHeader>
 
+        <PanelContent padding="none">
         {showAddForm && (
           <UserForm
             newUser={newUser}
@@ -298,13 +314,14 @@ const Users: React.FC = () => {
           onEditUser={handleEditUser}
           onDeleteUser={handleDeleteUser}
         />
-      </div>
+        </PanelContent>
+      </Panel>
 
       {/* API Keys Section */}
-      <div className="tui-panel">
-        <div className="tui-panel-header flex justify-between items-center">
+      <Panel>
+        <PanelHeader className="flex justify-between items-center">
           <span>API Keys ({apiUsers.length})</span>
-          <button
+          <Button
             onClick={() => {
               setShowCreateKey(!showCreateKey);
               if (showCreateKey) {
@@ -317,12 +334,14 @@ const Users: React.FC = () => {
                 setGeneratedKey('');
               }
             }}
-            className="text-tui-accent hover:text-tui-accent-hover text-sm"
+            variant={showCreateKey ? "secondary" : "primary"}
+            size="sm"
           >
             {showCreateKey ? 'CANCEL' : 'CREATE KEY'}
-          </button>
-        </div>
+          </Button>
+        </PanelHeader>
 
+        <PanelContent padding="none">
         {showCreateKey && (
           <UserApiKeyForm
             keyName={keyName}
@@ -348,7 +367,18 @@ const Users: React.FC = () => {
           onRetireUser={handleRetireUser}
           onDeleteUser={handleDeleteUser}
         />
-      </div>
+        </PanelContent>
+      </Panel>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        variant={confirmDialog.variant}
+      />
     </div>
     </AsyncErrorBoundary>
   )
