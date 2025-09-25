@@ -47,13 +47,16 @@ const UserTable: React.FC<SystemUsersTableProps> = ({
     {
       label: 'EDIT',
       variant: 'primary',
-      onClick: onEditUser
+      onClick: onEditUser,
+      hidden: (user: ApiUserDto) => true
+
     },
     {
       label: 'DELETE',
       variant: 'danger',
       onClick: onDeleteUser,
-      hidden: (user: ApiUserDto) => user.role === 'app-admin'
+      //      hidden: (user: ApiUserDto) => user.role === 'app-admin'
+      hidden: (user: ApiUserDto) => true
     }
   ], [onEditUser, onDeleteUser])
 

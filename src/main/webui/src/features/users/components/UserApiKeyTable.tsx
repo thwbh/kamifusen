@@ -43,7 +43,7 @@ const UserApiKeyTable: React.FC<ApiKeysTableProps> = ({
       key: 'expiresAt',
       header: 'Expires',
       accessor: 'expiresAt',
-      cell: (value: never) => {
+      cell: (value: any) => {
         if (!value) {
           return <span className="text-tui-muted">Never</span>;
         }
@@ -72,30 +72,30 @@ const UserApiKeyTable: React.FC<ApiKeysTableProps> = ({
   ], [])
 
   const actions = useMemo((): DataTableAction<ApiUserDto>[] => [
-      {
-        label: 'RENEW',
-        variant: 'primary',
-        onClick: onRenewUser,
-        hidden: (user: ApiUserDto) => !(user.expiresAt && new Date(user.expiresAt) <= new Date())
-      },
-      {
-        label: 'DELETE',
-        variant: 'danger',
-        onClick: onDeleteUser,
-        hidden: (user: ApiUserDto) => !(user.expiresAt && new Date(user.expiresAt) <= new Date())
-      },
-      {
-        label: 'EDIT',
-        variant: 'primary',
-        onClick: onEditApiKey,
-        hidden: (user: ApiUserDto) => user.expiresAt && new Date(user.expiresAt) <= new Date()
-      },
-      {
-        label: 'REVOKE',
-        variant: 'danger',
-        onClick: onRetireUser,
-        hidden: (user: ApiUserDto) => user.expiresAt && new Date(user.expiresAt) <= new Date()
-      }
+    {
+      label: 'RENEW',
+      variant: 'primary',
+      onClick: onRenewUser,
+      hidden: (user: ApiUserDto) => !user.expiresAt || new Date(user.expiresAt) > new Date()
+    },
+    {
+      label: 'DELETE',
+      variant: 'danger',
+      onClick: onDeleteUser,
+      hidden: (user: ApiUserDto) => !user.expiresAt || new Date(user.expiresAt) > new Date()
+    },
+    {
+      label: 'EDIT',
+      variant: 'primary',
+      onClick: onEditApiKey,
+      hidden: (user: ApiUserDto) => !!user.expiresAt && new Date(user.expiresAt) <= new Date()
+    },
+    {
+      label: 'REVOKE',
+      variant: 'danger',
+      onClick: onRetireUser,
+      hidden: (user: ApiUserDto) => !!user.expiresAt && new Date(user.expiresAt) <= new Date()
+    }
   ], [onEditApiKey, onRenewUser, onRetireUser, onDeleteUser])
 
   const config: DataTableConfig<ApiUserDto> = {

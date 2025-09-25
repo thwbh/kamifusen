@@ -30,8 +30,7 @@ const Stats: React.FC = () => {
   const maxVisits = Math.max(...visitData.map(d => d.value))
 
   // Map categories to CSS classes
-  const getCategoryColor = (category: string): string => {
-    console.log(`category=${category}`);
+  const getCategoryColor = (category: string | undefined): string => {
     let color = '';
 
     switch (category) {

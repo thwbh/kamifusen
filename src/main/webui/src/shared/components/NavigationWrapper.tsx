@@ -1,5 +1,4 @@
 import React from 'react';
-import { Dashboard } from '../../features/dashboard';
 import { Pages } from '../../features/pages';
 import { Stats } from '../../features/stats';
 import { Users } from '../../features/users';
@@ -22,7 +21,8 @@ const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
       case 'users':
         return <Users />;
       default:
-        return <Dashboard onSignOut={onSignOut} />;
+        return <Stats />;
+      //        return <Dashboard onSignOut={onSignOut} />;
     }
   };
 

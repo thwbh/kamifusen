@@ -1,12 +1,12 @@
-import React, {useState, useRef, useEffect, useCallback} from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { ApiUserDto } from '../../../api'
 import { useUsers } from '../hooks'
 import { SortingState } from '@tanstack/react-table'
 import UserTable from './UserTable'
 import UserApiKeyTable from './UserApiKeyTable'
 import UserForm from './UserForm'
-import UserApiKeyForm from './UserApiKeyForm'
 import { ErrorDisplay, AsyncErrorBoundary, Panel, PanelHeader, PanelContent, Button, ConfirmDialog } from 'crt-dojo'
+import UserApiKeyForm from './UserApiKeyForm'
 
 const Users: React.FC = () => {
   // Hook state
@@ -46,7 +46,7 @@ const Users: React.FC = () => {
     message: string
     onConfirm: () => void
     variant?: 'danger' | 'warning' | 'info'
-  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => { } })
 
   const errorRef = useRef<HTMLDivElement>(null)
 
@@ -58,9 +58,6 @@ const Users: React.FC = () => {
       })
     }
   }
-
-
-
 
   useEffect(() => {
     if (error) {
@@ -155,7 +152,7 @@ const Users: React.FC = () => {
       variant: 'warning',
       onConfirm: async () => {
         try {
-          await retireApiKey(user.id);
+          await retireApiKey(user.id!);
         } catch (err) {
           console.error('Error retiring user:', err);
         }
@@ -212,10 +209,6 @@ const Users: React.FC = () => {
   }, [])
 
   const handleDeleteUser = useCallback(async (user: ApiUserDto) => {
-    if (!user.id) {
-      return;
-    }
-
     setConfirmDialog({
       isOpen: true,
       title: 'Delete User',
@@ -223,7 +216,8 @@ const Users: React.FC = () => {
       variant: 'danger',
       onConfirm: async () => {
         try {
-          await deleteUser(user.id);
+          await deleteUser(user.id!);
+
         } catch (err) {
           console.error('Error deleting user:', err);
         }
@@ -270,116 +264,116 @@ const Users: React.FC = () => {
         <ErrorDisplay ref={errorRef} error={error} onClearError={clearError} />
 
         {/* System Users Section */}
-      <Panel className="mb-6">
-        <PanelHeader className="flex justify-between items-center">
-          <span>System Users ({systemUsers.length})</span>
-          <Button
-            onClick={() => {
-              setShowAddForm(!showAddForm);
-              if (showAddForm) {
-                // Reset all state when closing
-                setIsRenewalMode(false);
-                setIsEditMode(false);
-                setEditingUser(null);
-                setIsApiKeyCreation(false);
-                setNewUser({ username: '', expiresAt: '', password: '' });
-                setGeneratedKey('');
-              }
-            }}
-            variant={showAddForm ? "secondary" : "primary"}
-            size="sm"
-          >
-            {showAddForm ? 'CANCEL' : 'ADD USER'}
-          </Button>
-        </PanelHeader>
+        <Panel className="mb-6">
+          <PanelHeader className="flex justify-between items-center">
+            <span>System Users ({systemUsers.length})</span>
+            { /* <Button
+              onClick={() => {
+                setShowAddForm(!showAddForm);
+                if (showAddForm) {
+                  // Reset all state when closing
+                  setIsRenewalMode(false);
+                  setIsEditMode(false);
+                  setEditingUser(null);
+                  setIsApiKeyCreation(false);
+                  setNewUser({ username: '', expiresAt: '', password: '' });
+                  setGeneratedKey('');
+                }
+              }}
+              variant={showAddForm ? "secondary" : "primary"}
+              size="sm"
+            >
+              {showAddForm ? 'CANCEL' : 'ADD USER'}
+            </Button>*/ }
+          </PanelHeader>
 
-        <PanelContent padding="none">
-        {showAddForm && (
-          <UserForm
-            newUser={newUser}
-            onUserChange={setNewUser}
-            onSubmit={handleAddUser}
-            isEditMode={isEditMode}
-            isRenewalMode={isRenewalMode}
-            editingUser={editingUser}
-            generatedKey={generatedKey}
-            onGeneratedKeyDismiss={handleUserFormDismiss}
-            onCopyToClipboard={copyToClipboard}
-          />
-        )}
-        <UserTable
-          users={systemUsers}
-          sorting={sorting}
-          onSortingChange={setSorting}
-          onEditUser={handleEditUser}
-          onDeleteUser={handleDeleteUser}
+          <PanelContent padding="none">
+            {showAddForm && (
+              <UserForm
+                newUser={newUser}
+                onUserChange={setNewUser}
+                onSubmit={handleAddUser}
+                isEditMode={isEditMode}
+                isRenewalMode={isRenewalMode}
+                editingUser={editingUser}
+                generatedKey={generatedKey}
+                onGeneratedKeyDismiss={handleUserFormDismiss}
+                onCopyToClipboard={copyToClipboard}
+              />
+            )}
+            <UserTable
+              users={systemUsers}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              onEditUser={handleEditUser}
+              onDeleteUser={handleDeleteUser}
+            />
+          </PanelContent>
+        </Panel>
+
+        {/* API Keys Section */}
+        <Panel>
+          <PanelHeader className="flex justify-between items-center">
+            <span>API Keys ({apiUsers.length})</span>
+            <Button
+              onClick={() => {
+                setShowCreateKey(!showCreateKey);
+                if (showCreateKey) {
+                  // Reset all state when closing
+                  setIsEditingKey(false);
+                  setIsRenewalMode(false);
+                  setEditingApiKey(null);
+                  setKeyName('');
+                  setKeyExpiresAt('');
+                  setGeneratedKey('');
+                }
+              }}
+              variant={showCreateKey ? "secondary" : "primary"}
+              size="sm"
+            >
+              {showCreateKey ? 'CANCEL' : 'CREATE KEY'}
+            </Button>
+          </PanelHeader>
+
+          <PanelContent padding="none">
+            {showCreateKey && (
+              <UserApiKeyForm
+                keyName={keyName}
+                keyExpiresAt={keyExpiresAt}
+                onKeyNameChange={setKeyName}
+                onKeyExpiresAtChange={setKeyExpiresAt}
+                onSubmit={handleCreateApiKey}
+                isEditingKey={isEditingKey}
+                isRenewalMode={isRenewalMode}
+                editingApiKey={editingApiKey}
+                generatedKey={generatedKey}
+                onGeneratedKeyDismiss={handleApiKeyFormDismiss}
+                onCopyToClipboard={copyToClipboard}
+              />
+            )}
+
+            <UserApiKeyTable
+              users={apiUsers}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              onEditApiKey={handleEditApiKey}
+              onRenewUser={handleRenewUser}
+              onRetireUser={handleRetireUser}
+              onDeleteUser={handleDeleteUser}
+            />
+          </PanelContent>
+        </Panel>
+
+        {/* Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          variant={confirmDialog.variant}
         />
-        </PanelContent>
-      </Panel>
-
-      {/* API Keys Section */}
-      <Panel>
-        <PanelHeader className="flex justify-between items-center">
-          <span>API Keys ({apiUsers.length})</span>
-          <Button
-            onClick={() => {
-              setShowCreateKey(!showCreateKey);
-              if (showCreateKey) {
-                // Reset all state when closing
-                setIsEditingKey(false);
-                setIsRenewalMode(false);
-                setEditingApiKey(null);
-                setKeyName('');
-                setKeyExpiresAt('');
-                setGeneratedKey('');
-              }
-            }}
-            variant={showCreateKey ? "secondary" : "primary"}
-            size="sm"
-          >
-            {showCreateKey ? 'CANCEL' : 'CREATE KEY'}
-          </Button>
-        </PanelHeader>
-
-        <PanelContent padding="none">
-        {showCreateKey && (
-          <UserApiKeyForm
-            keyName={keyName}
-            keyExpiresAt={keyExpiresAt}
-            onKeyNameChange={setKeyName}
-            onKeyExpiresAtChange={setKeyExpiresAt}
-            onSubmit={handleCreateApiKey}
-            isEditingKey={isEditingKey}
-            isRenewalMode={isRenewalMode}
-            editingApiKey={editingApiKey}
-            generatedKey={generatedKey}
-            onGeneratedKeyDismiss={handleApiKeyFormDismiss}
-            onCopyToClipboard={copyToClipboard}
-          />
-        )}
-
-        <UserApiKeyTable
-          users={apiUsers}
-          sorting={sorting}
-          onSortingChange={setSorting}
-          onEditApiKey={handleEditApiKey}
-          onRenewUser={handleRenewUser}
-          onRetireUser={handleRetireUser}
-          onDeleteUser={handleDeleteUser}
-        />
-        </PanelContent>
-      </Panel>
-
-      {/* Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={confirmDialog.isOpen}
-        onConfirm={confirmDialog.onConfirm}
-        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
-        title={confirmDialog.title}
-        message={confirmDialog.message}
-        variant={confirmDialog.variant}
-      />
-    </div>
+      </div>
     </AsyncErrorBoundary>
   )
 }
