@@ -8,103 +8,189 @@
 
 # kamifusen
 
-> A simple page hit counter written in kotlin.
+> A privacy-focused page hit counter with analytics dashboard
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Kamifusen is a simple yet powerful page hit counter written in Kotlin using the Quarkus framework. It tracks page visits by hashing user agent information to ensure unique visit counting while maintaining user privacy. Features include API key management, analytics dashboard, and session tracking.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Features
 
-## First time setup
-For development, a default user with username/password `admin` exists. You will be prompted to change your
-password after your first login. For production, access the database and execute the given `insert.sql` in
-`src/main/resources`.
+- **Privacy-focused**: Hashes user agent info instead of storing personal data
+- **Unique visit tracking**: Ensures each visitor is counted only once per page
+- **Analytics dashboard**: Real-time statistics and visit trends
+- **API key management**: Secure access control for multiple domains
+- **Session tracking**: Advanced visitor journey analytics
+- **Modern UI**: Terminal-style admin interface built with React
+- **Scalable**: Built on Quarkus for cloud-native deployment
 
-## API Key creation
-Issue a new API Key on: http://localhost:8080/users
+## Quick Start
 
-The new Key will be visible only once. Copy and distribute it according to your needs. Do not use the same API Key across
-multiple domains (or do, it's not like I can stop you).
+### Prerequisites
 
-## Registering pages
-You need to add some JavaScript to your page if you want the hit counter to work. Use this snippet provided:
+- Java 17+
+- PostgreSQL 15+
+- Node.js 22+ (for UI development)
+
+### Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/tohuwabohu-io/kamifusen.git
+   cd kamifusen
+   ```
+
+2. **Set up PostgreSQL database**
+   ```bash
+   # Create database and user
+   createdb dev
+   psql -d dev -c "CREATE USER kamifusen WITH PASSWORD 'kamifusen';"
+   psql -d dev -c "GRANT ALL PRIVILEGES ON DATABASE dev TO kamifusen;"
+   ```
+
+3. **Configure environment (optional)**
+
+   The application uses sensible defaults for development. You can override any configuration by setting environment variables or modifying `application.properties`:
+
+   ```bash
+   # Database (defaults shown)
+   export QUARKUS_DATASOURCE_USERNAME=kamifusen
+   export QUARKUS_DATASOURCE_PASSWORD=kamifusen
+   export QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://localhost:5432/dev
+
+   # Auth (required for production)
+   export QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY=your-32-char-encryption-key
+
+   # CORS (optional)
+   export QUARKUS_HTTP_CORS=true
+   export QUARKUS_HTTP_CORS_ORIGINS=http://localhost:3000,https://yourdomain.com
+   ```
+
+4. **Run in development mode**
+   ```bash
+   ./gradlew quarkusDev
+   ```
+
+   This starts:
+   - Backend server on http://localhost:8080
+   - React dev server on http://localhost:3000 (proxy to backend)
+   - Database migration (creates tables automatically)
+   - Live reload for both backend and frontend
+
+5. **First login**
+   - Navigate to http://localhost:8080
+   - Login with username: `admin`, password: `admin`
+   - You'll be prompted to change the password on first login
+
+### Production Configuration
+
+Required environment variables for production:
+
+```bash
+# Database
+QUARKUS_DATASOURCE_USERNAME=your_db_user
+QUARKUS_DATASOURCE_PASSWORD=your_db_password
+QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://your_host:5432/your_db
+
+# Security
+QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY=your-32-character-encryption-key
+
+# CORS (if serving from different domains)
+QUARKUS_HTTP_CORS=true
+QUARKUS_HTTP_CORS_ORIGINS=https://yourdomain.com
+```
+
+## API Usage
+
+### Create API Key
+
+1. Access the admin interface at your server URL
+2. Navigate to "User Management"
+3. Click "CREATE KEY" in the API Keys section
+4. Copy the generated key (shown only once)
+
+### Track Page Hits
+
+Add this JavaScript to your pages:
 
 ```html
-<script language="JavaScript">
-    document.addEventListener('DOMContentLoaded', function () {
+<script>
+document.addEventListener('DOMContentLoaded', function () {
     const url = new URL(window.location.href);
 
-    fetch('http://localhost:8080/public/visits/hit', {
+    fetch('https://your-server.com/public/visits/hit', {
         method: 'POST',
         headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Basic <API-KEY>'
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic YOUR_API_KEY_HERE'
         },
         body: JSON.stringify({
             path: url.pathname,
             domain: url.hostname
         })
     });
-})
+});
 </script>
 ```
 
-## Running the application in dev mode
+### Get Visit Count
 
-You can run your application in dev mode that enables live coding using:
-
-```shell script
-./gradlew quarkusDev
+```bash
+curl -H "Authorization: Basic YOUR_API_KEY" \
+     "https://your-server.com/public/visits/count/{pageId}"
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+Replace `{pageId}` with the UUID of the page you want to get visit counts for. Page IDs are available through the admin interface or by tracking the response from the hit endpoint.
 
-## Packaging and running the application
+## Building for Production
 
-The application can be packaged using:
-
-```shell script
+### Standard JAR
+```bash
 ./gradlew build
+java -jar build/quarkus-app/quarkus-run.jar
 ```
 
-It produces the `quarkus-run.jar` file in the `build/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `build/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar build/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./gradlew build -Dquarkus.package.jar.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar build/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
+### Native Executable
+```bash
 ./gradlew build -Dquarkus.native.enabled=true
+./build/*-runner
 ```
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./gradlew build -Dquarkus.native.enabled=true -Dquarkus.native.container-build=true
+### Docker
+```bash
+docker build -f src/main/docker/Dockerfile.jvm -t kamifusen:jvm .
+docker run -p 8080:8080 kamifusen:jvm
 ```
 
-You can then execute your native executable with: `./build/kamifusen-0.0.1-runner`
+## Architecture
 
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/gradle-tooling>.
+- **Backend**: Kotlin + Quarkus + PostgreSQL
+- **Frontend**: React + TypeScript + Tailwind CSS
+- **Build**: Gradle + Quinoa (integrates npm builds)
+- **Database**: Flyway migrations
+- **Auth**: Form-based authentication with secure sessions
+- **Deployment**: Docker + GraalVM native compilation support
 
-## Related Guides
+## Development
 
-- Kotlin ([guide](https://quarkus.io/guides/kotlin)): Write your services in Kotlin
+### UI Development
+```bash
+cd src/main/webui
+npm run dev  # Separate dev server
+```
 
-## Provided Code
+### Generate API Client
+```bash
+./gradlew regenerateClient  # Updates TypeScript API client
+```
 
-### REST
+### Testing
+```bash
+./gradlew test              # Backend tests
+cd src/main/webui && npm test  # Frontend tests
+```
 
-Easily start your REST Web Services
+## Learn More
 
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+- [Quarkus Framework](https://quarkus.io/)
+- [Database Schema](src/main/resources/db/migration/)
+- [API Documentation](spec/openapi.yaml)
+
