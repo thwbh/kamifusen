@@ -1,10 +1,6 @@
 -- Populate development data with realistic timestamps
 -- This migration adds test data with varied timestamps for development and testing
 
--- Insert admin user
-INSERT INTO api_user (id, username, role, password)
-VALUES (gen_random_uuid(), 'admin', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW');
-
 -- Insert API keys for testing
 INSERT INTO api_user (id, username, role, password, expires_at) VALUES
     ('9f685bd0-90e6-479a-99b6-3fad28d2a001', 'api-key-user', 'api-user', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW', NOW() + INTERVAL '1 year'),
