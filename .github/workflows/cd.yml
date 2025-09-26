@@ -43,15 +43,15 @@ jobs:
       - name: Build kamifusen native-micro image
         run: |
           docker build -f src/main/docker/Dockerfile.native-micro \
-          -t ghcr.io/tohuwabohu-io/kamifusen:${{ steps.semver.outputs.semantic-version }} .
+          -t ghcr.io/thbwh/kamifusen:${{ steps.semver.outputs.semantic-version }} .
 
       - name: Push kamifusen jvm native-micro image to ghcr
-        run: docker push ghcr.io/tohuwabohu-io/kamifusen:${{ steps.semver.outputs.semantic-version }}
+        run: docker push ghcr.io/thbwh/kamifusen:${{ steps.semver.outputs.semantic-version }}
 
       - name: Deploy kamifusen
         run: |
           flyctl deploy -a kamifusen -i \
-          ghcr.io/tohuwabohu-io/kamifusen:${{ steps.semver.outputs.semantic-version }} \
+          ghcr.io/thbwh/kamifusen:${{ steps.semver.outputs.semantic-version }} \
           --image-label ${{ steps.semver.outputs.semantic-version }} --local-only --no-cache \
           && flyctl secrets set -a kamifusen --detach \
           QUARKUS_APPLICATION_VERSION=${{ steps.semver.outputs.semantic-version }} \
