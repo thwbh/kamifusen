@@ -173,3 +173,8 @@ tasks.register("generateReactEnv") {
 tasks.named("quarkusBuild") {
     dependsOn("generateReactEnv")
 }
+
+// Ensure .env is generated before any build process starts
+tasks.named("processResources") {
+    dependsOn("generateReactEnv")
+}
