@@ -4,7 +4,7 @@
 
 ---
 
-![GitHub Release](https://img.shields.io/github/v/release/tohuwabohu-io/kamifusen) ![Coverage](https://raw.githubusercontent.com/tohuwabohu-io/kamifusen/badges/jacoco.svg)
+![GitHub Release](https://img.shields.io/github/v/release/thwbh/kamifusen) ![Coverage](https://raw.githubusercontent.com/thwbh/kamifusen/badges/jacoco.svg)
 
 # kamifusen
 
@@ -24,7 +24,7 @@ Kamifusen is a simple yet powerful page hit counter written in Kotlin using the 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/tohuwabohu-io/kamifusen.git
+   git clone https://github.com/thwbh/kamifusen.git
    cd kamifusen
    ```
 
