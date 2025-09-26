@@ -1,0 +1,39 @@
+/**
+* {{description}}{{^description}}{{classname}}{{/description}}
+*
+{{#vars}} * @param {{name}} {{description}}{{^description}}{{name}}{{/description}}
+{{/vars}} */
+{{#jackson}}
+    {{#jsonPropertyOrder}}
+        @JsonPropertyOrder({{#vars}}"{{baseName}}"{{^-last}}, {{/-last}}{{/vars}})
+    {{/jsonPropertyOrder}}
+    @JsonTypeName("{{name}}")
+{{/jackson}}
+data class {{classname}}(
+{{#vars}}
+    {{#useBeanValidation}}{{>beanValidation}}
+    {{/useBeanValidation}}@field:JsonProperty("{{baseName}}")
+    val {{{name}}}: {{{dataType}}}{{#hasDefaultValue}} = {{{defaultValue}}}{{/hasDefaultValue}}{{^required}}?{{/required}}{{^-last}},{{/-last}}
+{{/vars}}
+){{#parent}} : {{parent}}(){{/parent}} {
+{{#additionalPropertiesType}}
+
+    @JsonProperty("additionalProperties")
+    var additionalProperties: Map<String, {{additionalPropertiesType}}>? = null
+{{/additionalPropertiesType}}
+{{#hasEnums}}
+    {{#vars}}
+        {{#isEnum}}
+
+            /**
+            * {{description}}{{^description}}Values: {{#allowableValues}}{{#enumValues}}{{#values}}{{.}}{{^-last}},{{/-last}}{{/values}}{{/enumValues}}{{/allowableValues}}{{/description}}
+            */
+            enum class {{enumName}}(val value: {{dataType}}) {
+            {{#allowableValues}}{{#enumValues}}
+                {{#values}}@JsonProperty("{{.}}") {{name}}({{#isString}}"{{.}}"{{/isString}}{{^isString}}{{.}}{{/isString}}){{^-last}},{{/-last}}
+                {{/values}}{{/enumValues}}{{/allowableValues}}
+            }
+        {{/isEnum}}
+    {{/vars}}
+{{/hasEnums}}
+}

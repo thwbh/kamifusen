@@ -1,132 +1,60 @@
 package io.tohuwabohu.kamifusen
 
+import io.quarkus.hibernate.reactive.panache.common.WithSession
 import io.quarkus.logging.Log
+import io.quarkus.security.identity.SecurityIdentity
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.ApiUser
-import io.tohuwabohu.kamifusen.crud.ApiUserRepository
-import io.tohuwabohu.kamifusen.crud.PageRepository
-import io.tohuwabohu.kamifusen.crud.dto.PageVisitDtoRepository
-import io.tohuwabohu.kamifusen.crud.security.*
-import io.tohuwabohu.kamifusen.ssr.*
-import io.tohuwabohu.kamifusen.ssr.response.recoverWithHtmxResponse
-import io.vertx.ext.web.RoutingContext
+import io.tohuwabohu.kamifusen.api.generated.AppAdminResourceApi
+import io.tohuwabohu.kamifusen.error.recoverWithResponse
+import io.tohuwabohu.kamifusen.service.PageStatsService
+import io.tohuwabohu.kamifusen.service.StatsService
+import io.tohuwabohu.kamifusen.service.crud.ApiUser
+import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
+import io.tohuwabohu.kamifusen.service.crud.BlacklistRepository
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.validator.UserValidation
+import io.tohuwabohu.kamifusen.service.validator.validatePassword
+import io.tohuwabohu.kamifusen.service.validator.validateUser
+import jakarta.annotation.PostConstruct
 import jakarta.annotation.security.RolesAllowed
-import jakarta.ws.rs.*
-import jakarta.ws.rs.core.*
-import org.eclipse.microprofile.config.inject.ConfigProperty
-import java.time.Instant
+import jakarta.inject.Inject
+import jakarta.ws.rs.core.Response
+import java.net.URI
 import java.time.LocalDateTime
 import java.util.*
 
-
-@Path("/")
 class AppAdminResource(
-    private val apiUserRepository: ApiUserRepository,
-    private val pageVisitDtoRepository: PageVisitDtoRepository,
-    private val pageRepository: PageRepository
-) {
-    @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
-    lateinit var cookieName: String
+    private var apiUserRepository: ApiUserRepository,
+    private var pageStatsService: PageStatsService,
+    private var pageRepository: PageRepository,
+    private var statsService: StatsService,
+    private var blacklistRepository: BlacklistRepository
+) : AppAdminResourceApi {
 
-    @Path("/fragment/register")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_HTML)
+    @Inject
+    private lateinit var securityIdentity: SecurityIdentity
+
     @RolesAllowed("app-admin")
-    fun registerAdmin(
-        @FormParam("password") password: String,
-        @FormParam("password-confirm") passwordConfirm: String
-    ): Uni<Response> =
-        validatePassword(password, passwordConfirm).flatMap { result ->
-            if (result == PasswordValidation.VALID) {
-                apiUserRepository.setAdminPassword(password)
-                    .map { Response.ok(renderPasswordFlow(result)).build() }
-            } else {
-                Uni.createFrom().item(Response.ok(renderPasswordFlow(result)).build())
-            }
-        }.onFailure().invoke { e -> Log.error("Error during admin password update.", e) }
-            .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
+    override fun adminLanding(): Uni<Response> {
+        val username = securityIdentity.principal.name
+        Log.info("Landing page accessed by user: $username")
+        Log.info("Security identity attributes in landing: ${securityIdentity.attributes}")
 
-    @Path("/logout")
-    @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    fun logoutAdmin(@Context routingContext: RoutingContext): Uni<Response> =
-        Uni.createFrom().item(
-            Response.status(Response.Status.FOUND)
-                .cookie(
-                    NewCookie.Builder(cookieName)
-                        .maxAge(0)
-                        .expiry(Date.from(Instant.EPOCH))
-                        .path("/")
-                        .build()
-                )
-                .header("Location", "/index.html")
-                .build()
-        )
+        // Since attributes are lost, check if user still has default credentials
+        return apiUserRepository.findByUsernameAndPassword(username, "admin")
+            .map { _ ->
+                Log.info("Redirecting to password change page")
+                Response.seeOther(URI.create("/?page=change-password")).build()
+            }.onFailure().recoverWithItem(Response.seeOther(URI.create("/?page=dashboard")).build())
 
-    @Path("/dashboard")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_HTML)
+    }
+
+    @WithSession
     @RolesAllowed("app-admin")
-    fun renderAdminDashboard(@Context securityContext: SecurityContext): Uni<Response> =
-        apiUserRepository.findByUsername(securityContext.userPrincipal.name).map { adminUser ->
-            Response.ok(renderAdminPage("Dashboard", isFirstTimeSetup = adminUser!!.updated == null) {
-                dashboard(adminUser)
-            }).build()
-        }.onFailure().invoke { e -> Log.error("Error during dashboard rendering.", e) }
-            .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
-
-    @Path("/stats")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_HTML)
-    @RolesAllowed("app-admin")
-    fun renderVisits(): Uni<Response> =
-        pageVisitDtoRepository.getAllPageVisits()
-            .flatMap {
-                Uni.createFrom().item(Response.ok(renderAdminPage("Stats") {
-                    stats(it)
-                }).build())
-            }
-            .onFailure().invoke { e -> Log.error("Error during stats rendering.", e) }
-            .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
-
-    @Path("/pages")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_HTML)
-    @RolesAllowed("app-admin")
-    fun renderPageList(): Uni<Response> =
-        pageRepository.listAllPages().flatMap {
-            Uni.createFrom().item(Response.ok(renderAdminPage("Pages") {
-                pages(it)
-            }).build())
-        }.onFailure().invoke { e -> Log.error("Error during pages rendering.", e) }
-            .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
-
-    @Path("/users")
-    @GET
-    @Consumes(MediaType.TEXT_PLAIN)
-    @Produces(MediaType.TEXT_HTML)
-    @RolesAllowed("app-admin")
-    fun renderUserList(): Uni<Response> =
-        apiUserRepository.listAll().flatMap {
-            Uni.createFrom().item(Response.ok(renderAdminPage("Users") {
-                users(it)
-            }).build())
-        }.onFailure().invoke { e -> Log.error("Error during user list rendering.", e) }
-            .onFailure().recoverWithHtmxResponse(Response.Status.INTERNAL_SERVER_ERROR)
-
-    @Path("/fragment/keygen")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
-    @RolesAllowed("app-admin")
-    fun renderNewApiKey(
-        @FormParam("username") username: String,
-        @FormParam("role") role: String,
-        @FormParam("expiresAt") expiresAt: String
+    override fun generateApiKey(
+        username: String,
+        role: String,
+        expiresAt: String
     ): Uni<Response> =
         validateUser(username, apiUserRepository).flatMap { result ->
             if (result == UserValidation.VALID) {
@@ -139,51 +67,197 @@ class AppAdminResource(
                             else -> LocalDateTime.parse(expiresAt)
                         },
                     )
-                ).map { keyRaw -> Response.ok(renderCreatedApiKey(keyRaw)).build() }
+                ).map { keyRaw -> Response.ok(keyRaw).build() }
             } else {
-                Uni.createFrom().item(Response
-                    .ok(renderUsernameValidationError(result))
-                    .header("hx-retarget", "#username")
-                    .build())
+                Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST).entity("User validation failed: $result").build()
+                )
             }
         }.onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 
-    @Path("/fragment/retire/{userId}")
-    @POST
-    @Produces(MediaType.TEXT_HTML)
+    @WithSession
     @RolesAllowed("app-admin")
-    fun retireApiKey(userId: UUID): Uni<Response> =
-        apiUserRepository.expireUser(userId).onItem()
-            .transform { Response.ok().header("hx-redirect", "/users").build() }
-            .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
-            .onFailure().recoverWithItem(Response.serverError().build())
+    override fun getStats(timeRange: String?): Uni<Response> =
+        statsService.getAggregatedStats(timeRange ?: "7d")
+            .map { stats -> Response.ok(stats).build() }
+            .onFailure().invoke { e -> Log.error("Error receiving aggregated stats.", e) }
+            .onFailure().recoverWithResponse()
 
-    @Path("/fragment/pageadd")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
+    @WithSession
     @RolesAllowed("app-admin")
-    fun registerNewPage(@FormParam("path") path: String, @FormParam("domain") domain: String): Uni<Response> =
-        validatePage(path, domain, pageRepository).flatMap { result ->
-            if (result == PageValidation.VALID) {
-                pageRepository.addPage(path, domain).map { Response.ok().header("hx-redirect", "/pages").build() }
-            } else {
-                Uni.createFrom().item(Response
-                    .ok(renderPageValidationError(result))
-                    .header("hx-retarget", "#path")
-                    .build())
+    override fun getVisits(): Uni<Response> =
+        pageStatsService.getAllPageVisits()
+            .flatMap {
+                Uni.createFrom().item(Response.ok(it).build())
             }
-        }.onFailure().invoke { e -> Log.error("Error during page registration.", e) }
-            .onFailure().recoverWithItem(Response.serverError().build())
+            .onFailure().invoke { e -> Log.error("Error receiving visits.", e) }
+            .onFailure().recoverWithResponse()
 
-    @Path("/fragment/pagedel/{pageId}")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.TEXT_PLAIN)
+    @WithSession
     @RolesAllowed("app-admin")
-    fun unregisterPage(pageId: UUID): Uni<Response> =
-        pageRepository.deletePage(pageId).map { Response.ok().header("hx-redirect", "/pages").build() }
-            .onFailure().invoke { e -> Log.error("Error during page registration.", e) }
-            .onFailure().recoverWithItem(Response.serverError().build())
+    override fun listPages(): Uni<Response> =
+        pageStatsService.getNonBlacklistedPagesWithStats().flatMap {
+            Uni.createFrom().item(Response.ok(it).build())
+        }.onFailure().invoke { e -> Log.error("Error receiving pages.", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun listBlacklistedPages(domain: String?): Uni<Response> =
+        if (domain != null) {
+            pageStatsService.getBlacklistedPagesByDomainWithStats(domain)
+        } else {
+            pageStatsService.getBlacklistedPagesWithStats()
+        }.flatMap {
+            Uni.createFrom().item(Response.ok(it).build())
+        }.onFailure().invoke { e -> Log.error("Error receiving blacklisted pages.", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun restorePage(pageId: UUID): Uni<Response> =
+        blacklistRepository.removePageFromBlacklist(pageId).map { Response.ok().build() }
+            .onFailure().invoke { e -> Log.error("Error during page restoration.", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun listUsers(): Uni<Response> =
+        apiUserRepository.listAll().flatMap { users ->
+            Uni.createFrom().item(Response.ok(users).build())
+        }.onFailure().invoke { e -> Log.error("Error receiving users.", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun retireApiKey(userId: UUID): Uni<Response> =
+        apiUserRepository.expireUser(userId).onItem()
+            .transform { Response.ok().build() }
+            .onFailure().invoke { e -> Log.error("Error during key retirement", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun renewApiKey(
+        userId: UUID,
+        expiresAt: String?
+    ): Uni<Response> =
+        apiUserRepository.renewUser(
+            userId,
+            if (expiresAt.isNullOrBlank()) null else LocalDateTime.parse(expiresAt)
+        ).map { keyRaw -> Response.ok(keyRaw).build() }
+            .onFailure().invoke { e -> Log.error("Error during key renewal", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun updateUser(
+        userId: UUID,
+        username: String,
+        expiresAt: String?
+    ): Uni<Response> {
+        return validateUser(username, apiUserRepository).flatMap { userValidation ->
+            if (!userValidation.valid) {
+                Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(userValidation.message ?: "Username validation failed")
+                        .build()
+                )
+            } else {
+                val parsedExpiresAt = if (expiresAt.isNullOrBlank()) null else LocalDateTime.parse(expiresAt)
+                apiUserRepository.updateUser(userId, username, parsedExpiresAt)
+                    .onItem().transform { Response.ok().build() }
+                    .onFailure().invoke { e -> Log.error("Error updating user $userId", e) }
+                    .onFailure().recoverWithResponse()
+            }
+        }
+    }
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun updateUserPassword(
+        userId: UUID,
+        username: String,
+        password: String?
+    ): Uni<Response> {
+        return validateUser(username, apiUserRepository).flatMap { userValidation ->
+            if (!userValidation.valid) {
+                Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(userValidation.message ?: "Username validation failed")
+                        .build()
+                )
+            } else {
+                apiUserRepository.updateUserWithPassword(userId, username, password)
+                    .onItem().transform { Response.ok().build() }
+                    .onFailure().invoke { e -> Log.error("Error updating user password $userId", e) }
+                    .onFailure().recoverWithResponse()
+            }
+        }
+    }
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun deleteUser(userId: UUID): Uni<Response> =
+        apiUserRepository.deleteUser(userId)
+            .onItem().transform { deleted ->
+                if (deleted) {
+                    Response.ok().build()
+                } else {
+                    Response.status(Response.Status.NOT_FOUND).build()
+                }
+            }
+            .onFailure().invoke { e -> Log.error("Error deleting user $userId", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun unregisterPage(pageId: UUID): Uni<Response> =
+        pageRepository.deletePage(pageId, blacklistRepository).map { Response.ok().build() }
+            .onFailure().invoke { e -> Log.error("Error during page blacklisting.", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun updateAdmin(
+        newUsername: String,
+        newPassword: String,
+        newPasswordConfirmation: String
+    ): Uni<Response> {
+        // Validate required parameters
+        return validatePassword(newPassword, newPasswordConfirmation).flatMap { passwordValidation ->
+            if (!passwordValidation.valid) {
+                Uni.createFrom().item(
+                    Response.status(Response.Status.BAD_REQUEST)
+                        .entity(passwordValidation.message ?: "Password validation failed")
+                        .build()
+                )
+            } else {
+                // Only validate newUsername if it's different from oldUsername (for username changes)
+                if (newUsername != securityIdentity.principal.name) {
+                    validateUser(newUsername, apiUserRepository).flatMap { userValidation ->
+                        if (!userValidation.valid) {
+                            Uni.createFrom().item(
+                                Response.status(Response.Status.BAD_REQUEST)
+                                    .entity(userValidation.message ?: "Username validation failed")
+                                    .build()
+                            )
+                        } else {
+                            apiUserRepository.updateAdmin(securityIdentity.principal.name, newUsername, newPassword)
+                                .flatMap { user ->
+                                    Uni.createFrom().item(Response.ok(user).build())
+                                }
+                        }
+                    }
+                } else {
+                    apiUserRepository.updateAdmin(securityIdentity.principal.name, newUsername, newPassword)
+                        .flatMap { user ->
+                            Uni.createFrom().item(Response.ok(user).build())
+                        }
+                }
+            }
+        }.onFailure().invoke { e -> Log.error("Error updating admin password.", e) }
+            .onFailure().recoverWithResponse()
+    }
 }

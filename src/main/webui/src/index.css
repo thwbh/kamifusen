@@ -1,0 +1,189 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/JetBrainsMono-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Colors - based on terminal/TUI aesthetics */
+  --tui-dark: #1a1a1a;
+  --tui-darker: #0f0f0f;
+  --tui-light: #e0e0e0;
+  --tui-accent: #ff8c00; /* Orange accent from screenshots */
+  --tui-accent-hover: #ff7700;
+  --tui-close-accent: #ffff00; /* Yellow for close button */
+  --tui-red: #ff4444; /* Red decorative lines */
+  --tui-green: #00ff88;
+  --tui-yellow: #ffff00;
+  --tui-border: #333333;
+  --tui-muted: #888888;
+
+  /* Typography - Terminal fonts */
+  --tui-font:
+    "JetBrains Mono", "Cascadia Code", "Iosevka", "Hack", "Source Code Pro",
+    "SF Mono", "Monaco", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--tui-font);
+  background: var(--tui-dark);
+  color: var(--tui-light);
+  overflow-x: hidden;
+}
+
+#root {
+  height: 100vh;
+  position: relative;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--tui-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tui-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tui-muted);
+}
+
+/* Focus styles for keyboard navigation */
+.tui-focus:focus {
+  outline: 2px solid var(--tui-accent);
+  outline-offset: 2px;
+}
+
+/* Global focus color override */
+*:focus {
+  outline-color: var(--tui-accent) !important;
+  outline: 1px solid var(--tui-accent);
+}
+
+/* Button styles */
+.tui-button {
+  @apply px-4 py-2 border border-tui-accent text-tui-accent bg-tui-darker transition-all duration-200 font-mono rounded-md;
+  background-color: rgba(255, 140, 0, 0.3);
+}
+
+.tui-button:hover,
+.tui-button:focus {
+  @apply bg-tui-accent text-tui-dark;
+}
+
+/* Close button styles */
+.tui-close-button {
+  @apply w-8 h-8 text-lg font-mono border border-tui-yellow text-white bg-tui-darker transition-all duration-200 flex items-center justify-center rounded-md;
+  background-color: rgba(255, 255, 0, 0.3);
+}
+
+.tui-close-button:hover,
+.tui-close-button:focus {
+  @apply text-tui-close-accent;
+}
+
+/* Table styles */
+.tui-table {
+  @apply w-full border-collapse;
+}
+
+.tui-table th,
+.tui-table td {
+  @apply border border-tui-border px-4 py-2 text-left;
+}
+
+.tui-table th {
+  @apply bg-tui-darker text-tui-accent;
+}
+
+.tui-table tr:nth-child(even) {
+  @apply bg-tui-darker bg-opacity-50;
+}
+
+/* Panel styles */
+.tui-panel {
+  @apply border border-tui-border bg-tui-dark;
+}
+
+.tui-panel-header {
+  @apply bg-tui-darker text-tui-accent px-4 py-2 border-b border-tui-border;
+}
+
+/* Timeline styles */
+.tui-timeline-container {
+  @apply max-w-4xl mx-auto p-6;
+}
+
+.tui-timeline {
+  @apply relative pl-8;
+}
+
+.tui-timeline-line {
+  @apply absolute left-4 top-0 bottom-0 w-px bg-tui-border;
+}
+
+.tui-timeline-card {
+  @apply relative transition-all duration-200;
+}
+
+.tui-timeline-card.selected {
+  @apply transform scale-105;
+}
+
+.tui-timeline-card:hover {
+  @apply transform translate-x-1;
+}
+
+.tui-timeline-dot {
+  @apply absolute -left-2 top-6 w-4 h-4 bg-tui-dark border-2 border-tui-accent rounded-full z-10;
+  @apply flex items-center justify-center;
+}
+
+.tui-timeline-dot::after {
+  content: "";
+  @apply w-2 h-2 bg-tui-accent rounded-full;
+}
+
+.tui-timeline-card.selected .tui-timeline-dot {
+  @apply border-tui-yellow;
+}
+
+.tui-timeline-card.selected .tui-timeline-dot::after {
+  @apply bg-tui-yellow;
+}
+
+.tui-timeline-card:focus {
+  @apply outline-none;
+}
+
+.tui-timeline-card:focus .tui-timeline-dot {
+  @apply ring-2 ring-tui-accent ring-opacity-50;
+}

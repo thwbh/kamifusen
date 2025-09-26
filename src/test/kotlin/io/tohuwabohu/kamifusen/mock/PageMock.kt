@@ -1,10 +1,13 @@
 package io.tohuwabohu.kamifusen.mock
 
 import io.smallrye.mutiny.Uni
-import io.tohuwabohu.kamifusen.crud.Page
-import io.tohuwabohu.kamifusen.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.crud.Page
+import io.tohuwabohu.kamifusen.service.crud.PageRepository
 import java.util.*
 
+/**
+ * Mock repository for non-disruptive CRUD operations on Page entity
+ */
 class PageRepositoryMock : PageRepository() {
     val pages = mutableListOf<Page>()
 
