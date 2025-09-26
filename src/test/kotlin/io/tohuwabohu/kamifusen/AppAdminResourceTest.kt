@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 @QuarkusTest
@@ -83,7 +84,8 @@ class AppAdminResourceTest {
     @TestSecurity(user = "admin", roles = ["app-admin"])
     @RunOnVertxContext
     fun `should generate API key with expiration date`(uniAsserter: UniAsserter) {
-        val expirationDate = LocalDateTime.now().plusDays(30).toString()
+        val expirationDateTime = LocalDateTime.now().plusDays(30)
+        val expirationDate = expirationDateTime.toString()
 
         Given {
             header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
@@ -101,7 +103,8 @@ class AppAdminResourceTest {
             { result ->
                 Assertions.assertNotNull(result)
                 Assertions.assertEquals("api-user", result?.role)
-                Assertions.assertEquals(expirationDate, result?.expiresAt.toString())
+                // Compare LocalDateTime objects, truncated to seconds to avoid microsecond differences
+                Assertions.assertEquals(expirationDateTime.truncatedTo(ChronoUnit.SECONDS), result?.expiresAt?.truncatedTo(ChronoUnit.SECONDS))
             }
         )
     }
