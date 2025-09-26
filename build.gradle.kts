@@ -161,31 +161,23 @@ tasks.register("generateApi") {
 
 // Generate .env file for React app with current version
 tasks.register("generateReactEnv") {
-    doLast {
+    doFirst {
         val appVersion = System.getProperty("quarkus.application.version") ?: project.version.toString()
         val envFile = file("$projectDir/src/main/webui/.env")
         envFile.parentFile.mkdirs()
         envFile.writeText("VITE_APP_VERSION=$appVersion\n")
         println("Generated .env file at: ${envFile.absolutePath}")
         println("Generated .env file with version: $appVersion")
-        println("File exists: ${envFile.exists()}")
-        if (envFile.exists()) {
-            println("File contents: ${envFile.readText()}")
-        }
     }
 }
 
-// Make sure .env is generated before Quinoa builds
-tasks.named("quarkusBuild") {
-    dependsOn("generateReactEnv")
-}
-
-// Ensure .env is generated before any build process starts
-tasks.named("processResources") {
-    dependsOn("generateReactEnv")
-}
-
-// Make sure it runs before compilation
-tasks.named("compileKotlin") {
-    dependsOn("generateReactEnv")
+// Run the .env generation at the very start of any build
+gradle.projectsEvaluated {
+    tasks.named("generateReactEnv").get().let { envTask ->
+        tasks.all {
+            if (name.startsWith("quarkus") || name.contains("Build")) {
+                dependsOn(envTask)
+            }
+        }
+    }
 }
