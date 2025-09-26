@@ -36,7 +36,7 @@ jobs:
 
     - name: Run gradle build
       if: github.event.pull_request.base.ref == 'main'
-      run: ./gradlew build -x test --debug
+      run: ./gradlew build -x test
 
     - name: Generate JaCoCo Badge
       if: github.event_name != 'pull_request'

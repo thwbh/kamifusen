@@ -37,8 +37,6 @@ dependencies {
     implementation("io.quarkus:quarkus-rest")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlin:kotlin-noarg")
-    // ssr
-    implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.11.0")
     // testing
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.quarkus:quarkus-test-vertx")
@@ -82,7 +80,8 @@ sourceSets {
 
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn("generateServerApi")
+    dependsOn("generateApi")
+    dependsOn("generateReactEnv")
 
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -166,18 +165,5 @@ tasks.register("generateReactEnv") {
         val envFile = file("$projectDir/src/main/webui/.env")
         envFile.parentFile.mkdirs()
         envFile.writeText("VITE_APP_VERSION=$appVersion\n")
-        println("Generated .env file at: ${envFile.absolutePath}")
-        println("Generated .env file with version: $appVersion")
-    }
-}
-
-// Run the .env generation at the very start of any build
-gradle.projectsEvaluated {
-    tasks.named("generateReactEnv").get().let { envTask ->
-        tasks.all {
-            if (name.startsWith("quarkus") || name.contains("Build")) {
-                dependsOn(envTask)
-            }
-        }
     }
 }
