@@ -12,16 +12,6 @@
 
 Kamifusen is a simple yet powerful page hit counter written in Kotlin using the Quarkus framework. It tracks page visits by hashing user agent information to ensure unique visit counting while maintaining user privacy. Features include API key management, analytics dashboard, and session tracking.
 
-## Features
-
-- **Privacy-focused**: Hashes user agent info instead of storing personal data
-- **Unique visit tracking**: Ensures each visitor is counted only once per page
-- **Analytics dashboard**: Real-time statistics and visit trends
-- **API key management**: Secure access control for multiple domains
-- **Session tracking**: Advanced visitor journey analytics
-- **Modern UI**: Terminal-style admin interface built with React
-- **Scalable**: Built on Quarkus for cloud-native deployment
-
 ## Quick Start
 
 ### Prerequisites
@@ -85,10 +75,11 @@ Kamifusen is a simple yet powerful page hit counter written in Kotlin using the 
 Required environment variables for production:
 
 ```bash
-# Database
+# Database (both reactive and JDBC for Flyway migrations)
 QUARKUS_DATASOURCE_USERNAME=your_db_user
 QUARKUS_DATASOURCE_PASSWORD=your_db_password
 QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://your_host:5432/your_db
+QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://your_host:5432/your_db
 
 # Security
 QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY=your-32-character-encryption-key
@@ -150,8 +141,8 @@ java -jar build/quarkus-app/quarkus-run.jar
 
 ### Native Executable
 ```bash
-./gradlew build -Dquarkus.native.enabled=true
-./build/*-runner
+# Build native binary (requires Docker/Podman for cross-compilation)
+./gradlew build -Dquarkus.native.enabled=true -Dquarkus.native.container-build=true -Dquarkus.package.jar.enabled=false -Dquarkus.native.container-runtime=podman -Dquarkus.native.native-image-xmx=6g -Dquarkus.application.version=VERSION_NUMBER
 ```
 
 ### Docker
@@ -163,7 +154,7 @@ docker run -p 8080:8080 kamifusen:jvm
 ## Architecture
 
 - **Backend**: Kotlin + Quarkus + PostgreSQL
-- **Frontend**: React + TypeScript + Tailwind CSS
+- **Frontend**: React + TypeScript + crt-dojo
 - **Build**: Gradle + Quinoa (integrates npm builds)
 - **Database**: Flyway migrations
 - **Auth**: Form-based authentication with secure sessions
