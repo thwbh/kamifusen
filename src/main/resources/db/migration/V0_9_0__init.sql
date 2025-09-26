@@ -39,3 +39,7 @@ CREATE INDEX idx_page_path_domain ON page(path, domain);
 CREATE INDEX idx_page_visit_page_id ON page_visit(page_id);
 CREATE INDEX idx_page_visit_visitor_id ON page_visit(visitor_id);
 CREATE INDEX idx_visitor_info ON visitor(info);
+
+-- Insert admin user
+INSERT INTO api_user (id, username, role, password)
+VALUES (gen_random_uuid(), 'admin', 'app-admin', '$2a$10$1M/kyr.zOz6y9Owsp8qDUul1RmUfaI0zapjZED4wdwO1nLZ3Jz7OW');

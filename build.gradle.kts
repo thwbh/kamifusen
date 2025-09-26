@@ -158,3 +158,18 @@ tasks.register("generateApi") {
     dependsOn("generateServerApi")
     dependsOn("generateClientApi")
 }
+
+// Generate .env file for React app with current version
+tasks.register("generateReactEnv") {
+    doLast {
+        val appVersion = System.getProperty("quarkus.application.version") ?: project.version.toString()
+        val envFile = file("$projectDir/src/main/webui/.env")
+        envFile.writeText("VITE_APP_VERSION=$appVersion\n")
+        println("Generated .env file with version: $appVersion")
+    }
+}
+
+// Make sure .env is generated before Quinoa builds
+tasks.named("quarkusBuild") {
+    dependsOn("generateReactEnv")
+}

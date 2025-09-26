@@ -34,11 +34,6 @@ class AppAdminResource(
     @Inject
     private lateinit var securityIdentity: SecurityIdentity
 
-    @PostConstruct
-    fun init() {
-        Log.info("AppAdminResource initialized via CDI")
-    }
-
     @RolesAllowed("app-admin")
     override fun adminLanding(): Uni<Response> {
         val username = securityIdentity.principal.name
