@@ -13,15 +13,16 @@ export class ApiConfig {
    */
   static getBaseUrl(): string {
     if (this.baseUrl === null) {
-      // Check if we're in development mode
-      const isDev = import.meta.env.DEV || import.meta.env.MODE === 'development';
+      // If VITE_APP_VERSION exists, it means we're in a production build
+      // (the .env file is only generated during build time)
+      const isProduction = !!import.meta.env.VITE_APP_VERSION;
 
-      if (isDev) {
-        // Development: Quarkus dev server
-        this.baseUrl = 'http://localhost:8080';
-      } else {
+      if (isProduction) {
         // Production: same origin (Quinoa serves both frontend and backend)
         this.baseUrl = window.location.origin;
+      } else {
+        // Development: Quarkus dev server
+        this.baseUrl = 'http://localhost:8080';
       }
     }
     return this.baseUrl;
