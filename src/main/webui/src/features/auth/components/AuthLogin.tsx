@@ -83,6 +83,10 @@ const AuthLogin: React.FC<WelcomeProps> = () => {
       setError('Invalid username or password');
       // Clean the URL
       window.history.replaceState({}, '', '/');
+    } else if (urlError === 'session-expired') {
+      setError('Your session has expired. Please login again.');
+      // Clean the URL
+      window.history.replaceState({}, '', '/');
     }
   }, []);
 

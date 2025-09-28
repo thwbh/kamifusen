@@ -16,23 +16,23 @@ const AuthLogout: React.FC<SignOutProps> = ({ onRestart }) => {
       <div className="text-center max-w-3xl">
         {/* Main heading */}
         <h1 className="text-tui-accent text-5xl md:text-6xl font-bold mb-12 tracking-widest uppercase">
-          SIGNING OUT
+          SIGNED OUT
         </h1>
 
         {/* Thank you message */}
         <h2 className="text-tui-light text-2xl mb-8 tracking-wide">
-          Thank you for visiting!
+          You have been successfully logged out
         </h2>
 
         {/* Description */}
         <p className="text-tui-light text-lg leading-relaxed mb-16 max-w-2xl mx-auto">
-          We appreciate you considering us for your development needs and look
-          forward to getting in touch with you soon.
+          Your session has been terminated. All authentication cookies have been cleared
+          for your security.
         </p>
 
         {/* Restart instruction */}
         <div className="text-tui-muted text-sm mb-8">
-          <p>Press any key to restart the session</p>
+          <p>Press any key to return to login</p>
         </div>
 
         {/* Hidden button for accessibility */}

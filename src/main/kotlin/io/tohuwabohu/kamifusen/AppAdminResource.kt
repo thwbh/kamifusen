@@ -15,9 +15,9 @@ import io.tohuwabohu.kamifusen.service.crud.PageRepository
 import io.tohuwabohu.kamifusen.service.validator.UserValidation
 import io.tohuwabohu.kamifusen.service.validator.validatePassword
 import io.tohuwabohu.kamifusen.service.validator.validateUser
-import jakarta.annotation.PostConstruct
 import jakarta.annotation.security.RolesAllowed
 import jakarta.inject.Inject
+import jakarta.ws.rs.core.NewCookie
 import jakarta.ws.rs.core.Response
 import java.net.URI
 import java.time.LocalDateTime
@@ -76,6 +76,9 @@ class AppAdminResource(
         }.onFailure().invoke { e -> Log.error("Error during keygen.", e) }
             .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build())
 
+    @RolesAllowed("app-admin")
+    override fun getAuthStatus(): Uni<Response> = Uni.createFrom().item { Response.ok().build() }
+
     @WithSession
     @RolesAllowed("app-admin")
     override fun getStats(timeRange: String?): Uni<Response> =
@@ -128,6 +131,22 @@ class AppAdminResource(
             Uni.createFrom().item(Response.ok(users).build())
         }.onFailure().invoke { e -> Log.error("Error receiving users.", e) }
             .onFailure().recoverWithResponse()
+
+    @RolesAllowed("app-admin")
+    override fun logout(): Uni<Response> {
+        return Uni.createFrom().item(
+            Response.ok()
+                .cookie(
+                    NewCookie.Builder("AuthToken")  // Use your configured cookie name
+                    .value("")
+                    .path("/")
+                    .maxAge(0)  // Expire immediately
+                    .httpOnly(true)
+                    .sameSite(NewCookie.SameSite.STRICT)
+                    .build())
+                .build()
+        )
+    }
 
     @WithSession
     @RolesAllowed("app-admin")

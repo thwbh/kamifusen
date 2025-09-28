@@ -39,11 +39,23 @@ paths:
               schema:
                 type: string
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
       - SecurityScheme: []
+  /admin/logout:
+    post: 
+      operationId: logout
+      tags:
+      - App Admin Resource  
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+      security:
+        - SecurityScheme: []
   /admin/pagedel/{pageId}:
     post:
       operationId: unregisterPage
@@ -61,7 +73,7 @@ paths:
           content:
             text/plain: {}
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -81,7 +93,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/PageWithStatsDto"
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -105,7 +117,7 @@ paths:
               schema:
                 type: string
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -138,7 +150,7 @@ paths:
               schema:
                 type: string
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -162,7 +174,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/AggregatedStatsDto"
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -188,7 +200,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/PageWithStatsDto"
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -210,7 +222,7 @@ paths:
           content:
             text/plain: {}
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -230,7 +242,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/ApiUserDto"
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -267,7 +279,7 @@ paths:
               schema:
                 type: string
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -290,7 +302,7 @@ paths:
               schema:
                 type: string
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -327,7 +339,7 @@ paths:
               schema:
                 type: string
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -343,7 +355,7 @@ paths:
           content:
             application/json: {}
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -357,7 +369,27 @@ paths:
         "302":
           description: Redirect to appropriate page
         "401":
-          description: Not Authorized
+          description: Unauthorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
+  /admin/auth/status:
+    get:
+      operationId: getAuthStatus
+      tags:
+      - App Admin Resource
+      summary: Check authentication status
+      description: Returns current authentication status for the logged-in user
+      responses:
+        "200":
+          description: Authentication status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthStatusDto"
+        "401":
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
@@ -389,7 +421,7 @@ paths:
           content:
             text/plain: {}
         "401":
-          description: Not Authorized
+          description: Unauthorized
         "403":
           description: Not Allowed
       security:
