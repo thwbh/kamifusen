@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { AppAdminResourceApi, PageWithStatsDto} from '../../../api'
+import { PageWithStatsDto} from '../../../api'
+import { appAdminApi } from '../../../config/apiClient'
 import { useAsyncOperation } from 'crt-dojo'
 
 interface UsePagesState {
@@ -30,7 +31,7 @@ export const usePages = (): UsePagesState & UsePagesActions => {
   const [hiddenCount, setHiddenCount] = useState(0)
   const { loading, error, execute, clearError } = useAsyncOperation()
 
-  const adminApi = useMemo(() => new AppAdminResourceApi(), [])
+  const adminApi = appAdminApi
 
   const domains = useMemo(() => {
     const uniqueDomains = [...new Set(pages.map(page => page.domain).filter((domain): domain is string => Boolean(domain)))]

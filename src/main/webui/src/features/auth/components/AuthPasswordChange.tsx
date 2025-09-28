@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { AppAdminResourceApi, Configuration } from '../../../api'
+import { appAdminApi } from '../../../config/apiClient'
 // import kamifusenIcon from '../../../assets/icons/kamifusen_3.svg'
 import kamifusenIcon from '../../../assets/icons/logo_128.png'
 import { LoadingSpinner, Panel, PanelHeader, PanelContent, Button, Form, FormConfig } from 'crt-dojo';
@@ -18,10 +18,7 @@ const AuthPasswordChange: React.FC<PasswordChangeProps> = ({ onSuccess }) => {
     setIsLoading(true);
 
     try {
-      const config = new Configuration({
-        basePath: '',
-      });
-      const api = new AppAdminResourceApi(config);
+      const api = appAdminApi;
 
       await api.updateAdmin(data.newUsername, data.newPassword, data.confirmPassword);
       onSuccess();

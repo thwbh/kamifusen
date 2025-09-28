@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { AppAdminResourceApi, AggregatedStatsDto} from '../../../api'
+import { AggregatedStatsDto} from '../../../api'
+import { appAdminApi } from '../../../config/apiClient'
 import { useAsyncOperation } from 'crt-dojo'
 
 interface UseStatsState {
@@ -20,7 +21,7 @@ export const useStats = (): UseStatsState & UseStatsActions => {
   const [timeRange, setTimeRange] = useState('7d')
   const { loading, error, execute, clearError } = useAsyncOperation()
 
-  const adminApi = useMemo(() => new AppAdminResourceApi(), [])
+  const adminApi = appAdminApi
 
   const refreshStats = useCallback(async () => {
     const result = await execute(async () => {

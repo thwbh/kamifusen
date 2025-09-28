@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { AppAdminResourceApi, ApiUserDto } from '../../../api'
+import { ApiUserDto } from '../../../api'
+import { appAdminApi } from '../../../config/apiClient'
 import { useAsyncOperation } from 'crt-dojo'
 
 interface UseUsersState {
@@ -25,7 +26,7 @@ export const useUsers = (): UseUsersState & UseUsersActions => {
   const [users, setUsers] = useState<ApiUserDto[]>([]);
   const { loading, error, execute, clearError } = useAsyncOperation();
 
-  const adminApi = useMemo(() => new AppAdminResourceApi(), []);
+  const adminApi = appAdminApi;
 
   const systemUsers = useMemo(() => users.filter(user => user.role === 'app-admin'), [users]);
   const apiUsers = useMemo(() => users.filter(user => user.role === 'api-user'), [users]);
