@@ -5,6 +5,8 @@ import ActionPanel from './ActionPanel';
 import StatusBar from './StatusBar';
 import TimeSlots from './TimeSlots';
 import MainContent from './MainContent';
+import ActiveSessions from './ActiveSessions';
+import SystemHealth from './SystemHealth';
 
 interface DataItem {
   name: string;
@@ -61,27 +63,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
   return (
     <div className="flex h-full" onKeyDown={handleKeyPress} tabIndex={0}>
       <div className="w-80 bg-tui-dark border-r border-tui-border flex flex-col">
-        <DataTable
-          title="STATION PROFILE"
-          subtitle="MATERIAL SPECIALIZATIONS"
-          data={materials}
-          selectedIndex={selectedMaterial}
-          onItemSelect={setSelectedMaterial}
-        />
-        <MetricsPanel
-          title="REFINERY CAPACITY"
-          subtitle="REFINERY CURRENTLY HAS AN EXTREME WORKLOAD. A LARGE SURCHARGE WILL BE ADDED."
-          primaryMetric={{
-            label: "CURRENT CAPACITY",
-            value: currentCapacity.toString(),
-            unit: "%"
-          }}
-        />
+        <SystemHealth />
+        <ActiveSessions />
         <ActionPanel
-          title="USER DETAILS"
-          subtitle="MATERIAL SELECTION"
+          title="MISSION CONTROL"
+          subtitle="QUICK ACTIONS"
           actions={[
-            { label: "Select Material Location" }
+            { label: "View Live Activity Feed" },
+            { label: "Export Analytics Data" },
+            { label: "System Diagnostics" }
           ]}
         />
         <StatusBar />

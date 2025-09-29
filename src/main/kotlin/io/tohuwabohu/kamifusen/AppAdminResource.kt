@@ -5,6 +5,7 @@ import io.quarkus.logging.Log
 import io.quarkus.security.identity.SecurityIdentity
 import io.smallrye.mutiny.Uni
 import io.tohuwabohu.kamifusen.api.generated.AppAdminResourceApi
+import io.tohuwabohu.kamifusen.api.generated.model.ActiveSessionsDto
 import io.tohuwabohu.kamifusen.error.recoverWithResponse
 import io.tohuwabohu.kamifusen.service.PageStatsService
 import io.tohuwabohu.kamifusen.service.StatsService
@@ -12,6 +13,7 @@ import io.tohuwabohu.kamifusen.service.crud.ApiUser
 import io.tohuwabohu.kamifusen.service.crud.ApiUserRepository
 import io.tohuwabohu.kamifusen.service.crud.BlacklistRepository
 import io.tohuwabohu.kamifusen.service.crud.PageRepository
+import io.tohuwabohu.kamifusen.service.crud.SessionRepository
 import io.tohuwabohu.kamifusen.service.validator.UserValidation
 import io.tohuwabohu.kamifusen.service.validator.validatePassword
 import io.tohuwabohu.kamifusen.service.validator.validateUser
@@ -28,7 +30,8 @@ class AppAdminResource(
     private var pageStatsService: PageStatsService,
     private var pageRepository: PageRepository,
     private var statsService: StatsService,
-    private var blacklistRepository: BlacklistRepository
+    private var blacklistRepository: BlacklistRepository,
+    private var sessionRepository: SessionRepository
 ) : AppAdminResourceApi {
 
     @Inject
@@ -85,6 +88,20 @@ class AppAdminResource(
         statsService.getAggregatedStats(timeRange ?: "7d")
             .map { stats -> Response.ok(stats).build() }
             .onFailure().invoke { e -> Log.error("Error receiving aggregated stats.", e) }
+            .onFailure().recoverWithResponse()
+
+    @WithSession
+    @RolesAllowed("app-admin")
+    override fun getActiveSessions(): Uni<Response> =
+        sessionRepository.countActiveSessions()
+            .map { activeCount ->
+                val activeSessionsDto = ActiveSessionsDto(
+                    activeCount = activeCount,
+                    timestamp = java.time.LocalDateTime.now()
+                )
+                Response.ok(activeSessionsDto).build()
+            }
+            .onFailure().invoke { e -> Log.error("Error receiving active sessions.", e) }
             .onFailure().recoverWithResponse()
 
     @WithSession

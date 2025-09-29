@@ -5,6 +5,7 @@ import { Users } from '../../features/users';
 import Header from "./Header";
 import { Navigation, NavigationConfig, LoadingSpinner } from 'crt-dojo';
 import { useAuthStatus } from '../hooks';
+import { Dashboard } from '../../features/dashboard';
 
 interface NavigationWrapperProps {
   onSignOut: (reason?: string) => void;
@@ -41,8 +42,8 @@ const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
 
   const renderContent = (page: string) => {
     switch (page) {
-      //      case 'dashboard':
-      //        return <Dashboard onSignOut={onSignOut} />;
+      case 'dashboard':
+        return <Dashboard onSignOut={onSignOut} />;
       case 'pages':
         return <Pages />;
       case 'stats':
@@ -50,14 +51,13 @@ const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
       case 'users':
         return <Users />;
       default:
-        return <Stats />;
-      //        return <Dashboard onSignOut={onSignOut} />;
+        return <Dashboard onSignOut={onSignOut} />;
     }
   };
 
   const navigationConfig: NavigationConfig = {
     items: [
-      //      { key: '1', label: 'Dashboard', page: 'dashboard' },
+      { key: '0', label: 'Dashboard', page: 'dashboard' },
       { key: '1', label: 'Stats', page: 'stats' },
       { key: '2', label: 'Pages', page: 'pages' },
       { key: '3', label: 'Users', page: 'users' }

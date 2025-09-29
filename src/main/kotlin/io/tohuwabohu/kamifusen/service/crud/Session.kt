@@ -16,9 +16,8 @@ data class Session(
     var id: UUID,
     var visitorId: UUID,
     val startTime: LocalDateTime = LocalDateTime.now(),
-    var endTime: LocalDateTime? = null,
-    var pageViews: Int = 0,
-    var isActive: Boolean = true
+    var updatedAt: LocalDateTime = LocalDateTime.now(),
+    var pageViews: Int = 0
 ) : PanacheEntityBase {
     final override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -38,7 +37,7 @@ data class Session(
 
     @Override
     override fun toString(): String {
-        return this::class.simpleName + "(  id = $id   ,   visitorId = $visitorId   ,   startTime = $startTime   ,   isActive = $isActive )"
+        return this::class.simpleName + "(  id = $id   ,   visitorId = $visitorId   ,   startTime = $startTime   ,   updatedAt = $updatedAt )"
     }
 }
 
@@ -54,10 +53,9 @@ class SessionRepository : PanacheRepositoryBase<Session, UUID> {
     }
 
     @WithTransaction
-    fun endSession(sessionId: UUID): Uni<Session?> {
+    fun updateSessionActivity(sessionId: UUID): Uni<Session?> {
         return findById(sessionId).onItem().ifNotNull().call { session ->
-            session.endTime = LocalDateTime.now()
-            session.isActive = false
+            session.updatedAt = LocalDateTime.now(java.time.ZoneOffset.UTC)
             persist(session)
         }
     }
@@ -66,13 +64,16 @@ class SessionRepository : PanacheRepositoryBase<Session, UUID> {
     fun incrementPageViews(sessionId: UUID): Uni<Session?> {
         return findById(sessionId).onItem().ifNotNull().call { session ->
             session.pageViews++
+            session.updatedAt = LocalDateTime.now(java.time.ZoneOffset.UTC)
             persist(session)
         }
     }
 
     @WithTransaction
-    fun findActiveSessionByVisitor(visitorId: UUID): Uni<Session?> =
-        find("visitorId = ?1 AND isActive = true", visitorId).firstResult()
+    fun findActiveSessionByVisitor(visitorId: UUID, minutes: Int = 30): Uni<Session?> {
+        val cutoffTime = LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(minutes.toLong())
+        return find("visitorId = ?1 AND updatedAt >= ?2 ORDER BY updatedAt DESC", visitorId, cutoffTime).firstResult()
+    }
 
     // Sliding window session support
     @WithTransaction
@@ -93,12 +94,16 @@ class SessionRepository : PanacheRepositoryBase<Session, UUID> {
     }
 
     @WithTransaction
-    fun countActiveSessions(): Uni<Long> =
-        count("isActive = true")
+    fun countActiveSessions(minutes: Int = 30): Uni<Long> {
+        val cutoffTime = LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(minutes.toLong())
+        return count("updatedAt >= ?1", cutoffTime)
+    }
 
     @WithTransaction
-    fun getActiveSessionsInTimeRange(minutes: Int): Uni<List<Session>> =
-        list("isActive = true AND startTime >= ?1", LocalDateTime.now().minusMinutes(minutes.toLong()))
+    fun getActiveSessionsInTimeRange(minutes: Int): Uni<List<Session>> {
+        val cutoffTime = LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(minutes.toLong())
+        return list("updatedAt >= ?1", cutoffTime)
+    }
 
     @WithTransaction
     fun getAverageSessionDuration(): Uni<Double> {

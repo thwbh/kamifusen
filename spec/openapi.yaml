@@ -394,6 +394,26 @@ paths:
           description: Not Allowed
       security:
       - SecurityScheme: []
+  /admin/sessions/active:
+    get:
+      operationId: getActiveSessions
+      tags:
+      - App Admin Resource
+      summary: Get real-time active sessions
+      description: Returns count of sessions active in the last 30 minutes
+      responses:
+        "200":
+          description: Active sessions data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActiveSessionsDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
   /admin/update:
     post:
       operationId: updateAdmin
@@ -525,6 +545,19 @@ components:
           allOf:
           - $ref: "#/components/schemas/LocalDateTime"
           nullable: true
+    ActiveSessionsDto:
+      required:
+      - activeCount
+      - timestamp
+      type: object
+      properties:
+        activeCount:
+          format: int64
+          type: integer
+          description: Number of sessions active in the last 30 minutes
+        timestamp:
+          $ref: "#/components/schemas/LocalDateTime"
+          description: Timestamp when the count was calculated
     AuthStatusDto:
       required:
       - requiresPasswordChange

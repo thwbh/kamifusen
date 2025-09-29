@@ -220,20 +220,45 @@ INSERT INTO page_visit (page_id, visitor_id, visited_at) VALUES
 ('9f685bd0-90e6-479a-99b6-2fad28d2a647', '9f685bd0-90e6-479a-99b6-2fad28d2a644', NOW() - INTERVAL '6 hours'),
 ('9f685bd0-90e6-479a-99b6-2fad28d2a647', '9f685bd0-90e6-479a-99b6-2fad28d2a645', NOW() - INTERVAL '4 hours');
 
--- Additional blog visits to increase diversity (15 more visits)
-INSERT INTO page_visit (page_id, visitor_id, visited_at) VALUES
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a641', NOW() - INTERVAL '27 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a642', NOW() - INTERVAL '26 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a643', NOW() - INTERVAL '24 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a644', NOW() - INTERVAL '23 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a645', NOW() - INTERVAL '22 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a646', NOW() - INTERVAL '21 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a647', NOW() - INTERVAL '18 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a648', NOW() - INTERVAL '17 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a649', NOW() - INTERVAL '16 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a640', NOW() - INTERVAL '14 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a641', NOW() - INTERVAL '13 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a642', NOW() - INTERVAL '11 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a643', NOW() - INTERVAL '9 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a644', NOW() - INTERVAL '6 days'),
-('9f685bd0-90e6-479a-99b6-2fad28d2a641', '9f685bd0-90e6-479a-99b6-2fad28d2a645', NOW() - INTERVAL '4 days');
+-- Insert test sessions using sliding window approach
+-- Mix of active (last 30 minutes) and inactive sessions to demonstrate the new architecture
+INSERT INTO session (id, visitor_id, start_time, updated_at, page_views) VALUES
+-- Active sessions (updated within last 30 minutes) - should appear in active count
+-- Using CURRENT_TIMESTAMP to ensure proper timezone handling
+('9f685bd0-90e6-479a-99b6-5fad28d2a001', '9f685bd0-90e6-479a-99b6-2fad28d2a681', CURRENT_TIMESTAMP - INTERVAL '10 minutes', CURRENT_TIMESTAMP - INTERVAL '5 minutes', 3),
+('9f685bd0-90e6-479a-99b6-5fad28d2a002', '9f685bd0-90e6-479a-99b6-2fad28d2a682', CURRENT_TIMESTAMP - INTERVAL '25 minutes', CURRENT_TIMESTAMP - INTERVAL '15 minutes', 5),
+('9f685bd0-90e6-479a-99b6-5fad28d2a003', '9f685bd0-90e6-479a-99b6-2fad28d2a683', CURRENT_TIMESTAMP - INTERVAL '45 minutes', CURRENT_TIMESTAMP - INTERVAL '20 minutes', 2),
+('9f685bd0-90e6-479a-99b6-5fad28d2a004', '9f685bd0-90e6-479a-99b6-2fad28d2a684', CURRENT_TIMESTAMP - INTERVAL '30 minutes', CURRENT_TIMESTAMP - INTERVAL '25 minutes', 1),
+('9f685bd0-90e6-479a-99b6-5fad28d2a005', '9f685bd0-90e6-479a-99b6-2fad28d2a685', CURRENT_TIMESTAMP - INTERVAL '2 hours', CURRENT_TIMESTAMP - INTERVAL '5 minutes', 8),
+
+-- Recent but inactive sessions (updated 31-60 minutes ago) - should NOT appear in active count
+('9f685bd0-90e6-479a-99b6-5fad28d2a006', '9f685bd0-90e6-479a-99b6-2fad28d2a686', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '35 minutes', 4),
+('9f685bd0-90e6-479a-99b6-5fad28d2a007', '9f685bd0-90e6-479a-99b6-2fad28d2a687', NOW() - INTERVAL '1 hour', NOW() - INTERVAL '45 minutes', 2),
+('9f685bd0-90e6-479a-99b6-5fad28d2a008', '9f685bd0-90e6-479a-99b6-2fad28d2a688', NOW() - INTERVAL '90 minutes', NOW() - INTERVAL '50 minutes', 6),
+
+-- Older sessions from different time periods
+('9f685bd0-90e6-479a-99b6-5fad28d2a009', '9f685bd0-90e6-479a-99b6-2fad28d2a641', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', 12),
+('9f685bd0-90e6-479a-99b6-5fad28d2a010', '9f685bd0-90e6-479a-99b6-2fad28d2a642', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days', 7),
+('9f685bd0-90e6-479a-99b6-5fad28d2a011', '9f685bd0-90e6-479a-99b6-2fad28d2a643', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days', 3),
+('9f685bd0-90e6-479a-99b6-5fad28d2a012', '9f685bd0-90e6-479a-99b6-2fad28d2a644', NOW() - INTERVAL '1 week', NOW() - INTERVAL '1 week', 15),
+('9f685bd0-90e6-479a-99b6-5fad28d2a013', '9f685bd0-90e6-479a-99b6-2fad28d2a645', NOW() - INTERVAL '2 weeks', NOW() - INTERVAL '2 weeks', 9),
+('9f685bd0-90e6-479a-99b6-5fad28d2a014', '9f685bd0-90e6-479a-99b6-2fad28d2a646', NOW() - INTERVAL '3 weeks', NOW() - INTERVAL '3 weeks', 4),
+
+-- Long-running session demonstrating visitor returning to extend session
+('9f685bd0-90e6-479a-99b6-5fad28d2a015', '9f685bd0-90e6-479a-99b6-2fad28d2a647', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '10 minutes', 18),
+
+-- Multiple sessions for same visitor showing session transitions over time
+('9f685bd0-90e6-479a-99b6-5fad28d2a016', '9f685bd0-90e6-479a-99b6-2fad28d2a648', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 5),
+('9f685bd0-90e6-479a-99b6-5fad28d2a017', '9f685bd0-90e6-479a-99b6-2fad28d2a648', NOW() - INTERVAL '12 hours', NOW() - INTERVAL '12 hours', 3),
+('9f685bd0-90e6-479a-99b6-5fad28d2a018', '9f685bd0-90e6-479a-99b6-2fad28d2a648', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '10 minutes', 7),
+
+-- Edge case: Session exactly at 30-minute boundary
+('9f685bd0-90e6-479a-99b6-5fad28d2a019', '9f685bd0-90e6-479a-99b6-2fad28d2a689', NOW() - INTERVAL '45 minutes', NOW() - INTERVAL '30 minutes', 2),
+
+-- Single page visit sessions (bounce sessions)
+('9f685bd0-90e6-479a-99b6-5fad28d2a020', '9f685bd0-90e6-479a-99b6-2fad28d2a690', NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour', 1),
+('9f685bd0-90e6-479a-99b6-5fad28d2a021', '9f685bd0-90e6-479a-99b6-2fad28d2a651', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '3 hours', 1),
+
+-- High page view sessions (power users)
+('9f685bd0-90e6-479a-99b6-5fad28d2a022', '9f685bd0-90e6-479a-99b6-2fad28d2a652', NOW() - INTERVAL '4 days', NOW() - INTERVAL '4 days', 25),
+('9f685bd0-90e6-479a-99b6-5fad28d2a023', '9f685bd0-90e6-479a-99b6-2fad28d2a653', NOW() - INTERVAL '1 week', NOW() - INTERVAL '1 week', 31);

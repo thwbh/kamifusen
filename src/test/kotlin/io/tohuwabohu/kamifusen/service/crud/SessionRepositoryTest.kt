@@ -26,36 +26,7 @@ class SessionRepositoryTest {
                 assertNotNull(session)
                 assertNotNull(session.id)
                 assertEquals(visitorId, session.visitorId)
-                assertTrue(session.isActive)
-                assertNull(session.endTime)
                 assertEquals(0, session.pageViews)
-            }
-        )
-    }
-
-    @Test
-    @RunOnVertxContext
-    fun `should end session correctly`(uniAsserter: UniAsserter) {
-        val sessionId = UUID.randomUUID()
-
-        uniAsserter.assertThat(
-            { sessionRepository.endSession(sessionId) },
-            { endedSession ->
-                // Should handle non-existent session gracefully by returning null
-                assertNull(endedSession)
-            }
-        )
-    }
-
-    @Test
-    @RunOnVertxContext
-    fun `should end non-existent session gracefully`(uniAsserter: UniAsserter) {
-        val nonExistentId = UUID.randomUUID()
-
-        uniAsserter.assertThat(
-            { sessionRepository.endSession(nonExistentId) },
-            { result ->
-                assertNull(result) // Should return null for non-existent session
             }
         )
     }
@@ -69,14 +40,12 @@ class SessionRepositoryTest {
             { sessionRepository.startSession(visitorId) },
             { session ->
                 assertNotNull(session)
-                assertTrue(session.isActive)
             }
         ).assertThat(
             { sessionRepository.findActiveSessionByVisitor(visitorId) },
             { foundSession ->
                 if (foundSession != null) {
                     assertEquals(visitorId, foundSession.visitorId)
-                    assertTrue(foundSession.isActive)
                 }
             }
         )
@@ -106,7 +75,6 @@ class SessionRepositoryTest {
 
                 // All sessions should be active and within time range
                 sessions.forEach { session ->
-                    assertTrue(session.isActive)
                     assertTrue(session.startTime >= cutoffTime)
                 }
             }
@@ -123,7 +91,6 @@ class SessionRepositoryTest {
             { foundSession ->
                 assertNotNull(foundSession)
                 assertEquals(visitorId, foundSession.visitorId)
-                assertTrue(foundSession.isActive)
             }
         )
     }
@@ -138,9 +105,7 @@ class SessionRepositoryTest {
             { newSession ->
                 assertNotNull(newSession)
                 assertEquals(visitorId, newSession.visitorId)
-                assertTrue(newSession.isActive)
                 assertEquals(0, newSession.pageViews)
-                assertNull(newSession.endTime)
             }
         )
     }
@@ -155,7 +120,6 @@ class SessionRepositoryTest {
             { newSession ->
                 assertNotNull(newSession)
                 assertEquals(visitorId, newSession.visitorId)
-                assertTrue(newSession.isActive)
             }
         )
     }
@@ -219,6 +183,11 @@ class SessionRepositoryTest {
                 assertNotNull(sessions)
                 // Should return sessions from current time (might be empty)
                 assertTrue(sessions.size >= 0)
+                // All returned sessions should have updatedAt at current time or later
+                val now = LocalDateTime.now()
+                sessions.forEach { session ->
+                    assertTrue(session.updatedAt >= now.minusSeconds(1)) // Allow 1 second tolerance
+                }
             }
         )
     }
