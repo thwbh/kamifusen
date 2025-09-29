@@ -1,5 +1,5 @@
 import { Configuration } from '../api/configuration';
-import { AppAdminResourceApi, PageVisitResourceApi } from '../api';
+import { AppAdminResourceApi, HealthResourceApi, PageVisitResourceApi } from '../api';
 import { ApiConfig } from './api';
 
 /**
@@ -18,6 +18,7 @@ function createConfiguration(): Configuration {
 // Create pre-configured API clients
 export const appAdminApi = new AppAdminResourceApi(createConfiguration());
 export const pageVisitApi = new PageVisitResourceApi(createConfiguration());
+export const healthApi = new HealthResourceApi(createConfiguration());
 
 // Export configuration factory for custom clients
 export { createConfiguration };

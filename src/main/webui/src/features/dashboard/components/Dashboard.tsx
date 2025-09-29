@@ -3,67 +3,24 @@ import DataTable from './DataTable';
 import MetricsPanel from './MetricsPanel';
 import ActionPanel from './ActionPanel';
 import StatusBar from './StatusBar';
-import TimeSlots from './TimeSlots';
+import BottomSlots from './BottomSlots';
 import MainContent from './MainContent';
 import ActiveSessions from './ActiveSessions';
 import SystemHealth from './SystemHealth';
-
-interface DataItem {
-  name: string;
-  value: string;
-  color: string;
-}
+import { useSystemHealth } from '../hooks/useSystemHealth';
 
 interface DashboardProps {
   onSignOut: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
-  const [selectedMaterial, setSelectedMaterial] = useState(0);
-  const [currentCapacity, setCurrentCapacity] = useState(3612);
-
-  const materials: DataItem[] = [
-    { name: 'Corundum (Raw)', value: '+2%', color: 'text-tui-green' },
-    { name: 'Gold (Ore)', value: '+1%', color: 'text-tui-green' },
-    { name: 'Laranite (Raw)', value: '+2%', color: 'text-tui-green' },
-    { name: 'Quartz (Raw)', value: '-3%', color: 'text-tui-red' },
-    { name: 'Copper (Ore)', value: '+4%', color: 'text-tui-green' },
-    { name: 'Aluminum (Ore)', value: '+7%', color: 'text-tui-green' },
-  ];
-
-  const timeSlots = [
-    '09:01', '13:46', '04:37', '03:00', '04:00', '10:1A', 'AB:HS',
-    '07:00', '12:22', '18:22', '02:09', '06:10', '15:CE', 'AQ:CE'
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentCapacity(prev => prev + Math.floor(Math.random() * 5) - 2);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    switch (event.key) {
-      case 'ArrowUp':
-        setSelectedMaterial(prev => Math.max(0, prev - 1));
-        break;
-      case 'ArrowDown':
-        setSelectedMaterial(prev => Math.min(materials.length - 1, prev + 1));
-        break;
-      case 'Escape':
-        onSignOut();
-        break;
-      default:
-        break;
-    }
-  };
+  const { healthData, loading, error } = useSystemHealth(5000); // Refresh every 5 seconds
+  const [loginTime] = useState(new Date()); // Store login timestamp
 
   return (
-    <div className="flex h-full" onKeyDown={handleKeyPress} tabIndex={0}>
+    <div className="flex h-full">
       <div className="w-80 bg-tui-dark border-r border-tui-border flex flex-col">
-        <SystemHealth />
+        <SystemHealth healthData={healthData} loading={loading} error={error} />
         <ActiveSessions />
         <ActionPanel
           title="MISSION CONTROL"
@@ -79,7 +36,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
 
       <div className="flex-1 bg-tui-dark relative">
         <MainContent />
-        <TimeSlots timeSlots={timeSlots} />
+        <BottomSlots healthData={healthData} loginTime={loginTime} />
       </div>
     </div>
   );

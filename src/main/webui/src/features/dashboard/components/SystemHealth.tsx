@@ -1,48 +1,20 @@
-import React, { useState, useEffect } from 'react';
-
-interface HealthMetric {
-  name: string;
-  value: string;
-  status: 'healthy' | 'warning' | 'critical';
-  description: string;
-}
+import React, { useState } from 'react';
+import { useSystemHealth } from '../hooks/useSystemHealth';
 
 const SystemHealth: React.FC = () => {
-  const [healthMetrics, setHealthMetrics] = useState<HealthMetric[]>([
-    { name: 'API Response Time', value: '~120ms', status: 'healthy', description: 'Average response time for admin endpoints' },
-    { name: 'Database Connection', value: 'ONLINE', status: 'healthy', description: 'PostgreSQL connection status' },
-    { name: 'Error Rate', value: '<0.1%', status: 'healthy', description: 'Failed requests in last hour' },
-    { name: 'Memory Usage', value: '67%', status: 'warning', description: 'JVM heap memory utilization' },
-    { name: 'Session Store', value: 'ACTIVE', status: 'healthy', description: 'User session management status' },
-  ]);
-
+  const { healthData, loading, error } = useSystemHealth(5000); // Refresh every 5 seconds
   const [selectedMetric, setSelectedMetric] = useState(0);
 
-  // Simulate real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHealthMetrics(prev => prev.map((metric, index) => {
-        if (metric.name === 'API Response Time') {
-          const responseTime = 80 + Math.random() * 100; // 80-180ms
-          const status = responseTime > 150 ? 'warning' : responseTime > 200 ? 'critical' : 'healthy';
-          return { ...metric, value: `~${Math.round(responseTime)}ms`, status };
-        }
-        if (metric.name === 'Error Rate') {
-          const errorRate = Math.random() * 0.5; // 0-0.5%
-          const status = errorRate > 0.3 ? 'warning' : errorRate > 0.5 ? 'critical' : 'healthy';
-          return { ...metric, value: `${errorRate.toFixed(2)}%`, status };
-        }
-        if (metric.name === 'Memory Usage') {
-          const memUsage = 50 + Math.random() * 30; // 50-80%
-          const status = memUsage > 75 ? 'warning' : memUsage > 85 ? 'critical' : 'healthy';
-          return { ...metric, value: `${Math.round(memUsage)}%`, status };
-        }
-        return metric;
-      }));
-    }, 5000); // Update every 5 seconds
+  // Fallback data while loading or on error
+  const fallbackMetrics = [
+    { name: 'API Response Time', value: '~120ms', status: 'healthy' as const, description: 'Average response time for admin endpoints' },
+    { name: 'Database Connection', value: 'ONLINE', status: 'healthy' as const, description: 'PostgreSQL connection status' },
+    { name: 'Error Rate', value: '<0.1%', status: 'healthy' as const, description: 'Failed requests in last hour' },
+    { name: 'Memory Usage', value: '67%', status: 'warning' as const, description: 'JVM heap memory utilization' },
+    { name: 'Session Store', value: 'ACTIVE', status: 'healthy' as const, description: 'User session management status' },
+  ];
 
-    return () => clearInterval(interval);
-  }, []);
+  const healthMetrics = healthData?.metrics || fallbackMetrics;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -63,6 +35,14 @@ const SystemHealth: React.FC = () => {
   };
 
   const getOverallStatus = () => {
+    if (healthData) {
+      return {
+        status: healthData.overallStatus,
+        text: healthData.overallText
+      };
+    }
+
+    // Fallback calculation
     const criticalCount = healthMetrics.filter(m => m.status === 'critical').length;
     const warningCount = healthMetrics.filter(m => m.status === 'warning').length;
 

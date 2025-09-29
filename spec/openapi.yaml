@@ -414,6 +414,26 @@ paths:
           description: Not Allowed
       security:
       - SecurityScheme: []
+  /admin/health/metrics:
+    get:
+      operationId: getSystemHealth
+      tags:
+      - Health Resource
+      summary: Get system health metrics
+      description: Returns real-time system health and performance metrics
+      responses:
+        "200":
+          description: System health data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemHealthDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      security:
+      - SecurityScheme: []
   /admin/update:
     post:
       operationId: updateAdmin
@@ -558,6 +578,53 @@ components:
         timestamp:
           $ref: "#/components/schemas/LocalDateTime"
           description: Timestamp when the count was calculated
+    SystemHealthDto:
+      required:
+      - overallStatus
+      - overallText
+      - metrics
+      - timestamp
+      type: object
+      properties:
+        overallStatus:
+          type: string
+          enum: [healthy, warning, critical]
+          description: Overall system status
+        overallText:
+          type: string
+          description: Human-readable status description
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/HealthMetricDto"
+          description: Individual health metrics
+        timestamp:
+          $ref: "#/components/schemas/LocalDateTime"
+          description: Timestamp when metrics were collected
+    HealthMetricDto:
+      required:
+      - name
+      - value
+      - status
+      - description
+      type: object
+      properties:
+        name:
+          type: string
+          description: Metric name
+        value:
+          type: string
+          description: Metric value (formatted)
+        status:
+          type: string
+          enum: [healthy, warning, critical]
+          description: Metric status
+        description:
+          type: string
+          description: Metric description
+        timestamp:
+          $ref: "#/components/schemas/LocalDateTime"
+          description: When this metric was collected
     AuthStatusDto:
       required:
       - requiresPasswordChange
