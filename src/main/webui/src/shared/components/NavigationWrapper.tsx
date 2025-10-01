@@ -1,15 +1,44 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pages } from '../../features/pages';
 import { Stats } from '../../features/stats';
 import { Users } from '../../features/users';
 import Header from "./Header";
-import { Navigation, NavigationConfig } from 'crt-dojo';
+import { Navigation, NavigationConfig, LoadingSpinner } from 'crt-dojo';
+import { useAuthStatus } from '../hooks';
 
 interface NavigationWrapperProps {
-  onSignOut: () => void;
+  onSignOut: (reason?: string) => void;
 }
 
 const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
+  const { isAuthenticated, error, clearError } = useAuthStatus();
+
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      // Authentication failed, trigger sign out with appropriate reason
+      if (error) {
+        console.error('Authentication error:', error);
+        onSignOut('session-expired');
+      } else {
+        onSignOut();
+      }
+    }
+  }, [isAuthenticated, error, onSignOut]);
+
+  // Show loading while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // If not authenticated, don't render the navigation (onSignOut will be called)
+  if (isAuthenticated === false) {
+    return null;
+  }
+
   const renderContent = (page: string) => {
     switch (page) {
       //      case 'dashboard':
