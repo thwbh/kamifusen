@@ -13,6 +13,8 @@ const AuthLogin: React.FC<WelcomeProps> = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (data: any) => {
+    sessionStorage.setItem('form-submit-ts', Date.now().toString());
+
     setError('');
     setIsLoading(true);
 

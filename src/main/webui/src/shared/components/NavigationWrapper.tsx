@@ -57,12 +57,12 @@ const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
 
   const navigationConfig: NavigationConfig = {
     items: [
-      { key: '0', label: 'Dashboard', page: 'dashboard' },
-      { key: '1', label: 'Stats', page: 'stats' },
-      { key: '2', label: 'Pages', page: 'pages' },
-      { key: '3', label: 'Users', page: 'users' }
+      { key: '1', label: 'Dashboard', page: 'dashboard' },
+      { key: '2', label: 'Stats', page: 'stats' },
+      { key: '3', label: 'Pages', page: 'pages' },
+      { key: '4', label: 'Users', page: 'users' }
     ],
-    initialPage: 'stats',
+    initialPage: 'dashboard',
     headerComponent: Header,
     onSignOut: onSignOut,
     renderContent: renderContent,
@@ -70,7 +70,7 @@ const NavigationWrapper: React.FC<NavigationWrapperProps> = ({ onSignOut }) => {
     disableShortcutsOnInput: true   // Disable shortcuts when typing in forms
   };
 
-  return <Navigation config={navigationConfig} />;
+  return <Navigation className="h-full" config={navigationConfig} />;
 };
 
 export default NavigationWrapper;

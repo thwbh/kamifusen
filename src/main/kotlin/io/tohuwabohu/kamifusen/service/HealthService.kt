@@ -46,7 +46,6 @@ class HealthService {
                 timestamp = timestamp
             ))
 
-            // Available Processors - GraalVM-compatible
             val availableProcessors = runtime.availableProcessors()
             metrics.add(HealthMetricDto(
                 name = "CPU Cores",
@@ -56,7 +55,6 @@ class HealthService {
                 timestamp = timestamp
             ))
 
-            // System Properties - Native-compatible
             val javaVersion = System.getProperty("java.version", "unknown")
             metrics.add(HealthMetricDto(
                 name = "Java Version",
@@ -66,7 +64,6 @@ class HealthService {
                 timestamp = timestamp
             ))
 
-            // Runtime Type Detection - GraalVM vs JVM
             val runtimeType = detectRuntimeType()
             metrics.add(HealthMetricDto(
                 name = "Runtime Type",

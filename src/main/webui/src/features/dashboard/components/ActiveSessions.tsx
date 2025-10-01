@@ -19,10 +19,12 @@ const ActiveSessions: React.FC = () => {
   };
 
   const generateActivityBars = () => {
-    // Generate visual representation of activity levels
+    // Generate stable visual representation of activity levels
     return Array.from({ length: 20 }, (_, i) => {
-      const height = loading ? 20 : Math.min(Math.max((activeCount / 50) * 100, 10), 100);
-      const barHeight = height + (Math.random() * 20 - 10); // Add some variance
+      const baseHeight = loading ? 20 : Math.min(Math.max((activeCount / 50) * 100, 10), 100);
+      // Use deterministic variance based on index instead of random
+      const variance = (Math.sin(i * 0.5) * 10);
+      const barHeight = baseHeight + variance;
       const opacity = activeCount > i * 2.5 ? 1 : 0.3;
 
       return (
@@ -44,20 +46,22 @@ const ActiveSessions: React.FC = () => {
         <h3 className="font-mono text-xs">{'//'} ACTIVE VISITORS</h3>
       </div>
       <div className="p-4">
-        <div className="text-tui-muted text-xs mb-2">
-          {error ? (
-            'CONNECTION ERROR: UNABLE TO FETCH VISITOR DATA'
-          ) : loading ? (
-            'SYNCHRONIZING VISITOR DATA...'
-          ) : activeCount === 0 ? (
-            'NO ACTIVE VISITORS DETECTED IN LAST 30 MINUTES'
-          ) : activeCount < 5 ? (
-            'LOW TRAFFIC DETECTED. NORMAL OPERATION.'
-          ) : activeCount < 20 ? (
-            'MODERATE TRAFFIC LEVELS. SYSTEM OPERATING NORMALLY.'
-          ) : (
-            'HIGH TRAFFIC DETECTED. MONITORING SYSTEM PERFORMANCE.'
-          )}
+        <div className="text-tui-muted text-xs mb-2 h-8 flex items-center">
+          <div>
+            {error ? (
+              'CONNECTION ERROR: UNABLE TO FETCH VISITOR DATA'
+            ) : loading ? (
+              'SYNCHRONIZING VISITOR DATA...'
+            ) : activeCount === 0 ? (
+              'NO ACTIVE VISITORS DETECTED IN LAST 30 MINUTES'
+            ) : activeCount < 5 ? (
+              'LOW TRAFFIC DETECTED. NORMAL OPERATION.'
+            ) : activeCount < 20 ? (
+              'MODERATE TRAFFIC LEVELS. SYSTEM OPERATING NORMALLY.'
+            ) : (
+              'HIGH TRAFFIC DETECTED. MONITORING SYSTEM PERFORMANCE.'
+            )}
+          </div>
         </div>
 
         <div className="text-tui-light text-sm mb-2">LIVE VISITORS</div>
@@ -65,11 +69,9 @@ const ActiveSessions: React.FC = () => {
           {loading ? '---' : error ? 'ERR' : activeCount}
         </div>
 
-        {timestamp && (
-          <div className="text-tui-muted text-xs mb-4">
-            LAST UPDATE: {formatTimestamp(timestamp)}
-          </div>
-        )}
+        <div className="text-tui-muted text-xs mb-4 h-4">
+          {timestamp && `LAST UPDATE: ${formatTimestamp(timestamp)}`}
+        </div>
 
         {/* Activity visualization */}
         <div className="flex items-end space-x-1 h-16 mb-4">

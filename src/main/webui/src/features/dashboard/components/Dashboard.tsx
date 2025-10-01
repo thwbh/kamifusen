@@ -14,29 +14,46 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onSignOut }) => {
-  const { healthData, loading, error } = useSystemHealth(5000); // Refresh every 5 seconds
+  const { healthData, loading, error, responseTime } = useSystemHealth(5000); // Refresh every 5 seconds
   const [loginTime] = useState(new Date()); // Store login timestamp
 
-  return (
-    <div className="flex h-full">
-      <div className="w-80 bg-tui-dark border-r border-tui-border flex flex-col">
-        <SystemHealth healthData={healthData} loading={loading} error={error} />
-        <ActiveSessions />
-        <ActionPanel
-          title="MISSION CONTROL"
-          subtitle="QUICK ACTIONS"
-          actions={[
-            { label: "View Live Activity Feed" },
-            { label: "Export Analytics Data" },
-            { label: "System Diagnostics" }
-          ]}
-        />
-        <StatusBar />
-      </div>
+  useEffect(() => {
+    // Set redirect timestamp when dashboard first mounts
+    const formSubmitTime = sessionStorage.getItem('form-submit-ts');
+    if (formSubmitTime && !sessionStorage.getItem('redirect-ts')) {
+      sessionStorage.setItem('redirect-ts', Date.now().toString());
+    }
+  }, []);
 
-      <div className="flex-1 bg-tui-dark relative">
-        <MainContent />
-        <BottomSlots healthData={healthData} loginTime={loginTime} />
+  return (
+    <div className="relative h-full">
+      {/* Main content area */}
+      <div className="flex flex-col h-full">
+        <div className="flex flex-row">
+          <div className="w-80 bg-tui-dark border-r border-tui-border flex flex-col">
+            <div className="flex-1">
+              <SystemHealth />
+              <ActiveSessions />
+            </div>
+          </div>
+
+          <div className="flex-1 bg-tui-dark relative">
+            <MainContent />
+            <ActionPanel
+              title="MISSION CONTROL"
+              subtitle="QUICK ACTIONS"
+              actions={[
+                { label: "View Live Activity Feed" },
+                { label: "Export Analytics Data" },
+                { label: "System Diagnostics" }
+              ]}
+            />
+          </div>
+        </div>
+        <div className="flex bottom-0">
+          <StatusBar />
+          <BottomSlots healthData={healthData} loginTime={loginTime} responseTime={responseTime} />
+        </div>
       </div>
     </div>
   );

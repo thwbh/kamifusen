@@ -1,20 +1,62 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { StatusEnum } from '../../../api';
 import { useSystemHealth } from '../hooks/useSystemHealth';
 
 const SystemHealth: React.FC = () => {
-  const { healthData, loading, error } = useSystemHealth(5000); // Refresh every 5 seconds
+  const { healthData, responseTime, errorCount, totalRequests } = useSystemHealth(5000);
   const [selectedMetric, setSelectedMetric] = useState(0);
+  const [loginDuration, setLoginDuration] = useState<number | null>(null);
 
-  // Fallback data while loading or on error
-  const fallbackMetrics = [
-    { name: 'API Response Time', value: '~120ms', status: 'healthy' as const, description: 'Average response time for admin endpoints' },
-    { name: 'Database Connection', value: 'ONLINE', status: 'healthy' as const, description: 'PostgreSQL connection status' },
-    { name: 'Error Rate', value: '<0.1%', status: 'healthy' as const, description: 'Failed requests in last hour' },
-    { name: 'Memory Usage', value: '67%', status: 'warning' as const, description: 'JVM heap memory utilization' },
-    { name: 'Session Store', value: 'ACTIVE', status: 'healthy' as const, description: 'User session management status' },
-  ];
+  useEffect(() => {
+    // Calculate login duration from form-submit to redirect
+    const formSubmitTime = sessionStorage.getItem('form-submit-ts');
+    const redirectTime = sessionStorage.getItem('redirect-ts');
 
-  const healthMetrics = healthData?.metrics || fallbackMetrics;
+    if (formSubmitTime && redirectTime) {
+      const duration = parseInt(redirectTime) - parseInt(formSubmitTime);
+      setLoginDuration(duration);
+    }
+  }, []);
+
+  // Helper function to get metric value by name
+  const getMetricValue = (name: string): string => {
+    const metric = healthData?.metrics?.find(m => m.name === name);
+    return metric?.value || '---';
+  };
+
+  const memoryUsage = getMetricValue('Memory Usage');
+  const errorRate = totalRequests > 0 ? ((errorCount / totalRequests) * 100).toFixed(1) : '0.0';
+
+  const healthMetrics = React.useMemo(() => {
+    const metrics = [
+      {
+        name: 'Login Time',
+        value: loginDuration ? `${loginDuration}ms` : '---',
+        status: loginDuration && loginDuration < 1000 ? StatusEnum.Healthy : loginDuration && loginDuration < 2000 ? StatusEnum.Warning : StatusEnum.Critical,
+        description: 'Time from form submission to dashboard redirect'
+      },
+      {
+        name: 'Response Time',
+        value: responseTime ? `${responseTime}ms` : '---',
+        status: responseTime && responseTime < 200 ? StatusEnum.Healthy : responseTime && responseTime < 500 ? StatusEnum.Warning : StatusEnum.Critical,
+        description: 'System health check API response time (5s interval)'
+      },
+      {
+        name: 'Error Rate',
+        value: `${errorRate}%`,
+        status: parseFloat(errorRate) < 1 ? StatusEnum.Healthy : parseFloat(errorRate) < 5 ? StatusEnum.Warning : StatusEnum.Critical,
+        description: `Failed health check requests in this session (${errorCount}/${totalRequests})`
+      },
+      {
+        name: 'Memory Usage',
+        value: memoryUsage,
+        status: StatusEnum.Healthy,
+        description: 'JVM heap memory utilization'
+      }
+    ];
+
+    return metrics;
+  }, [loginDuration, responseTime, errorRate, errorCount, totalRequests, memoryUsage]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -35,16 +77,8 @@ const SystemHealth: React.FC = () => {
   };
 
   const getOverallStatus = () => {
-    if (healthData) {
-      return {
-        status: healthData.overallStatus,
-        text: healthData.overallText
-      };
-    }
-
-    // Fallback calculation
-    const criticalCount = healthMetrics.filter(m => m.status === 'critical').length;
-    const warningCount = healthMetrics.filter(m => m.status === 'warning').length;
+    const criticalCount = healthMetrics.filter(m => m.status === StatusEnum.Critical).length;
+    const warningCount = healthMetrics.filter(m => m.status === StatusEnum.Warning).length;
 
     if (criticalCount > 0) return { status: 'critical', text: 'SYSTEM DEGRADED' };
     if (warningCount > 0) return { status: 'warning', text: 'MONITORING ALERTS' };
@@ -79,7 +113,7 @@ const SystemHealth: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {healthMetrics.map((metric, index) => (
+            {healthMetrics && healthMetrics.map((metric, index) => (
               <tr
                 key={index}
                 className={`${index === selectedMetric ? 'bg-tui-accent bg-opacity-20' : ''} cursor-pointer hover:bg-tui-border hover:bg-opacity-50 transition-colors duration-150`}
@@ -99,7 +133,7 @@ const SystemHealth: React.FC = () => {
         </table>
 
         {/* Selected metric details */}
-        {selectedMetric < healthMetrics.length && (
+        {healthMetrics && selectedMetric < healthMetrics.length && (
           <div className="mt-4 p-2 bg-tui-background border border-tui-border rounded">
             <div className="text-tui-muted text-xs">
               {healthMetrics[selectedMetric].description}

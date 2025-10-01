@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import type { SystemHealthDto } from '../../../api';
 import { getAppVersion } from '../../../shared/utils/version';
 
 interface BottomSlotsProps {
   healthData: SystemHealthDto | null;
   loginTime: Date;
+  responseTime: number | null;
 }
 
-const BottomSlots: React.FC<BottomSlotsProps> = ({ healthData, loginTime }) => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Update current time every second
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+const BottomSlots: React.FC<BottomSlotsProps> = ({ healthData, loginTime, responseTime }) => {
+  const currentTime = new Date();
 
   // Helper function to get metric value by name
   const getMetricValue = (name: string): string => {
@@ -24,13 +18,9 @@ const BottomSlots: React.FC<BottomSlotsProps> = ({ healthData, loginTime }) => {
     return metric?.value || '---';
   };
 
-  // Format time as HH:MM
+  // Format time as HH:MM using date-fns
   const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
+    return format(date, 'HH:mm:ss');
   };
 
   const javaVersion = getMetricValue('Java Version');
@@ -43,7 +33,7 @@ const BottomSlots: React.FC<BottomSlotsProps> = ({ healthData, loginTime }) => {
   const utcTime = formatTime(new Date(currentTime.getTime() + currentTime.getTimezoneOffset() * 60000));
 
   const buildTime = healthData?.timestamp ?
-    new Date(healthData.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) :
+    format(new Date(healthData.timestamp), 'dd/MM') :
     '--/--';
 
   // Calculate additional values for the slots
@@ -54,7 +44,7 @@ const BottomSlots: React.FC<BottomSlotsProps> = ({ healthData, loginTime }) => {
   const userName = 'admin'; // Could be extracted from context/props if available
 
   const refreshInterval = '5s';
-  const healthResponseTime = '~120ms'; // Could be calculated from actual response times
+  const healthResponseTime = responseTime ? `${responseTime}ms` : '---';
 
   //  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone.split('/').pop() || 'UTC';
   //  const currentTimestamp = formatTime(currentTime);
@@ -71,7 +61,7 @@ const BottomSlots: React.FC<BottomSlotsProps> = ({ healthData, loginTime }) => {
   ];
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-tui-darker border-t border-tui-border">
+    <div className="flex-1 bg-tui-darker border-t border-tui-border">
       <div className="flex">
         {dualSlots.map((slot, index) => (
           <div
